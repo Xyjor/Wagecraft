@@ -9,6 +9,7 @@ import { MyProfilePage } from "@/features/employees/MyProfilePage";
 import { HomePage } from "@/features/home/HomePage";
 import { HolidaysPage } from "@/features/org/HolidaysPage";
 import { OrganizationPage } from "@/features/org/OrganizationPage";
+import { OvertimePage } from "@/features/overtime/OvertimePage";
 import { UsersPage } from "@/features/users/UsersPage";
 
 export const router = createBrowserRouter([
@@ -19,6 +20,7 @@ export const router = createBrowserRouter([
       { path: "me", element: <MyProfilePage /> },
       { path: "my-attendance", element: <MyAttendancePage /> },
       { path: "attendance", element: <AttendancePage /> },
+      { path: "overtime", element: <OvertimePage /> },
       { path: "employees", element: <EmployeesPage /> },
       { path: "employees/new", element: <EmployeeFormPage /> },
       { path: "employees/:id", element: <EmployeeProfilePage /> },

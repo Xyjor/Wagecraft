@@ -28,7 +28,7 @@ pub async fn for_employee(
     Ok(repo::for_employee(db, employee_id, &from.to_string(), &to.to_string()).await?)
 }
 
-fn check_range(range: &DateRange) -> Result<(NaiveDate, NaiveDate), AppError> {
+pub(crate) fn check_range(range: &DateRange) -> Result<(NaiveDate, NaiveDate), AppError> {
     let from = NaiveDate::parse_from_str(range.from.trim(), "%Y-%m-%d");
     let to = NaiveDate::parse_from_str(range.to.trim(), "%Y-%m-%d");
     let (Ok(from), Ok(to)) = (from, to) else {
@@ -104,7 +104,7 @@ pub async fn day(db: &SqlitePool, date: &str) -> Result<Vec<DayRow>, AppError> {
 }
 
 /// A regular holiday outranks a special one when two fall on the same day.
-fn strongest_holiday(holidays: &[(String, String)]) -> Option<HolidayKind> {
+pub(crate) fn strongest_holiday(holidays: &[(String, String)]) -> Option<HolidayKind> {
     let kinds: Vec<_> = holidays
         .iter()
         .filter_map(|(_, t)| HolidayKind::from_db(t))

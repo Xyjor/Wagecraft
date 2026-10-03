@@ -54,7 +54,7 @@ describe("MyAttendancePage", () => {
   });
 
   it("lists this month's records with readable times", async () => {
-    call.mockResolvedValue([
+    const records = [
       record({
         id: 2,
         workDate: "2026-10-06",
@@ -64,7 +64,8 @@ describe("MyAttendancePage", () => {
         workedMinutes: 0,
       }),
       record({ needsReview: true }),
-    ]);
+    ];
+    call.mockImplementation(async (cmd: string) => (cmd === "attendance_mine" ? records : []));
     renderAs(staff);
 
     const row = await screen.findByRole("row", { name: /Oct 5, 2026/ });
@@ -76,7 +77,7 @@ describe("MyAttendancePage", () => {
     const open = screen.getByRole("row", { name: /Oct 6, 2026/ });
     expect(within(open).getByText("Not yet")).toBeTruthy();
 
-    const { from, to } = call.mock.calls[0][1].range;
+    const { from, to } = call.mock.calls.find(([cmd]) => cmd === "attendance_mine")![1].range;
     expect(from).toMatch(/^\d{4}-\d{2}-01$/);
     expect(to.slice(0, 7)).toBe(from.slice(0, 7));
   });

@@ -5,4 +5,5 @@ pub mod attendance_calc;
 pub mod compensation;
 pub mod employee;
 pub mod org;
+pub mod overtime;
 pub mod validation;

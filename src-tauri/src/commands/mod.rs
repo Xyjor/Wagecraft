@@ -2,6 +2,7 @@ pub mod attendance;
 pub mod auth;
 pub mod employees;
 pub mod org;
+pub mod overtime;
 pub mod reports;
 pub mod system;
 pub mod users;

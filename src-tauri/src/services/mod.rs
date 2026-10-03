@@ -6,5 +6,6 @@ pub mod employees;
 pub mod holidays;
 pub mod kiosk;
 pub mod org;
+pub mod overtime;
 pub mod reports;
 pub mod users;

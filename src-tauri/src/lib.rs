@@ -89,6 +89,12 @@ pub fn run() {
             commands::attendance::attendance_for_employee,
             commands::attendance::attendance_save,
             commands::attendance::attendance_mark_reviewed,
+            commands::overtime::overtime_request_create,
+            commands::overtime::overtime_request_cancel,
+            commands::overtime::overtime_mine,
+            commands::overtime::overtime_list,
+            commands::overtime::overtime_pending,
+            commands::overtime::overtime_decide,
             commands::reports::report_masterlist_csv,
         ])
         .run(tauri::generate_context!())
