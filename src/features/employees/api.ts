@@ -1,3 +1,5 @@
+import type { AccountSummary } from "@/bindings/AccountSummary";
+import type { NewStaffAccount } from "@/bindings/NewStaffAccount";
 import type { Compensation } from "@/bindings/Compensation";
 import type { CompensationInput } from "@/bindings/CompensationInput";
 import type { Employee } from "@/bindings/Employee";
@@ -19,3 +21,10 @@ export const compensationHistory = (id: number) =>
   call<Compensation[]>("employee_compensation_history", { id });
 export const addCompensation = (id: number, input: CompensationInput) =>
   call<Compensation>("employee_add_compensation", { id, input });
+export const getAccount = (id: number) => call<AccountSummary | null>("employee_account", { id });
+export const linkableAccounts = () => call<AccountSummary[]>("employee_linkable_accounts");
+export const createAccount = (id: number, input: NewStaffAccount) =>
+  call<AccountSummary>("employee_create_account", { id, input });
+export const linkAccount = (id: number, userId: number) =>
+  call<AccountSummary>("employee_link_user", { id, userId });
+export const unlinkAccount = (id: number) => call<void>("employee_unlink_user", { id });

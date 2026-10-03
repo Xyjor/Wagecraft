@@ -27,6 +27,7 @@ function user(id: number, username: string, extra: Partial<UserSummary> = {}): U
     username,
     role: "HR",
     employeeId: null,
+    employeeLabel: null,
     isActive: true,
     mustChangePassword: false,
     locked: false,

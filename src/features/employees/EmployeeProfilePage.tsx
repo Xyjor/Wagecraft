@@ -7,10 +7,17 @@ import { formatDate } from "@/lib/dates";
 import { formatId } from "@/lib/govIds";
 import type { AppError } from "@/lib/ipc";
 import { archiveEmployee, getEmployee } from "./api";
+import { AccountTab } from "./AccountTab";
 import { CompensationTab } from "./CompensationTab";
 import { CIVIL_STATUS_LABELS, fullName, SEX_LABELS, STATUS_LABELS } from "./format";
 
-const TABS = ["Personal", "Employment", "Government IDs", "Compensation"] as const;
+const TABS = [
+  "Personal",
+  "Employment",
+  "Government IDs",
+  "Compensation",
+  "Sign-in account",
+] as const;
 type Tab = (typeof TABS)[number];
 
 const SEPARATED = ["RESIGNED", "TERMINATED"];
@@ -136,6 +143,7 @@ export function EmployeeProfilePage() {
           />
         )}
         {tab === "Compensation" && <CompensationTab employee={e} />}
+        {tab === "Sign-in account" && <AccountTab employee={e} />}
       </div>
     </article>
   );

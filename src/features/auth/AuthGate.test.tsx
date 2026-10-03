@@ -27,14 +27,14 @@ const admin: Me = {
 };
 const signedOut = { code: "UNAUTHENTICATED", message: "Please sign in", fields: [] };
 
-function setup(state: { needsSetup: boolean; me?: Me }) {
+function setup(state: { needsSetup: boolean; me?: Me }, onUserChanged?: () => void) {
   handlers.auth_setup_status = async () => ({ needsSetup: state.needsSetup });
   handlers.auth_me = async () => {
     if (state.me) return state.me;
     throw signedOut;
   };
   render(
-    <AuthGate>
+    <AuthGate onUserChanged={onUserChanged}>
       <p>App content</p>
     </AuthGate>,
   );
@@ -107,5 +107,27 @@ describe("AuthGate", () => {
     });
 
     expect(await screen.findByRole("heading", { name: "Sign in" })).toBeTruthy();
+  });
+
+  it("tells the app when a different person signs in after a sign-out", async () => {
+    const onUserChanged = vi.fn();
+    setup({ needsSetup: false, me: admin }, onUserChanged);
+    await screen.findByText("App content");
+    const signIn = async (me: Me) => {
+      handlers.auth_login = async () => me;
+      act(() => {
+        window.dispatchEvent(new Event(SIGNED_OUT_EVENT));
+      });
+      await screen.findByRole("heading", { name: "Sign in" });
+      type("Username", me.username);
+      type("Password", "whatever password");
+      fireEvent.click(screen.getByRole("button", { name: "Sign in" }));
+      await screen.findByText("App content");
+    };
+
+    await signIn(admin);
+    expect(onUserChanged).not.toHaveBeenCalled();
+    await signIn({ ...admin, userId: 5, username: "jose", role: "STAFF" });
+    expect(onUserChanged).toHaveBeenCalledTimes(1);
   });
 });

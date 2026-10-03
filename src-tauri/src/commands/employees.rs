@@ -5,6 +5,7 @@ use crate::auth::permissions::Permission;
 use crate::domain::compensation::{Compensation, CompensationInput};
 use crate::domain::employee::{Employee, EmployeeInput, EmployeePage, EmployeeQuery};
 use crate::error::AppError;
+use crate::services::accounts::{self, AccountSummary, NewStaffAccount};
 use crate::services::{compensation, employees};
 use crate::state::AppState;
 use chrono::{Local, Utc};
@@ -82,4 +83,49 @@ pub async fn employee_add_compensation(
 ) -> Result<Compensation, AppError> {
     let session = state.require(Permission::EmployeeWrite).await?;
     compensation::add(&state.db, session.actor(), id, input, Utc::now()).await
+}
+
+/// The sign-in account linked to this employee, if any.
+#[tauri::command]
+pub async fn employee_account(
+    state: State<'_, AppState>,
+    id: i64,
+) -> Result<Option<AccountSummary>, AppError> {
+    state.require(Permission::EmployeeReadAll).await?;
+    accounts::linked(&state.db, id).await
+}
+
+/// Accounts not linked to anyone, for linking an Admin or HR user to their own record.
+#[tauri::command]
+pub async fn employee_linkable_accounts(
+    state: State<'_, AppState>,
+) -> Result<Vec<AccountSummary>, AppError> {
+    state.require(Permission::EmployeeWrite).await?;
+    accounts::linkable(&state.db).await
+}
+
+#[tauri::command]
+pub async fn employee_create_account(
+    state: State<'_, AppState>,
+    id: i64,
+    input: NewStaffAccount,
+) -> Result<AccountSummary, AppError> {
+    let session = state.require(Permission::EmployeeWrite).await?;
+    accounts::create_staff(&state.db, session.actor(), id, input, Utc::now()).await
+}
+
+#[tauri::command]
+pub async fn employee_link_user(
+    state: State<'_, AppState>,
+    id: i64,
+    user_id: i64,
+) -> Result<AccountSummary, AppError> {
+    let session = state.require(Permission::EmployeeWrite).await?;
+    accounts::link(&state.db, session.actor(), id, user_id, Utc::now()).await
+}
+
+#[tauri::command]
+pub async fn employee_unlink_user(state: State<'_, AppState>, id: i64) -> Result<(), AppError> {
+    let session = state.require(Permission::EmployeeWrite).await?;
+    accounts::unlink(&state.db, session.actor(), id, Utc::now()).await
 }
