@@ -15,6 +15,8 @@ pub struct FieldError {
 pub enum AppError {
     #[error("Please sign in")]
     Unauthenticated,
+    #[error("You were signed out after a period of inactivity. Please sign in again")]
+    SessionExpired,
     #[error("You don't have permission to do this")]
     Forbidden,
     #[error("Some fields are invalid")]
@@ -29,6 +31,7 @@ impl AppError {
     fn code(&self) -> &'static str {
         match self {
             AppError::Unauthenticated => "UNAUTHENTICATED",
+            AppError::SessionExpired => "SESSION_EXPIRED",
             AppError::Forbidden => "FORBIDDEN",
             AppError::Validation(_) => "VALIDATION",
             AppError::NotFound(_) => "NOT_FOUND",
