@@ -1,6 +1,7 @@
 //! Who is signed in right now. Wagecraft runs on one PC, so there is at most one
 //! session, held in Rust memory (never in the webview).
 
+use crate::audit::Actor;
 use crate::auth::permissions::{Permission, Role};
 use crate::error::AppError;
 use std::{
@@ -11,12 +12,23 @@ use std::{
 #[derive(Debug, Clone)]
 pub struct Session {
     pub user_id: i64,
+    /// Kept for the audit trail, so entries name the user even after the account changes.
+    pub username: String,
     /// The employee this user is, if any. "Self" commands read this, never an id from the UI.
     #[allow(dead_code)]
     // First read by the self-service commands (attendance, leave, payslips).
     pub employee_id: Option<i64>,
     pub role: Role,
     pub last_activity: Instant,
+}
+
+impl Session {
+    pub fn actor(&self) -> Actor<'_> {
+        Actor {
+            user_id: Some(self.user_id),
+            username: &self.username,
+        }
+    }
 }
 
 pub struct Auth {
@@ -36,8 +48,9 @@ impl Auth {
         *self.session.lock().expect("session lock") = Some(s);
     }
 
-    pub fn sign_out(&self) {
-        *self.session.lock().expect("session lock") = None;
+    /// Ends the session and returns it, so the caller can audit who signed out.
+    pub fn sign_out(&self) -> Option<Session> {
+        self.session.lock().expect("session lock").take()
     }
 
     /// The first line of every command: checks sign-in, idle time and permission.
@@ -70,6 +83,7 @@ mod tests {
     fn staff(at: Instant) -> Session {
         Session {
             user_id: 1,
+            username: "staff".into(),
             employee_id: Some(7),
             role: Role::Staff,
             last_activity: at,
@@ -150,7 +164,9 @@ mod tests {
         let auth = Auth::new(IDLE);
         let t0 = Instant::now();
         auth.sign_in(staff(t0));
-        auth.sign_out();
+        let ended = auth.sign_out().expect("the session that ended");
+        assert_eq!(ended.username, "staff");
+        assert!(auth.sign_out().is_none());
         assert!(matches!(
             auth.require_at(Permission::SelfProfile, t0),
             Err(AppError::Unauthenticated)

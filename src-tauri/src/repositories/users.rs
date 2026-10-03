@@ -61,7 +61,7 @@ pub async fn insert(
 }
 
 pub async fn record_failure(
-    db: &SqlitePool,
+    conn: &mut SqliteConnection,
     id: i64,
     failed_attempts: i64,
     locked_until: Option<&str>,
@@ -74,12 +74,12 @@ pub async fn record_failure(
     .bind(locked_until)
     .bind(now)
     .bind(id)
-    .execute(db)
+    .execute(conn)
     .await?;
     Ok(())
 }
 
-pub async fn record_success(db: &SqlitePool, id: i64, now: &str) -> sqlx::Result<()> {
+pub async fn record_success(conn: &mut SqliteConnection, id: i64, now: &str) -> sqlx::Result<()> {
     sqlx::query(
         "UPDATE users SET failed_attempts = 0, locked_until = NULL, last_login_at = ?, \
          updated_at = ? WHERE id = ?",
@@ -87,19 +87,23 @@ pub async fn record_success(db: &SqlitePool, id: i64, now: &str) -> sqlx::Result
     .bind(now)
     .bind(now)
     .bind(id)
-    .execute(db)
+    .execute(conn)
     .await?;
     Ok(())
 }
 
-pub async fn set_password(db: &SqlitePool, id: i64, password_hash: &str) -> sqlx::Result<()> {
+pub async fn set_password(
+    conn: &mut SqliteConnection,
+    id: i64,
+    password_hash: &str,
+) -> sqlx::Result<()> {
     sqlx::query(
         "UPDATE users SET password_hash = ?, must_change_password = 0, \
          updated_at = strftime('%Y-%m-%dT%H:%M:%SZ', 'now') WHERE id = ?",
     )
     .bind(password_hash)
     .bind(id)
-    .execute(db)
+    .execute(conn)
     .await?;
     Ok(())
 }

@@ -71,6 +71,7 @@ pub async fn auth_login(
     let user = auth::login(&state.db, &username, &password, chrono::Utc::now()).await?;
     state.auth.sign_in(Session {
         user_id: user.id,
+        username: user.username.clone(),
         employee_id: user.employee_id,
         role: user.role,
         last_activity: Instant::now(),
@@ -80,8 +81,10 @@ pub async fn auth_login(
 
 #[tauri::command]
 pub async fn auth_logout(state: State<'_, AppState>) -> Result<(), AppError> {
-    state.auth.sign_out();
-    Ok(())
+    match state.auth.sign_out() {
+        Some(session) => auth::logout(&state.db, session.actor(), chrono::Utc::now()).await,
+        None => Ok(()),
+    }
 }
 
 #[tauri::command]
