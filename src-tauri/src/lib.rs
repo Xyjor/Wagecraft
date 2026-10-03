@@ -1,3 +1,5 @@
+#[allow(dead_code)] // Commands start using auth in Task 2.4.
+mod auth;
 mod commands;
 mod db;
 mod error;
