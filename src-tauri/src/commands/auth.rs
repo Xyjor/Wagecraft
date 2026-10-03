@@ -89,7 +89,7 @@ pub async fn auth_logout(state: State<'_, AppState>) -> Result<(), AppError> {
 
 #[tauri::command]
 pub async fn auth_me(state: State<'_, AppState>) -> Result<Me, AppError> {
-    let session = state.auth.require(Permission::SelfProfile)?;
+    let session = state.require(Permission::SelfProfile).await?;
     Ok(auth::find_user(&state.db, session.user_id).await?.into())
 }
 
@@ -99,6 +99,6 @@ pub async fn auth_change_password(
     current_password: String,
     new_password: String,
 ) -> Result<(), AppError> {
-    let session = state.auth.require(Permission::SelfProfile)?;
+    let session = state.require(Permission::SelfProfile).await?;
     auth::change_password(&state.db, session.user_id, &current_password, &new_password).await
 }

@@ -9,7 +9,7 @@ use tauri::State;
 
 #[tauri::command]
 pub async fn user_list(state: State<'_, AppState>) -> Result<Vec<UserSummary>, AppError> {
-    state.auth.require(Permission::UserManage)?;
+    state.require(Permission::UserManage).await?;
     users::list(&state.db, Utc::now()).await
 }
 
@@ -18,13 +18,13 @@ pub async fn user_create(
     state: State<'_, AppState>,
     input: NewUser,
 ) -> Result<UserSummary, AppError> {
-    let session = state.auth.require(Permission::UserManage)?;
+    let session = state.require(Permission::UserManage).await?;
     users::create(&state.db, session.actor(), input, Utc::now()).await
 }
 
 #[tauri::command]
 pub async fn user_update(state: State<'_, AppState>, id: i64, role: Role) -> Result<(), AppError> {
-    let session = state.auth.require(Permission::UserManage)?;
+    let session = state.require(Permission::UserManage).await?;
     users::set_role(&state.db, session.actor(), id, role, Utc::now()).await
 }
 
@@ -34,7 +34,7 @@ pub async fn user_set_active(
     id: i64,
     active: bool,
 ) -> Result<(), AppError> {
-    let session = state.auth.require(Permission::UserManage)?;
+    let session = state.require(Permission::UserManage).await?;
     users::set_active(&state.db, session.actor(), id, active, Utc::now()).await
 }
 
@@ -44,7 +44,7 @@ pub async fn user_reset_password(
     id: i64,
     temporary_password: String,
 ) -> Result<(), AppError> {
-    let session = state.auth.require(Permission::UserManage)?;
+    let session = state.require(Permission::UserManage).await?;
     users::reset_password(
         &state.db,
         session.actor(),

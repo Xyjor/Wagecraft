@@ -53,24 +53,46 @@ impl Auth {
         self.session.lock().expect("session lock").take()
     }
 
-    /// The first line of every command: checks sign-in, idle time and permission.
-    pub fn require(&self, p: Permission) -> Result<Session, AppError> {
-        self.require_at(p, Instant::now())
+    /// `check_at` as an `AppError`, for tests. Commands use `AppState::require`,
+    /// which also audits an expired session.
+    #[cfg(test)]
+    pub fn require_at(&self, p: Permission, now: Instant) -> Result<Session, AppError> {
+        self.check_at(p, now).map_err(AppError::from)
     }
 
-    /// `require` with the clock passed in, so tests don't wait 15 minutes.
-    pub fn require_at(&self, p: Permission, now: Instant) -> Result<Session, AppError> {
+    /// Checks sign-in, idle time and permission, with the clock passed in so tests
+    /// don't wait 15 minutes. An expired session is ended and handed back for auditing.
+    pub fn check_at(&self, p: Permission, now: Instant) -> Result<Session, Refusal> {
         let mut guard = self.session.lock().expect("session lock");
-        let s = guard.as_mut().ok_or(AppError::Unauthenticated)?;
+        let s = guard.as_mut().ok_or(Refusal::Unauthenticated)?;
         if now.duration_since(s.last_activity) > self.idle_timeout {
-            *guard = None;
-            return Err(AppError::SessionExpired);
+            let ended = guard.take().expect("session checked above");
+            return Err(Refusal::Expired(ended));
         }
         if !s.role.allows(p) {
-            return Err(AppError::Forbidden);
+            return Err(Refusal::Forbidden);
         }
         s.last_activity = now;
         Ok(s.clone())
+    }
+}
+
+/// Why `check_at` said no.
+#[derive(Debug)]
+pub enum Refusal {
+    Unauthenticated,
+    /// The idle timeout passed. Carries the session that just ended.
+    Expired(Session),
+    Forbidden,
+}
+
+impl From<Refusal> for AppError {
+    fn from(r: Refusal) -> Self {
+        match r {
+            Refusal::Unauthenticated => AppError::Unauthenticated,
+            Refusal::Expired(_) => AppError::SessionExpired,
+            Refusal::Forbidden => AppError::Forbidden,
+        }
     }
 }
 

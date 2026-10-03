@@ -46,13 +46,13 @@ mod tests {
         let missing: Vec<_> = commands()
             .into_iter()
             .filter(|(name, body)| {
-                !PUBLIC.contains(&name.as_str()) && !body.contains(".auth.require(")
+                !PUBLIC.contains(&name.as_str()) && !body.contains("state.require(")
             })
             .map(|(name, _)| name)
             .collect();
         assert!(
             missing.is_empty(),
-            "these commands never call state.auth.require(..): {missing:?}"
+            "these commands never call state.require(..): {missing:?}"
         );
     }
 
