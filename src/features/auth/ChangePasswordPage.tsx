@@ -1,8 +1,8 @@
 import { useState, type FormEvent } from "react";
 import type { Me } from "@/bindings/Me";
 import { call, type AppError } from "@/lib/ipc";
-import { AuthCard, Field, FormAlert, SubmitButton } from "./form";
-import { formValues, serverErrors } from "./formData";
+import { AuthCard, Field, FormAlert, SubmitButton } from "@/components/form";
+import { formValues, serverErrors } from "@/lib/formData";
 import { changePasswordSchema, fieldErrors } from "./validation";
 
 /** Shown right after sign-in when an Admin set this user's password for them. */

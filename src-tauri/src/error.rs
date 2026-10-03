@@ -23,6 +23,9 @@ pub enum AppError {
     NotFound(&'static str),
     #[error("Wrong username or password")]
     InvalidCredentials,
+    /// A business rule refused the change. The message says which rule, in plain words.
+    #[error("{0}")]
+    Conflict(&'static str),
     #[error("Something went wrong. Please try again")]
     Database(#[from] sqlx::Error),
     #[error("Something went wrong. Please try again")]
@@ -38,6 +41,7 @@ impl AppError {
             AppError::Validation(_) => "VALIDATION",
             AppError::NotFound(_) => "NOT_FOUND",
             AppError::InvalidCredentials => "INVALID_CREDENTIALS",
+            AppError::Conflict(_) => "CONFLICT",
             AppError::Database(_) => "DATABASE",
             AppError::Internal(_) => "INTERNAL",
         }
