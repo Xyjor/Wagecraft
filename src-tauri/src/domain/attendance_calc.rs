@@ -75,6 +75,11 @@ impl Interval {
         (self.end - self.start).num_minutes()
     }
 
+    /// True when the two spans share at least a moment. Touching ends don't count.
+    pub fn overlaps(&self, other: &Interval) -> bool {
+        self.start < other.end && other.start < self.end
+    }
+
     fn overlap(&self, other: &Interval) -> Interval {
         Interval::new(self.start.max(other.start), self.end.min(other.end))
     }

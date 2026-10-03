@@ -1,4 +1,5 @@
 import { useSession } from "@/features/auth/session";
+import { MyOvertime } from "@/features/overtime/MyOvertime";
 import { myAttendance } from "./api";
 import { AttendanceMonth } from "./AttendanceMonth";
 
@@ -20,6 +21,7 @@ export function MyAttendancePage() {
         Clock in and out on the time clock from the sign-in screen. Something wrong? Ask HR to
         correct it.
       </p>
+      <MyOvertime />
     </div>
   );
 }
