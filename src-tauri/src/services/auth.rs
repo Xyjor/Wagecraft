@@ -1,11 +1,13 @@
 //! Sign-in rules: first-run setup, login with lockout, and password changes (plan §6.1).
 //! Functions take the current time as a parameter so tests can move the clock.
 
+use crate::audit::{self, Actor, Entry};
 use crate::auth::{password, permissions::Role};
 use crate::error::{AppError, FieldError};
 use crate::repositories::users::{self, UserRow};
 use crate::time;
 use chrono::{DateTime, Utc};
+use serde_json::json;
 use sqlx::SqlitePool;
 use std::sync::OnceLock;
 
@@ -118,7 +120,7 @@ pub async fn create_admin(
     if users::count(&mut tx).await? > 0 {
         return Err(AppError::Forbidden);
     }
-    users::insert(&mut tx, username, &hash, Role::Admin.as_db(), false).await?;
+    let id = users::insert(&mut tx, username, &hash, Role::Admin.as_db(), false).await?;
     sqlx::query(
         "INSERT INTO settings (key, value) VALUES ('company_name', ?) \
          ON CONFLICT(key) DO UPDATE SET value = excluded.value",
@@ -126,6 +128,21 @@ pub async fn create_admin(
     .bind(company_name)
     .execute(&mut *tx)
     .await?;
+    let actor = Actor {
+        user_id: Some(id),
+        username,
+    };
+    let entry = Entry {
+        action: "auth.setup",
+        entity: Some(("user", id)),
+        after: Some(json!({
+            "username": username,
+            "role": Role::Admin.as_db(),
+            "companyName": company_name,
+        })),
+        ..Default::default()
+    };
+    audit::record(&mut tx, Utc::now(), actor, entry).await?;
     tx.commit().await?;
     Ok(())
 }
@@ -138,9 +155,18 @@ pub async fn login(
     password: &str,
     now: DateTime<Utc>,
 ) -> Result<User, AppError> {
-    let Some(row) = users::by_username(db, username.trim()).await? else {
+    let typed = username.trim();
+    // Before sign-in there is no acting user, only the name someone typed.
+    let stranger = Actor {
+        user_id: None,
+        username: typed,
+    };
+
+    let Some(row) = users::by_username(db, typed).await? else {
         // Spend the same time as a real check, so timing doesn't reveal the username.
         verify_blocking(password.to_string(), dummy_hash().to_string()).await?;
+        let mut conn = db.acquire().await?;
+        audit::record(&mut conn, now, stranger, failed_entry(None, "unknown_user")).await?;
         return Err(AppError::InvalidCredentials);
     };
 
@@ -151,18 +177,64 @@ pub async fn login(
         .is_some_and(|until| until > now);
     if !row.is_active || locked {
         verify_blocking(password.to_string(), dummy_hash().to_string()).await?;
+        let reason = if row.is_active { "locked" } else { "inactive" };
+        let mut conn = db.acquire().await?;
+        audit::record(&mut conn, now, stranger, failed_entry(Some(row.id), reason)).await?;
         return Err(AppError::InvalidCredentials);
     }
 
     if !verify_blocking(password.to_string(), row.password_hash.clone()).await? {
         let (failed, lock) = after_failed_login(row.failed_attempts, now);
         let lock = lock.map(time::to_db);
-        users::record_failure(db, row.id, failed, lock.as_deref(), &time::to_db(now)).await?;
+        let mut entry = failed_entry(Some(row.id), "wrong_password");
+        entry.after = Some(json!({
+            "reason": "wrong_password",
+            // Counts this attempt, even when the lock resets the stored count to 0.
+            "failedAttempts": row.failed_attempts + 1,
+            "lockedUntil": lock,
+        }));
+        let mut tx = db.begin().await?;
+        users::record_failure(&mut tx, row.id, failed, lock.as_deref(), &time::to_db(now)).await?;
+        audit::record(&mut tx, now, stranger, entry).await?;
+        tx.commit().await?;
         return Err(AppError::InvalidCredentials);
     }
 
-    users::record_success(db, row.id, &time::to_db(now)).await?;
+    let mut tx = db.begin().await?;
+    users::record_success(&mut tx, row.id, &time::to_db(now)).await?;
+    let actor = Actor {
+        user_id: Some(row.id),
+        username: &row.username,
+    };
+    let entry = Entry {
+        action: "auth.login",
+        entity: Some(("user", row.id)),
+        ..Default::default()
+    };
+    audit::record(&mut tx, now, actor, entry).await?;
+    tx.commit().await?;
     User::try_from(row)
+}
+
+fn failed_entry(user_id: Option<i64>, reason: &str) -> Entry<'static> {
+    Entry {
+        action: "auth.login_failed",
+        entity: user_id.map(|id| ("user", id)),
+        after: Some(json!({ "reason": reason })),
+        ..Default::default()
+    }
+}
+
+/// Records the sign-out. The caller has already cleared the in-memory session.
+pub async fn logout(db: &SqlitePool, actor: Actor<'_>, now: DateTime<Utc>) -> Result<(), AppError> {
+    let entry = Entry {
+        action: "auth.logout",
+        entity: actor.user_id.map(|id| ("user", id)),
+        ..Default::default()
+    };
+    let mut conn = db.acquire().await?;
+    audit::record(&mut conn, now, actor, entry).await?;
+    Ok(())
 }
 
 pub async fn find_user(db: &SqlitePool, id: i64) -> Result<User, AppError> {
@@ -197,7 +269,19 @@ pub async fn change_password(
         return Err(AppError::Validation(vec![field("newPassword", m)]));
     }
     let hash = hash_blocking(new.to_string()).await?;
-    users::set_password(db, user_id, &hash).await?;
+    let mut tx = db.begin().await?;
+    users::set_password(&mut tx, user_id, &hash).await?;
+    let actor = Actor {
+        user_id: Some(user_id),
+        username: &row.username,
+    };
+    let entry = Entry {
+        action: "auth.password_change",
+        entity: Some(("user", user_id)),
+        ..Default::default()
+    };
+    audit::record(&mut tx, Utc::now(), actor, entry).await?;
+    tx.commit().await?;
     Ok(())
 }
 
@@ -224,6 +308,7 @@ fn dummy_hash() -> &'static str {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::audit::test_support as audit_rows;
     use chrono::{Duration, TimeZone};
 
     const PW: &str = "correct horse battery";
@@ -399,6 +484,132 @@ mod tests {
             .expect("change");
         let user = find_user(&pool, user.id).await.expect("find");
         assert!(!user.must_change_password);
+    }
+
+    // ── Audit trail (plan §6.1: every auth event leaves an entry) ──
+
+    fn after(row: &audit_rows::Row) -> serde_json::Value {
+        serde_json::from_str(row.after_json.as_deref().expect("after_json")).expect("json")
+    }
+
+    #[tokio::test]
+    async fn setup_is_audited_as_the_new_admin() {
+        let (_dir, pool) = with_admin().await;
+        let rows = audit_rows::all(&pool).await;
+        assert_eq!(rows.len(), 1);
+        assert_eq!(rows[0].action, "auth.setup");
+        assert_eq!(rows[0].actor_user_id, Some(1));
+        assert_eq!(rows[0].actor_username, "admin");
+        assert_eq!(rows[0].entity_type.as_deref(), Some("user"));
+        assert_eq!(rows[0].entity_id, Some(1));
+        assert_eq!(after(&rows[0])["companyName"], "Rojyx Inc.");
+        assert_eq!(after(&rows[0])["role"], "ADMIN");
+    }
+
+    #[tokio::test]
+    async fn sign_in_is_audited() {
+        let (_dir, pool) = with_admin().await;
+        login(&pool, "Admin", PW, t0()).await.expect("login");
+
+        let rows = audit_rows::all(&pool).await;
+        let last = rows.last().expect("entry");
+        assert_eq!(last.action, "auth.login");
+        assert_eq!(last.at, "2026-10-05T08:00:00Z");
+        assert_eq!(last.actor_user_id, Some(1));
+        assert_eq!(last.actor_username, "admin");
+    }
+
+    #[tokio::test]
+    async fn wrong_password_is_audited_with_the_count() {
+        let (_dir, pool) = with_admin().await;
+        let _ = login(&pool, "admin", "wrong password!", t0()).await;
+
+        let rows = audit_rows::all(&pool).await;
+        let last = rows.last().expect("entry");
+        assert_eq!(last.action, "auth.login_failed");
+        // Nobody is signed in yet, so there is no acting user, only the name typed.
+        assert_eq!(last.actor_user_id, None);
+        assert_eq!(last.actor_username, "admin");
+        assert_eq!(last.entity_id, Some(1));
+        assert_eq!(after(last)["failedAttempts"], 1);
+        assert_eq!(after(last)["lockedUntil"], serde_json::Value::Null);
+    }
+
+    #[tokio::test]
+    async fn the_locking_failure_records_when_the_lock_ends() {
+        let (_dir, pool) = with_admin().await;
+        for _ in 0..5 {
+            let _ = login(&pool, "admin", "wrong password!", t0()).await;
+        }
+        let rows = audit_rows::all(&pool).await;
+        assert_eq!(
+            after(rows.last().unwrap())["lockedUntil"],
+            "2026-10-05T08:15:00Z"
+        );
+    }
+
+    #[tokio::test]
+    async fn unknown_users_and_locked_accounts_are_audited_too() {
+        let (_dir, pool) = with_admin().await;
+        let _ = login(&pool, "ghost", PW, t0()).await;
+        sqlx::query("UPDATE users SET is_active = 0")
+            .execute(&pool)
+            .await
+            .expect("deactivate");
+        let _ = login(&pool, "admin", PW, t0()).await;
+
+        let rows = audit_rows::all(&pool).await;
+        let [.., ghost, inactive] = rows.as_slice() else {
+            panic!("expected two entries")
+        };
+        assert_eq!(ghost.action, "auth.login_failed");
+        assert_eq!(ghost.actor_username, "ghost");
+        assert_eq!(ghost.entity_id, None);
+        assert_eq!(after(ghost)["reason"], "unknown_user");
+        assert_eq!(inactive.action, "auth.login_failed");
+        assert_eq!(after(inactive)["reason"], "inactive");
+    }
+
+    #[tokio::test]
+    async fn password_change_and_sign_out_are_audited() {
+        let (_dir, pool) = with_admin().await;
+        let user = login(&pool, "admin", PW, t0()).await.expect("login");
+        change_password(&pool, user.id, PW, "a brand new password")
+            .await
+            .expect("change");
+        let actor = Actor {
+            user_id: Some(user.id),
+            username: &user.username,
+        };
+        logout(&pool, actor, t0()).await.expect("logout");
+
+        let actions = audit_rows::actions(&pool).await;
+        assert_eq!(
+            actions,
+            [
+                "auth.setup",
+                "auth.login",
+                "auth.password_change",
+                "auth.logout"
+            ]
+        );
+    }
+
+    #[tokio::test]
+    async fn no_audit_entry_holds_a_password_or_hash() {
+        let (_dir, pool) = with_admin().await;
+        let _ = login(&pool, "admin", "wrong password!", t0()).await;
+        let user = login(&pool, "admin", PW, t0()).await.expect("login");
+        change_password(&pool, user.id, PW, "a brand new password")
+            .await
+            .expect("change");
+
+        for row in audit_rows::all(&pool).await {
+            let text = format!("{:?} {:?}", row.before_json, row.after_json);
+            for secret in ["argon2", PW, "wrong password!", "a brand new password"] {
+                assert!(!text.contains(secret), "{} leaks {secret}", row.action);
+            }
+        }
     }
 
     #[test]
