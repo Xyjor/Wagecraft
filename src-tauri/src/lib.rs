@@ -41,6 +41,11 @@ pub fn run() {
             commands::auth::auth_logout,
             commands::auth::auth_me,
             commands::auth::auth_change_password,
+            commands::users::user_list,
+            commands::users::user_create,
+            commands::users::user_update,
+            commands::users::user_set_active,
+            commands::users::user_reset_password,
         ])
         .run(tauri::generate_context!())
         .expect("error while running Wagecraft");

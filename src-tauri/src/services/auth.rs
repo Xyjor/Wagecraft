@@ -64,7 +64,7 @@ pub fn password_problem(username: &str, password: &str) -> Option<&'static str> 
     }
 }
 
-fn username_problem(username: &str) -> Option<&'static str> {
+pub(crate) fn username_problem(username: &str) -> Option<&'static str> {
     let ok_len = (3..=32).contains(&username.chars().count());
     let ok_chars = username
         .chars()
@@ -76,7 +76,7 @@ fn username_problem(username: &str) -> Option<&'static str> {
     }
 }
 
-fn field(name: &str, message: &str) -> FieldError {
+pub(crate) fn field(name: &str, message: &str) -> FieldError {
     FieldError {
         field: name.to_string(),
         message: message.to_string(),
@@ -286,7 +286,7 @@ pub async fn change_password(
 }
 
 // Argon2 takes ~100 ms on purpose; run it off the async threads so the app stays responsive.
-async fn hash_blocking(password: String) -> Result<String, AppError> {
+pub(crate) async fn hash_blocking(password: String) -> Result<String, AppError> {
     let hashed = tauri::async_runtime::spawn_blocking(move || password::hash(&password))
         .await
         .map_err(|e| anyhow::anyhow!("hash task failed: {e}"))??;

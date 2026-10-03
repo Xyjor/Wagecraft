@@ -5,11 +5,12 @@ type FieldProps = {
   label: string;
   type?: "text" | "password";
   autoComplete?: string;
+  autoFocus?: boolean;
   error?: string;
 };
 
 /** A labelled input. Uncontrolled: the parent form reads values through FormData. */
-export function Field({ name, label, type = "text", autoComplete, error }: FieldProps) {
+export function Field({ name, label, type = "text", autoComplete, autoFocus, error }: FieldProps) {
   const errorId = `${name}-error`;
   return (
     <div className="flex flex-col gap-1">
@@ -21,10 +22,49 @@ export function Field({ name, label, type = "text", autoComplete, error }: Field
         name={name}
         type={type}
         autoComplete={autoComplete}
+        autoFocus={autoFocus}
         aria-invalid={error ? true : undefined}
         aria-describedby={error ? errorId : undefined}
         className="rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-sky-500 aria-invalid:border-red-500 dark:border-zinc-700 dark:bg-zinc-900"
       />
+      {error && (
+        <p id={errorId} className="text-sm text-red-600 dark:text-red-400">
+          {error}
+        </p>
+      )}
+    </div>
+  );
+}
+
+type SelectFieldProps = {
+  name: string;
+  label: string;
+  options: { value: string; label: string }[];
+  defaultValue?: string;
+  error?: string;
+};
+
+export function SelectField({ name, label, options, defaultValue, error }: SelectFieldProps) {
+  const errorId = `${name}-error`;
+  return (
+    <div className="flex flex-col gap-1">
+      <label htmlFor={name} className="text-sm font-medium">
+        {label}
+      </label>
+      <select
+        id={name}
+        name={name}
+        defaultValue={defaultValue}
+        aria-invalid={error ? true : undefined}
+        aria-describedby={error ? errorId : undefined}
+        className="rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-sky-500 aria-invalid:border-red-500 dark:border-zinc-700 dark:bg-zinc-900"
+      >
+        {options.map((o) => (
+          <option key={o.value} value={o.value}>
+            {o.label}
+          </option>
+        ))}
+      </select>
       {error && (
         <p id={errorId} className="text-sm text-red-600 dark:text-red-400">
           {error}

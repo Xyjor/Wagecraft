@@ -1,16 +1,25 @@
 import { NavLink } from "react-router";
+import type { Role } from "@/bindings/Role";
+import { useSession } from "@/features/auth/session";
 
-// Menu entries arrive with each feature (Employees in Week 4, Attendance in Week 6, ...).
-const ITEMS = [{ to: "/", label: "Home" }];
+// Menu entries arrive with each feature. `roles` hides an entry from everyone else;
+// the backend still checks every command, so this is only to keep the menu tidy.
+const ITEMS: { to: string; label: string; roles?: Role[] }[] = [
+  { to: "/", label: "Home" },
+  { to: "/users", label: "Users", roles: ["ADMIN"] },
+];
 
 export function Sidebar() {
+  const { me } = useSession();
+  const items = ITEMS.filter((i) => !i.roles || i.roles.includes(me.role));
+
   return (
     <nav
       aria-label="Main"
       className="flex w-56 shrink-0 flex-col gap-1 border-r border-zinc-200 bg-zinc-50 p-3 dark:border-zinc-800 dark:bg-zinc-900"
     >
       <div className="px-2 pb-4 text-lg font-semibold tracking-tight">Wagecraft</div>
-      {ITEMS.map((item) => (
+      {items.map((item) => (
         <NavLink
           key={item.to}
           to={item.to}

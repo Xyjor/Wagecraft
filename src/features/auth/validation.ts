@@ -3,10 +3,12 @@ import { z } from "zod";
 // These rules mirror services/auth.rs. The Rust side is the real check;
 // these only let the form say what's wrong before a round trip.
 
-const USERNAME = /^[A-Za-z0-9._-]{3,32}$/;
-const MIN_PASSWORD = 10;
+export const USERNAME = /^[A-Za-z0-9._-]{3,32}$/;
+export const MIN_PASSWORD = 10;
 
-const password = z.string().min(MIN_PASSWORD, `Use at least ${MIN_PASSWORD} characters`);
+export const passwordField = z
+  .string()
+  .min(MIN_PASSWORD, `Use at least ${MIN_PASSWORD} characters`);
 
 export const setupSchema = z
   .object({
@@ -14,7 +16,7 @@ export const setupSchema = z
     username: z
       .string()
       .regex(USERNAME, "Use 3 to 32 letters, numbers, dots, dashes or underscores"),
-    password,
+    password: passwordField,
     confirmPassword: z.string(),
   })
   .superRefine((v, ctx) => {
@@ -40,7 +42,7 @@ export function changePasswordSchema(username: string) {
   return z
     .object({
       currentPassword: z.string().min(1, "Enter your current password"),
-      newPassword: password,
+      newPassword: passwordField,
       confirmPassword: z.string(),
     })
     .superRefine((v, ctx) => {

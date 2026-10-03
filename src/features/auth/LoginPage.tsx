@@ -1,8 +1,8 @@
 import { useState, type FormEvent } from "react";
 import type { Me } from "@/bindings/Me";
 import { call, type AppError } from "@/lib/ipc";
-import { AuthCard, Field, FormAlert, SubmitButton } from "./form";
-import { formValues } from "./formData";
+import { AuthCard, Field, FormAlert, SubmitButton } from "@/components/form";
+import { formValues } from "@/lib/formData";
 
 export function LoginPage({
   onSignedIn,
