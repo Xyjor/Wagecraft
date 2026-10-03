@@ -2,9 +2,10 @@
 //! Staff see only their own record, through `employee_me`.
 
 use crate::auth::permissions::Permission;
+use crate::domain::compensation::{Compensation, CompensationInput};
 use crate::domain::employee::{Employee, EmployeeInput, EmployeePage, EmployeeQuery};
 use crate::error::AppError;
-use crate::services::employees;
+use crate::services::{compensation, employees};
 use crate::state::AppState;
 use chrono::{Local, Utc};
 use tauri::State;
@@ -62,4 +63,23 @@ pub async fn employee_archive(
 ) -> Result<(), AppError> {
     let session = state.require(Permission::EmployeeWrite).await?;
     employees::set_archived(&state.db, session.actor(), id, archived, Utc::now()).await
+}
+
+#[tauri::command]
+pub async fn employee_compensation_history(
+    state: State<'_, AppState>,
+    id: i64,
+) -> Result<Vec<Compensation>, AppError> {
+    state.require(Permission::EmployeeReadAll).await?;
+    compensation::history(&state.db, id).await
+}
+
+#[tauri::command]
+pub async fn employee_add_compensation(
+    state: State<'_, AppState>,
+    id: i64,
+    input: CompensationInput,
+) -> Result<Compensation, AppError> {
+    let session = state.require(Permission::EmployeeWrite).await?;
+    compensation::add(&state.db, session.actor(), id, input, Utc::now()).await
 }
