@@ -4,6 +4,7 @@ export default defineConfig({
   test: {
     environment: "jsdom",
     include: ["src/**/*.test.{ts,tsx}"],
+    alias: { "@": new URL("./src/", import.meta.url).pathname },
     passWithNoTests: true,
   },
 });
