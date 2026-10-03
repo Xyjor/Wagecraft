@@ -1,4 +1,5 @@
 pub mod auth;
+pub mod employees;
 pub mod org;
 pub mod system;
 pub mod users;
