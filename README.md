@@ -19,7 +19,7 @@ This is a training project; see [docs/wagecraft-plan.md](docs/wagecraft-plan.md)
 | Lint and format | `pnpm lint`, `pnpm format`, `cargo fmt`, `cargo clippy --all-targets -- -D warnings` |
 | Installer       | `pnpm tauri build` (NSIS)                                                            |
 
-The database lives at `%APPDATA%\io.github.focalstack-lex.wagecraft\wagecraft.db`.
+The database lives at `%APPDATA%\io.github.xyjor.wagecraft\wagecraft.db`.
 
 ## Layout
 

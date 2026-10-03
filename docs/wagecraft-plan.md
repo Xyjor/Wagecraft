@@ -10,7 +10,7 @@
 | **Plan version**       | 1.1 — October 3, 2026                                             |
 | **Developer**          | _________________                                                 |
 | **Trainer / reviewer** | _________________                                                 |
-| **Repository**         | `focalstack-lex/wagecraft`                                        |
+| **Repository**         | `Xyjor/wagecraft`                                        |
 | **Suggested duration** | 14 weeks (Oct 5, 2026 – Jan 10, 2027), about 15 hours a week      |
 
 Revised Oct 3, 2026 to match the getting-started plan (14-week timeline, trimmed v1 scope, defaults for the open trainer questions).
@@ -1253,7 +1253,7 @@ gantt
 1. Install Rust (stable), Node.js LTS, pnpm, and the Tauri prerequisites for Windows (Microsoft C++ Build Tools, WebView2).
 2. Scaffold with `pnpm create tauri-app` (React + TypeScript), then reorganize into the §4.5 folder structure.
 3. Set up rustfmt, clippy, ESLint, Prettier, TypeScript strict mode, and a `.editorconfig`.
-4. Create the GitHub repo (`focalstack-lex/wagecraft`), a branch protection rule on `main`, and a CI workflow: format check → lint → test → build.
+4. Create the GitHub repo (`Xyjor/wagecraft`), a branch protection rule on `main`, and a CI workflow: format check → lint → test → build.
 5. Add `db.rs` (pool, PRAGMAs, migrations) and an empty `0001_core.sql`.
 6. Add `AppError`, `AppState`, and the `call<T>()` IPC wrapper. Prove the round trip with a `system_health` command.
 7. Build the app shell: sidebar, top bar, routing, and the Light/Dark/System theme toggle.
@@ -1468,7 +1468,7 @@ Automated E2E tests (WebdriverIO + `tauri-driver`) are cut from v1. Instead, a w
 {
   "productName": "Wagecraft",
   "version": "1.0.0",
-  "identifier": "io.github.focalstack-lex.wagecraft",
+  "identifier": "io.github.xyjor.wagecraft",
   "bundle": {
     "active": true,
     "targets": ["nsis"],
@@ -1480,7 +1480,7 @@ Automated E2E tests (WebdriverIO + `tauri-driver`) are cut from v1. Instead, a w
 }
 ```
 
-- **Identifier:** choose it once in Phase 0. The app data folder is named after it (on Windows: `%APPDATA%\io.github.focalstack-lex.wagecraft\`), so changing it later "loses" existing data. The repository is `focalstack-lex/wagecraft`.
+- **Identifier:** choose it once in Phase 0. The app data folder is named after it (on Windows: `%APPDATA%\io.github.xyjor.wagecraft\`), so changing it later "loses" existing data. The repository is `Xyjor/wagecraft`.
 - **WebView2:** `embedBootstrapper` bundles the WebView2 installer stub so setup works on PCs without WebView2. For offices with no internet at all, use `offlineInstaller` (larger installer).
 - **Installer:** v1 ships the NSIS `.exe` installer only. The NSIS uninstaller can optionally delete app data; warn users to take a backup first.
 - **Version** must match in `tauri.conf.json`, `Cargo.toml`, and `package.json`. Bump it with one script.
