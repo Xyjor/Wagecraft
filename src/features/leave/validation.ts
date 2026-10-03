@@ -1,4 +1,5 @@
 import type { BalanceAdjustment } from "@/bindings/BalanceAdjustment";
+import type { LeaveRequestInput } from "@/bindings/LeaveRequestInput";
 import type { LeaveTypeInput } from "@/bindings/LeaveTypeInput";
 import { parseDays } from "./format";
 
@@ -50,4 +51,45 @@ export function checkAdjustment(
   if (reason.length < 3 || reason.length > 200) errors.reason = "Say why, in 3 to 200 characters";
   if (Object.keys(errors).length || halfdays === null) return { ok: false, errors };
   return { ok: true, value: { entitledHalfdays: halfdays, reason } };
+}
+
+const DATE = /^\d{4}-\d{2}-\d{2}$/;
+
+/** A leave request. An empty end date means a one-day leave. */
+export function checkLeaveRequest(
+  v: Record<string, string>,
+  forSomeone: boolean,
+): Result<LeaveRequestInput> {
+  const errors: Record<string, string> = {};
+  const employeeNo = (v.employeeNo ?? "").trim();
+  const leaveTypeId = Number(v.leaveTypeId);
+  const startDate = (v.startDate ?? "").trim();
+  const endDate = (v.endDate ?? "").trim() || startDate;
+  const halfDay = v.halfDay === "on";
+  const reason = (v.reason ?? "").trim();
+  if (forSomeone && !employeeNo) errors.employeeNo = "Enter the employee number";
+  if (!Number.isInteger(leaveTypeId) || leaveTypeId <= 0) errors.leaveTypeId = "Pick a leave type";
+  if (!DATE.test(startDate)) errors.startDate = "Pick a start date";
+  else if (!DATE.test(endDate)) errors.endDate = "Pick an end date";
+  else if (endDate < startDate) errors.endDate = "The end date is before the start date";
+  else if (endDate.slice(0, 4) !== startDate.slice(0, 4)) {
+    errors.endDate = "File leave across New Year as two requests, one for each year";
+  } else if (halfDay && endDate !== startDate) {
+    errors.halfDay = "A half day starts and ends on the same date";
+  }
+  if (reason.length < 3 || reason.length > 200) {
+    errors.reason = "Say what the leave is for, in 3 to 200 characters";
+  }
+  if (Object.keys(errors).length) return { ok: false, errors };
+  return {
+    ok: true,
+    value: {
+      employeeNo: forSomeone ? employeeNo : null,
+      leaveTypeId,
+      startDate,
+      endDate,
+      halfDay,
+      reason,
+    },
+  };
 }

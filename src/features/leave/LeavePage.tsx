@@ -13,9 +13,10 @@ import {
   updateLeaveType,
 } from "./api";
 import { formatDays } from "./format";
+import { LeaveRequests } from "./LeaveRequests";
 import { checkLeaveType } from "./validation";
 
-/** HR's leave screen (`/leave`): the yearly grant and the leave types. */
+/** HR's leave screen (`/leave`): requests to decide, the yearly grant and the leave types. */
 export function LeavePage({ thisYear = new Date().getFullYear() }: { thisYear?: number }) {
   const { me } = useSession();
   if (me.role === "STAFF") {
@@ -25,10 +26,18 @@ export function LeavePage({ thisYear = new Date().getFullYear() }: { thisYear?: 
       </p>
     );
   }
-  return <Leave thisYear={thisYear} isAdmin={me.role === "ADMIN"} />;
+  return <Leave thisYear={thisYear} isAdmin={me.role === "ADMIN"} myEmployeeId={me.employeeId} />;
 }
 
-function Leave({ thisYear, isAdmin }: { thisYear: number; isAdmin: boolean }) {
+function Leave({
+  thisYear,
+  isAdmin,
+  myEmployeeId,
+}: {
+  thisYear: number;
+  isAdmin: boolean;
+  myEmployeeId: number | null;
+}) {
   const [types, setTypes] = useState<LeaveType[] | null>(null);
   const [alert, setAlert] = useState<string>();
   const [granted, setGranted] = useState<string>();
@@ -79,6 +88,8 @@ function Leave({ thisYear, isAdmin }: { thisYear: number; isAdmin: boolean }) {
     <div className="space-y-10">
       <h1 className="text-2xl font-semibold tracking-tight">Leave</h1>
       <FormAlert message={alert} />
+
+      <LeaveRequests types={types ?? []} myEmployeeId={myEmployeeId} />
 
       <section className="space-y-3" aria-labelledby="grant-heading">
         <h2 id="grant-heading" className="text-lg font-semibold">

@@ -1,10 +1,14 @@
-//! Leave types and balances. Everyone sees the types and their own balances; Admin
-//! manages types; HR grants and adjusts balances (plan §3.2, §6.4).
+//! Leave types, balances and requests. Everyone sees the types and their own balances and
+//! files their own leave; Admin manages types; HR grants and adjusts balances, files for
+//! others and decides (plan §3.2, §6.4).
 
 use crate::auth::permissions::Permission;
-use crate::domain::leave::{BalanceAdjustment, LeaveBalance, LeaveType, LeaveTypeInput};
+use crate::domain::attendance::DateRange;
+use crate::domain::leave::{
+    BalanceAdjustment, LeaveBalance, LeaveRequest, LeaveRequestInput, LeaveType, LeaveTypeInput,
+};
 use crate::error::AppError;
-use crate::services::{accounts, leave};
+use crate::services::{accounts, leave, leave_requests};
 use crate::state::AppState;
 use chrono::{Local, Utc};
 use tauri::State;
@@ -93,4 +97,84 @@ pub async fn leave_balance_adjust(
 ) -> Result<LeaveBalance, AppError> {
     let session = state.require(Permission::LeaveDecide).await?;
     leave::adjust(&state.db, session.actor(), id, input, Utc::now()).await
+}
+
+/// Files leave. With an employee number, it's HR filing for someone, which needs
+/// `leave.decide`; without one, it's for the signed-in person.
+#[tauri::command]
+pub async fn leave_request_create(
+    state: State<'_, AppState>,
+    input: LeaveRequestInput,
+) -> Result<LeaveRequest, AppError> {
+    let session = if input.employee_no.is_some() {
+        state.require(Permission::LeaveDecide).await?
+    } else {
+        state.require(Permission::SelfLeave).await?
+    };
+    let own = accounts::employee_of(&state.db, session.user_id).await?;
+    let today = Local::now().date_naive();
+    leave_requests::file(&state.db, session.actor(), own, input, today, Utc::now()).await
+}
+
+#[tauri::command]
+pub async fn leave_request_cancel(
+    state: State<'_, AppState>,
+    id: i64,
+) -> Result<LeaveRequest, AppError> {
+    let session = state.require(Permission::SelfLeave).await?;
+    let own = accounts::employee_of(&state.db, session.user_id).await?;
+    let can_decide = session.role.allows(Permission::LeaveDecide);
+    leave_requests::cancel(&state.db, session.actor(), own, can_decide, id, Utc::now()).await
+}
+
+/// The signed-in person's own requests. The employee comes from the session, never the UI.
+#[tauri::command]
+pub async fn leave_my_requests(
+    state: State<'_, AppState>,
+    year: i32,
+) -> Result<Vec<LeaveRequest>, AppError> {
+    let session = state.require(Permission::SelfLeave).await?;
+    let Some(id) = accounts::employee_of(&state.db, session.user_id).await? else {
+        return Ok(Vec::new());
+    };
+    leave_requests::mine(&state.db, id, year).await
+}
+
+#[tauri::command]
+pub async fn leave_request_list(
+    state: State<'_, AppState>,
+    status: Option<String>,
+    range: DateRange,
+) -> Result<Vec<LeaveRequest>, AppError> {
+    state.require(Permission::LeaveDecide).await?;
+    leave_requests::list(&state.db, status.as_deref(), &range).await
+}
+
+#[tauri::command]
+pub async fn leave_request_pending(
+    state: State<'_, AppState>,
+) -> Result<Vec<LeaveRequest>, AppError> {
+    state.require(Permission::LeaveDecide).await?;
+    leave_requests::pending(&state.db).await
+}
+
+#[tauri::command]
+pub async fn leave_request_decide(
+    state: State<'_, AppState>,
+    id: i64,
+    approve: bool,
+    note: Option<String>,
+) -> Result<LeaveRequest, AppError> {
+    let session = state.require(Permission::LeaveDecide).await?;
+    let own = accounts::employee_of(&state.db, session.user_id).await?;
+    leave_requests::decide(
+        &state.db,
+        session.actor(),
+        own,
+        id,
+        approve,
+        note,
+        Utc::now(),
+    )
+    .await
 }

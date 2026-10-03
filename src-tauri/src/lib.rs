@@ -103,6 +103,12 @@ pub fn run() {
             commands::leave::leave_balances_for,
             commands::leave::leave_balance_grant,
             commands::leave::leave_balance_adjust,
+            commands::leave::leave_request_create,
+            commands::leave::leave_request_cancel,
+            commands::leave::leave_my_requests,
+            commands::leave::leave_request_list,
+            commands::leave::leave_request_pending,
+            commands::leave::leave_request_decide,
             commands::reports::report_masterlist_csv,
         ])
         .run(tauri::generate_context!())

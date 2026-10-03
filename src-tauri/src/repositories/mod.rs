@@ -3,6 +3,7 @@ pub mod compensation;
 pub mod employees;
 pub mod holidays;
 pub mod leave;
+pub mod leave_requests;
 pub mod org;
 pub mod overtime;
 pub mod users;

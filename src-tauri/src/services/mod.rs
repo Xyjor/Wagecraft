@@ -6,6 +6,7 @@ pub mod employees;
 pub mod holidays;
 pub mod kiosk;
 pub mod leave;
+pub mod leave_requests;
 pub mod org;
 pub mod overtime;
 pub mod reports;
