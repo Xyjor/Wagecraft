@@ -266,17 +266,20 @@ pub async fn insert(conn: &mut SqliteConnection, r: &NewRequest<'_>) -> sqlx::Re
 }
 
 /// Moves a request to a final status. `decided_by` is the account that acted.
+/// It only applies while the request is still `from`, so of two people acting on the same
+/// request at once, only the first changes it. Returns whether it changed.
 pub async fn set_status(
     conn: &mut SqliteConnection,
     id: i64,
+    from: &str,
     status: &str,
     decided_by: Option<i64>,
     note: Option<&str>,
     now: &str,
-) -> sqlx::Result<()> {
-    sqlx::query(
+) -> sqlx::Result<bool> {
+    let res = sqlx::query(
         "UPDATE leave_requests SET status = ?, decided_by = ?, decided_at = ?, \
-         decision_note = ?, updated_at = ? WHERE id = ?",
+         decision_note = ?, updated_at = ? WHERE id = ? AND status = ?",
     )
     .bind(status)
     .bind(decided_by)
@@ -284,7 +287,8 @@ pub async fn set_status(
     .bind(note)
     .bind(now)
     .bind(id)
+    .bind(from)
     .execute(conn)
     .await?;
-    Ok(())
+    Ok(res.rows_affected() == 1)
 }

@@ -20,6 +20,8 @@ use std::collections::HashSet;
 
 const LOCKED: &str =
     "Some of these days are in a posted payroll period, so this leave can't change.";
+const DECIDED: &str = "This request has already been decided.";
+const CHANGED: &str = "Someone else just changed this request. Refresh to see it.";
 const NOT_ENOUGH: &str = "There aren't enough days left in this leave balance.";
 /// Longest single request, in calendar days. Longer leave is filed in parts.
 const MAX_SPAN_DAYS: i64 = 60;
@@ -280,7 +282,7 @@ pub async fn decide(
         .await?
         .ok_or(AppError::NotFound("Leave request"))?;
     if before.status != "PENDING" {
-        return Err(AppError::Conflict("This request has already been decided."));
+        return Err(AppError::Conflict(DECIDED));
     }
     if own_employee == Some(before.employee_id) {
         return Err(AppError::Conflict(
@@ -291,6 +293,20 @@ pub async fn decide(
         return Err(AppError::Conflict(LOCKED));
     }
     let stamp = time::to_db(now);
+    let status = if approve { "APPROVED" } else { "REJECTED" };
+    if !repo::set_status(
+        &mut tx,
+        id,
+        "PENDING",
+        status,
+        actor.user_id,
+        note.as_deref(),
+        &stamp,
+    )
+    .await?
+    {
+        return Err(AppError::Conflict(DECIDED));
+    }
     if approve
         && before.is_paid
         && !repo::use_balance(
@@ -305,8 +321,6 @@ pub async fn decide(
     {
         return Err(AppError::Conflict(NOT_ENOUGH));
     }
-    let status = if approve { "APPROVED" } else { "REJECTED" };
-    repo::set_status(&mut tx, id, status, actor.user_id, note.as_deref(), &stamp).await?;
     let after = repo::by_id(&mut *tx, id)
         .await?
         .ok_or(AppError::NotFound("Leave request"))?;
@@ -377,7 +391,19 @@ pub async fn cancel(
         )
         .await?;
     }
-    repo::set_status(&mut tx, id, "CANCELLED", actor.user_id, None, &stamp).await?;
+    if !repo::set_status(
+        &mut tx,
+        id,
+        &before.status,
+        "CANCELLED",
+        actor.user_id,
+        None,
+        &stamp,
+    )
+    .await?
+    {
+        return Err(AppError::Conflict(CHANGED));
+    }
     let after = repo::by_id(&mut *tx, id)
         .await?
         .ok_or(AppError::NotFound("Leave request"))?;
@@ -958,6 +984,114 @@ mod tests {
         assert_eq!(pending(&db).await.expect("pending").len(), 1);
         assert!(mine(&db, 4, 2026).await.expect("ana").is_empty());
         assert_eq!(list(&db, None, &oct).await.expect("october").len(), 1);
+    }
+
+    #[tokio::test]
+    async fn two_approvals_at_the_same_moment_decide_once() {
+        let (_d, db) = db().await;
+        let r = file(
+            &db,
+            juan(),
+            Some(1),
+            leave(&db, "VL", "2026-10-12", "2026-10-13").await,
+            today(),
+            t0(),
+        )
+        .await
+        .expect("file");
+        let (a, b) = tokio::join!(
+            decide(&db, hr(), None, r.id, true, None, t0()),
+            decide(&db, hr(), None, r.id, true, None, t0()),
+        );
+        let refused = [a, b]
+            .into_iter()
+            .filter_map(Result::err)
+            .collect::<Vec<_>>();
+        assert_eq!(refused.len(), 1, "{refused:?}");
+        assert!(
+            matches!(refused[0], AppError::Conflict(DECIDED)),
+            "{refused:?}"
+        );
+        assert_eq!(used(&db, 1, "VL").await, 4);
+        let approvals = audit_rows::actions(&db).await;
+        assert_eq!(
+            approvals.iter().filter(|a| *a == "leave.approve").count(),
+            1
+        );
+    }
+
+    #[tokio::test]
+    async fn two_approvals_at_the_same_moment_cant_overspend_a_balance() {
+        let (_d, db) = db().await;
+        let a = file(
+            &db,
+            juan(),
+            Some(1),
+            leave(&db, "VL", "2026-10-12", "2026-10-14").await,
+            today(),
+            t0(),
+        )
+        .await
+        .expect("3 days");
+        let b = file(
+            &db,
+            juan(),
+            Some(1),
+            leave(&db, "VL", "2026-10-19", "2026-10-20").await,
+            today(),
+            t0(),
+        )
+        .await
+        .expect("2 days");
+        // HR lowers VL to 3 days, so only the first approval fits.
+        sqlx::query("UPDATE leave_balances SET entitled_halfdays = 6 WHERE employee_id = 1 AND leave_type_id = ?")
+            .bind(type_id(&db, "VL").await)
+            .execute(&db)
+            .await
+            .expect("lower");
+        let (ra, rb) = tokio::join!(
+            decide(&db, hr(), None, a.id, true, None, t0()),
+            decide(&db, hr(), None, b.id, true, None, t0()),
+        );
+        assert!(ra.is_ok(), "{ra:?}");
+        assert!(matches!(rb, Err(AppError::Conflict(NOT_ENOUGH))), "{rb:?}");
+        assert_eq!(used(&db, 1, "VL").await, 6);
+        let still = repo::by_id(&db, b.id).await.expect("read").expect("row");
+        assert_eq!(still.status, "PENDING");
+    }
+
+    #[tokio::test]
+    async fn a_status_change_only_lands_on_the_status_it_expects() {
+        let (_d, db) = db().await;
+        let r = file(
+            &db,
+            juan(),
+            Some(1),
+            leave(&db, "VL", "2026-10-12", "2026-10-12").await,
+            today(),
+            t0(),
+        )
+        .await
+        .expect("file");
+        let mut conn = db.acquire().await.expect("conn");
+        let stale = repo::set_status(
+            &mut conn,
+            r.id,
+            "APPROVED",
+            "CANCELLED",
+            Some(1),
+            None,
+            "now",
+        )
+        .await
+        .expect("update");
+        assert!(
+            !stale,
+            "a request that isn't approved can't be cancelled as approved"
+        );
+        drop(conn);
+        let row = repo::by_id(&db, r.id).await.expect("read").expect("row");
+        assert_eq!(row.status, "PENDING");
     }
 
     #[test]
