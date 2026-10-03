@@ -55,6 +55,12 @@ pub fn run() {
             commands::org::position_create,
             commands::org::position_update,
             commands::org::position_set_active,
+            commands::employees::employee_list,
+            commands::employees::employee_get,
+            commands::employees::employee_me,
+            commands::employees::employee_create,
+            commands::employees::employee_update,
+            commands::employees::employee_archive,
         ])
         .run(tauri::generate_context!())
         .expect("error while running Wagecraft");

@@ -15,8 +15,6 @@ pub struct Session {
     /// Kept for the audit trail, so entries name the user even after the account changes.
     pub username: String,
     /// The employee this user is, if any. "Self" commands read this, never an id from the UI.
-    #[allow(dead_code)]
-    // First read by the self-service commands (attendance, leave, payslips).
     pub employee_id: Option<i64>,
     pub role: Role,
     pub last_activity: Instant,
