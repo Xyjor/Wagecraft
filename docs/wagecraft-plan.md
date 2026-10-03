@@ -11,9 +11,9 @@
 | **Developer**          | _________________                                                 |
 | **Trainer / reviewer** | _________________                                                 |
 | **Repository**         | `Xyjor/wagecraft`                                        |
-| **Suggested duration** | 14 weeks (Oct 5, 2026 – Jan 10, 2027), about 15 hours a week      |
+| **Duration**           | 4 weeks (Oct 5 – Nov 1, 2026) + 1 buffer week (Nov 2–8); Phase 0 done Oct 3 |
 
-Revised Oct 3, 2026 to match the getting-started plan (14-week timeline, trimmed v1 scope, defaults for the open trainer questions).
+Revised Oct 3, 2026: 4-week timeline to Nov 1 (trainer review in about a month), trimmed v1 scope, decisions owned by the developer.
 
 > **Name check:** a web search on Oct 2, 2026 found no HR, payroll, or time-tracking product called "Wagecraft". That is not a legal trademark search. Before publishing it publicly, also check the IPOPHL trademark database, GitHub, and domain availability.
 
@@ -73,9 +73,9 @@ These principles settle most design arguments before they start:
 | P6  | **Offline first**               | Everything works with no network. One SQLite file is the single source of data.                                                                      |
 | P7  | **Boring technology**           | Prefer well-documented, widely used libraries over clever ones.                                                                                      |
 
-### 1.4 Assumptions (confirm with trainer — see §16)
+### 1.4 Decisions (owner's decisions — see §16)
 
-These are the current assumptions. They are the defaults until the trainer answers the questions in §16.
+The trainer cannot be contacted before the review, so these are the owner's decisions on the questions in §16. The plan is built on them.
 
 - **Q1:** Payroll follows **Philippine rules** (SSS, PhilHealth, Pag-IBIG, BIR withholding tax, DOLE premium pay), packaged as the **PH-2026** rule pack. The rule pack is built last in Phase 5, after the engine works against test fixtures.
 - **Q2:** Pay frequency is **semi-monthly only** (1st–15th and 16th–end of month). Monthly payroll is a stretch goal.
@@ -83,7 +83,7 @@ These are the current assumptions. They are the defaults until the trainer answe
 - **Q5:** Frontend is **React + TypeScript** (Tauri allows any web framework).
 - **Q6:** Admin has all HR permissions. There is no maker–checker rule in v1.
 - **Q7:** The payslip layout is the one in §6.6.
-- **Q8:** About **15 hours a week**; demo in the week of January 11, 2027.
+- **Q8:** All 18 features by **Nov 1, 2026** (`v1.0.0`), with a buffer week (Nov 2–8) before the trainer's review in about a month. The owner has about 15 hours a week, mostly for reviewing PRs; the AI writes most of the code.
 - Primary target OS is **Windows 10/11**.
 
 ---
@@ -134,8 +134,8 @@ Every required feature is mapped to a module and a roadmap phase.
 
 - Must use **Tauri** (trainer requirement).
 - Must use a **local database** with no external server.
-- One developer, with trainer code reviews.
-- 14 weeks of part-time work, about 15 hours a week (Oct 5, 2026 to Jan 10, 2027).
+- One developer (the owner), who reviews about one PR a day; the AI writes most of the code. The trainer reviews the finished app.
+- 4 weeks to v1.0.0 (Oct 5 to Nov 1, 2026), plus a buffer week (Nov 2–8) before the trainer's review. The owner has about 15 hours a week; the schedule is set by the review date, not derived from those hours.
 
 ---
 
@@ -1190,7 +1190,7 @@ Each ADR below becomes its own file in `docs/adr/` (for example `docs/adr/0002-b
 
 ### ADR-011: React + TypeScript + TanStack Query + shadcn/ui
 
-- **Status:** Accepted (pending trainer confirmation)
+- **Status:** Accepted (owner decision, §16 Q5)
 - **Context:** A data-heavy admin UI with forms, tables, charts, and dark mode.
 - **Decision:** React 19 + TypeScript (strict), TanStack Query for backend data, React Hook Form + Zod, Tailwind + shadcn/ui, TanStack Table, Recharts.
 - **Alternatives:** _Svelte or Vue_: both excellent and lighter, but with fewer ready-made admin components and learning resources.
@@ -1202,51 +1202,50 @@ Each ADR below becomes its own file in `docs/adr/` (for example `docs/adr/0002-b
 
 ### 10.1 Timeline overview
 
-14 weeks, from Monday, October 5, 2026 to Sunday, January 10, 2027, at about 15 hours a week. The week of December 21–27 is an empty buffer: use it to catch up, or rest. The demo to the trainer is in the week of January 11, 2027.
+4 weeks, from Monday, October 5 to Sunday, November 1, 2026, then a buffer week (November 2–8). Phase 0 is already done (October 3).
+
+Why 4 weeks: the trainer will review the app in about a month and cannot be contacted before then, so the plan aims to deliver all 18 required features (F-01 to F-18) by November 1 and keeps one week of buffer for fixes before the review. The AI writes most of the code; the owner reviews one PR per task (about one a day) and demos the app at each milestone.
 
 ```mermaid
 gantt
-    title Wagecraft roadmap (14 weeks)
+    title Wagecraft roadmap (4 weeks + buffer)
     dateFormat YYYY-MM-DD
     axisFormat %b %d
     section Foundation
-    Phase 0 Setup and shell             :p0, 2026-10-05, 7d
-    Phase 1 Auth, RBAC, audit           :p1, after p0, 14d
-    section Core HR
-    Phase 2 Organization and employees  :p2, after p1, 14d
-    Phase 3 Attendance, kiosk, overtime :p3, after p2, 14d
-    Phase 4 Leave management            :p4, after p3, 7d
-    section Payroll
-    Phase 5 Payroll engine and runs     :p5, after p4, 14d
-    Phase 6 Payslips and reports        :p6, after p5, 7d
+    Phase 0 Setup and shell (done)      :done, p0, 2026-09-28, 2026-10-04
+    section Week 1
+    Phase 1 Auth, RBAC, audit           :p1, 2026-10-05, 3d
+    Phase 2 Organization and employees  :p2, after p1, 4d
+    section Week 2
+    Phase 3 Attendance, kiosk, overtime :p3, 2026-10-12, 4d
+    Phase 4 Leave management            :p4, after p3, 3d
+    section Week 3
+    Phase 5 Payroll engine and runs     :p5, 2026-10-19, 7d
+    section Week 4
+    Phase 6 Payslips and reports        :p6, 2026-10-26, 3d
+    Phase 7 Dashboard, backup, settings :p7, after p6, 2d
+    Phase 8 Hardening and packaging     :p8, after p7, 2d
     section Buffer
-    Empty buffer week                   :buf, after p6, 7d
-    section Finish
-    Phase 7 Dashboard, backup, settings :p7, after buf, 7d
-    Phase 8 Hardening and packaging     :p8, after p7, 7d
+    Fixes before trainer review         :buf, 2026-11-02, 7d
 ```
 
-| Week  | Dates           | Work                                       |
-| ----- | --------------- | ------------------------------------------ |
-| 1     | Oct 5–11        | Phase 0 — Setup & app shell                |
-| 2–3   | Oct 12–25       | Phase 1 — Auth, roles, audit → **M1**      |
-| 4–5   | Oct 26–Nov 8    | Phase 2 — Organization & employees         |
-| 6–7   | Nov 9–22        | Phase 3 — Attendance, kiosk & overtime     |
-| 8     | Nov 23–29       | Phase 4 — Leave management → **M2**        |
-| 9–10  | Nov 30–Dec 13   | Phase 5 — Payroll engine & runs            |
-| 11    | Dec 14–20       | Phase 6 — Payslips & reports → **M3**      |
-| 12    | Dec 21–27       | Empty buffer                               |
-| 13    | Dec 28–Jan 3    | Phase 7 — Dashboard, backup & settings     |
-| 14    | Jan 4–10        | Phase 8 — Hardening & packaging → **v1.0.0** |
+| Week   | Dates        | Work                                                                                                                              | Milestone           |
+| ------ | ------------ | --------------------------------------------------------------------------------------------------------------------------------- | ------------------- |
+| 0      | done Oct 3   | Phase 0 — Setup & app shell                                                                                                       |                     |
+| 1      | Oct 5–11     | Phase 1 — Auth, roles, audit; Phase 2 — Organization & employees                                                                  | **M1** `v0.1.0`, Oct 11 |
+| 2      | Oct 12–18    | Phase 3 — Attendance, kiosk & overtime; Phase 4 — Leave                                                                           | **M2** `v0.2.0`, Oct 18 |
+| 3      | Oct 19–25    | Phase 5 — Payroll engine & runs (20 golden cases)                                                                                 | **M3** `v0.3.0`, Oct 25 |
+| 4      | Oct 26–Nov 1 | Phase 6 — Payslips & reports; Phase 7 — Dashboard, backup & restore, settings; Phase 8 — Hardening, NSIS packaging, docs, manual test script | **`v1.0.0`**, Nov 1 |
+| Buffer | Nov 2–8      | Fixes before the trainer's review                                                                                                 |                     |
 
 | Milestone             | Tag      | End of            | You can demo                                                             |
 | --------------------- | -------- | ----------------- | ------------------------------------------------------------------------ |
-| **M1 — Secure shell** | `v0.1.0` | Week 3 (Oct 25)   | Installable shell, first-run setup, login, roles, audit, dark/light mode |
-| **M2 — HR core**      | `v0.2.0` | Week 8 (Nov 29)   | Employees, departments, attendance and kiosk, overtime, leave            |
-| **M3 — Payroll MVP**  | `v0.3.0` | Week 11 (Dec 20)  | Full payroll run from attendance to PDF payslips and the payroll register |
-| **Release**           | `v1.0.0` | Week 14 (Jan 10)  | Dashboard, backup/restore, Windows NSIS installer, docs                  |
+| **M1 — Secure shell + employees** | `v0.1.0` | Week 1 (Oct 11)   | Installable shell, first-run setup, login, roles, audit, dark/light mode, departments, positions, employees |
+| **M2 — HR core**      | `v0.2.0` | Week 2 (Oct 18)   | Attendance and kiosk, overtime, leave                                    |
+| **M3 — Payroll MVP**  | `v0.3.0` | Week 3 (Oct 25)   | Full payroll run from attendance to computed, approved, and posted payslips (20 golden cases pass) |
+| **Release**           | `v1.0.0` | Week 4 (Nov 1)    | PDF payslips and reports, dashboard, backup/restore, Windows NSIS installer, docs |
 
-#### Phase 0 — Setup & app shell (Week 1) · F-10, F-16
+#### Phase 0 — Setup & app shell (Week 0, done Oct 3) · F-10, F-16
 
 **Tasks**
 
@@ -1262,7 +1261,7 @@ gantt
 **Done when:** `pnpm tauri dev` opens the shell; the database file is created in the app data folder with the migrations table; the theme toggle works and survives a restart; CI is green.
 **Learning focus:** Rust basics (ownership, `Result`, `?`), async/await, how Tauri IPC works.
 
-#### Phase 1 — Authentication, RBAC & audit (Weeks 2–3, Oct 12–25) · F-09, F-13, F-15
+#### Phase 1 — Authentication, RBAC & audit (Week 1, Oct 5–11) · F-09, F-13, F-15
 
 **Tasks**
 
@@ -1274,10 +1273,10 @@ gantt
 6. `audit::record()` inside the same transaction; audit for login, logout, and failures.
 7. User management screen (Admin): create, edit role, deactivate, reset password.
 
-**Done when:** a Staff user calling an Admin command from the devtools console gets `Forbidden` (covered by a test); 5 wrong passwords lock the account for 15 minutes; idle timeout signs the user out; every auth event appears in the audit table. Tag `v0.1.0` (M1) on Oct 25.
+**Done when:** a Staff user calling an Admin command from the devtools console gets `Forbidden` (covered by a test); 5 wrong passwords lock the account for 15 minutes; idle timeout signs the user out; every auth event appears in the audit table.
 **Learning focus:** hashing vs encryption, authorization vs authentication, transactions.
 
-#### Phase 2 — Organization & employees (Weeks 4–5, Oct 26–Nov 8) · F-01, F-02, F-08, F-17
+#### Phase 2 — Organization & employees (Week 1, Oct 5–11) · F-01, F-02, F-08, F-17
 
 **Tasks**
 
@@ -1291,10 +1290,10 @@ gantt
 8. Seed command that generates 200 realistic demo employees.
 9. Employee masterlist CSV export (early practice for Phase 6).
 
-**Done when:** searching 200 employees returns in < 200 ms; an invalid TIN is rejected by the backend even when sent directly from the console; every change is audited with before/after; Staff can view only their own profile.
+**Done when:** searching 200 employees returns in < 200 ms; an invalid TIN is rejected by the backend even when sent directly from the console; every change is audited with before/after; Staff can view only their own profile. Tag `v0.1.0` (M1) on Oct 11.
 **Learning focus:** relational modelling, migrations, indexes, form UX.
 
-#### Phase 3 — Attendance, kiosk & overtime (Weeks 6–7, Nov 9–22) · F-03, F-06
+#### Phase 3 — Attendance, kiosk & overtime (Week 2, Oct 12–18) · F-03, F-06
 
 **Tasks**
 
@@ -1308,7 +1307,7 @@ gantt
 **Done when:** time-math tests pass for at least 15 cases; double clock-in is refused; a wrong PIN is refused and 5 wrong PINs lock the employee out for 15 minutes; edits are audited; unapproved OT never appears in payroll inputs.
 **Learning focus:** date/time handling, pure functions, unit testing.
 
-#### Phase 4 — Leave management (Week 8, Nov 23–29) · F-04
+#### Phase 4 — Leave management (Week 2, Oct 12–18) · F-04
 
 **Tasks**
 
@@ -1319,10 +1318,10 @@ gantt
 5. Approved leave updates attendance status.
 6. Reject leave decisions for dates in a posted period.
 
-**Done when:** a balance can never go negative (tested); overlapping requests are rejected; cancelling an approved leave restores the balance; all decisions are audited. Tag `v0.2.0` (M2) on Nov 29.
+**Done when:** a balance can never go negative (tested); overlapping requests are rejected; cancelling an approved leave restores the balance; all decisions are audited. Tag `v0.2.0` (M2) on Oct 18.
 **Learning focus:** state machines, transactional integrity.
 
-#### Phase 5 — Payroll engine & runs (Weeks 9–10, Nov 30–Dec 13) · F-05, F-06
+#### Phase 5 — Payroll engine & runs (Week 3, Oct 19–25) · F-05, F-06
 
 **Tasks**
 
@@ -1334,10 +1333,10 @@ gantt
 6. Read-only rule-pack viewer. There is no editor in v1; new rates come as a new migration.
 7. Last: seed the PH-2026 rule pack (Appendix A) as a migration, with a script that generates the SSS brackets.
 
-**Done when:** all 20 golden tests pass (this is the gate); coverage is tracked with `cargo llvm-cov` but is not a gate; recompute is idempotent; editing anything in a posted period fails; posting creates an automatic backup.
+**Done when:** all 20 golden tests pass (this is the gate); coverage is tracked with `cargo llvm-cov` but is not a gate; recompute is idempotent; editing anything in a posted period fails; posting creates an automatic backup. Tag `v0.3.0` (M3) on Oct 25.
 **Learning focus:** translating business rules into code, test-driven development.
 
-#### Phase 6 — Payslips & reports (Week 11, Dec 14–20) · F-07, F-12
+#### Phase 6 — Payslips & reports (Week 4, Oct 26–Nov 1) · F-07, F-12
 
 **Tasks**
 
@@ -1347,14 +1346,10 @@ gantt
 4. Rust `export_save_file` command: signed-in check, native Save dialog, write. Ownership is checked by `payslip_my_get` / `payslip_get` (§6.6).
 5. CSV hardening: UTF-8 BOM, formula-injection guard.
 
-**Done when:** PDF totals equal database values to the centavo for every golden case; CSVs open correctly in Excel; Staff can download only their own payslips. Tag `v0.3.0` (M3) on Dec 20.
+**Done when:** PDF totals equal database values to the centavo for every golden case; CSVs open correctly in Excel; Staff can download only their own payslips.
 **Learning focus:** document generation, data export.
 
-#### Buffer (Week 12, Dec 21–27)
-
-No planned work. Use it to catch up on anything late from Phases 0–6, or take the week off.
-
-#### Phase 7 — Dashboard, backup & restore, settings (Week 13, Dec 28–Jan 3) · F-11, F-13, F-14
+#### Phase 7 — Dashboard, backup & restore, settings (Week 4, Oct 26–Nov 1) · F-11, F-13, F-14
 
 **Tasks**
 
@@ -1367,7 +1362,7 @@ No planned work. Use it to catch up on anything late from Phases 0–6, or take 
 **Done when:** restoring a backup made at an older schema version works; an UPDATE or DELETE on `audit_logs` through the app fails; the dashboard loads in < 1 s with demo data.
 **Learning focus:** operational features, data safety.
 
-#### Phase 8 — Hardening, packaging & docs (Week 14, Jan 4–10) · F-18
+#### Phase 8 — Hardening, packaging & docs (Week 4, Oct 26–Nov 1) · F-18
 
 **Tasks**
 
@@ -1377,9 +1372,13 @@ No planned work. Use it to catch up on anything late from Phases 0–6, or take 
 4. App icon, product name, version, and installer configuration (§13).
 5. Build the NSIS installer; test install, upgrade, and uninstall on a clean Windows machine or VM.
 6. Write the README (setup, build, architecture summary), the user manual (with screenshots per role), and finalize the ADRs.
-7. Record a demo video; tag `v1.0.0` by Jan 10, 2027; present to the trainer in the week of Jan 11.
+7. Record a demo video; tag `v1.0.0` by Nov 1, 2026.
 
 **Done when:** a fresh Windows machine installs and runs Wagecraft from the NSIS installer; all CI checks pass; the manual test script passes; all 18 features are demonstrated in the final review.
+
+#### Buffer (Nov 2–8)
+
+No planned features. Fix anything late or broken from Phases 1–8 before the trainer's review.
 
 ---
 
@@ -1398,7 +1397,7 @@ No planned work. Use it to catch up on anything late from Phases 0–6, or take 
 
 ### 11.2 Payroll test rules
 
-- Golden cases are reviewed by the trainer, or by someone with payroll experience, before they become the expected values.
+- Golden cases are checked by hand against the official tables (and by someone with payroll experience, if possible) before they become the expected values.
 - A golden case is never edited to make a failing test pass. If the expected value was wrong, fix it in a separate commit that explains why.
 - Each new rule pack gets its own golden cases.
 
@@ -1426,10 +1425,10 @@ Automated E2E tests (WebdriverIO + `tauri-driver`) are cut from v1. Instead, a w
 ### 12.1 Git & GitHub
 
 - **Branches:** `main` is always releasable and protected. Work happens on short-lived branches such as `feat/attendance-clock-in`, `fix/leave-overlap-check`, or `docs/adr-006`.
-- **Pull requests:** one feature per PR; CI must pass; the trainer reviews; squash-merge.
+- **Pull requests:** one task per PR, kept small; CI must pass; the owner reviews (about one a day); squash-merge.
 - **Commits:** [Conventional Commits](https://www.conventionalcommits.org/): `feat:`, `fix:`, `refactor:`, `test:`, `docs:`, `chore:`. Example: `feat(payroll): add night differential premium`.
 - **Tracking:** one GitHub issue per task from §10; a GitHub Projects board (Backlog → In progress → Review → Done); labels `phase-0` … `phase-8`, `bug`, `security`.
-- **Versions:** SemVer tags per milestone: `v0.1.0` (M1, Oct 25), `v0.2.0` (M2, Nov 29), `v0.3.0` (M3, Dec 20), `v1.0.0` (release, by Jan 10, 2027). Keep a `CHANGELOG.md`.
+- **Versions:** SemVer tags per milestone: `v0.1.0` (M1, Oct 11), `v0.2.0` (M2, Oct 18), `v0.3.0` (M3, Oct 25), `v1.0.0` (release, by Nov 1, 2026). Keep a `CHANGELOG.md`.
 
 ### 12.2 Code conventions
 
@@ -1452,10 +1451,10 @@ Automated E2E tests (WebdriverIO + `tauri-driver`) are cut from v1. Instead, a w
 - [ ] README, user manual, or ADR updated if behaviour or design changed.
 - [ ] PR reviewed and CI green.
 
-### 12.4 Weekly rhythm with the trainer
+### 12.4 Weekly rhythm
 
 - **Monday:** pick the week's issues from the current phase.
-- **Midweek:** short check-in on blockers.
+- **Daily:** review and merge the open PR (one task each).
 - **Friday:** demo what works, open PRs for review, note lessons learned in a `docs/journal.md` (useful for your portfolio).
 
 ---
@@ -1502,21 +1501,21 @@ Automated E2E tests (WebdriverIO + `tauri-driver`) are cut from v1. Instead, a w
 
 | Risk                                             | Likelihood | Impact | Mitigation                                                                                                                                                |
 | ------------------------------------------------ | ---------- | ------ | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Payroll results are wrong in edge cases          | Medium     | High   | Pure engine, golden tests reviewed by trainer, rule packs, input snapshots for every payslip, "not for real payroll without accountant review" disclaimer |
+| Payroll results are wrong in edge cases          | Medium     | High   | Pure engine, golden tests checked by hand against official tables, rule packs, input snapshots for every payslip, "not for real payroll without accountant review" disclaimer |
 | Statutory rates change mid-project or yearly     | High       | Medium | Effective-dated rule packs; check agencies' sites every January                                                                                           |
-| Rust learning curve slows progress               | High       | Medium | Phase 0 dedicated to fundamentals; strict layering keeps each piece small; ask the trainer early                                                          |
+| Rust learning curve slows progress               | High       | Medium | Phase 0 dedicated to fundamentals; strict layering keeps each piece small; have the AI explain unfamiliar code before merging                                                          |
 | Scope creep (extra features before v1 works)     | Medium     | High   | Stretch list in §15; nothing from it before M3                                                                                                            |
 | Data loss (crash, bad restore, disk failure)     | Low        | High   | WAL + transactions, auto backups, pre-restore backup, restore drills in testing                                                                           |
 | Staff manipulate the PC clock to fake attendance | Medium     | Medium | Backwards-time detection and HR review flag; the kiosk runs on the one HR-controlled PC                                                                   |
 | Security bypass through the webview              | Low        | High   | Backend RBAC on every command, RBAC test suite, minimal capabilities, CSP                                                                                 |
 | Users need data on several PCs                   | Medium     | High   | Clarify now (§16); if required, plan a server-mode v2 instead of patching SQLite                                                                          |
-| Holiday season delays the final phase            | High       | Low    | Dec 21–27 is an empty buffer week; M3 (Dec 20) already gives a complete payroll demo                                                                      |
+| Review bottleneck: PRs pile up faster than the owner can review | High | Medium | One PR per task; small PRs; demo at each milestone (Oct 11, Oct 18, Oct 25, Nov 1); buffer week Nov 2–8                                   |
 
 ---
 
 ## 15. Scope: v1.0 vs Stretch Goals
 
-**v1.0 (must ship):** all 18 required features (F-01 to F-18) as specified in this plan, with these cuts to fit 14 weeks:
+**v1.0 (must ship):** all 18 required features (F-01 to F-18) as specified in this plan, with these cuts to fit 4 weeks:
 
 - Rule packs have a read-only viewer. New rates come as a new migration.
 - No automated E2E tests. A written manual test script covers the 7 flows in §11.3.
@@ -1544,16 +1543,16 @@ Automated E2E tests (WebdriverIO + `tauri-driver`) are cut from v1. Instead, a w
 
 ## 16. Open Questions for the Trainer
 
-Bring these to your next session. Until the trainer answers, the plan uses the default after each question (also listed in §1.4). An answer may change that default.
+The trainer cannot be contacted before the review, so the owner has decided each question; the decision follows each question (also listed in §1.4).
 
-1. Are Philippine payroll rules fine, or do you want generic or configurable-only deductions? **Default:** Philippine rules as the PH-2026 rule pack, built last in Phase 5.
-2. Is semi-monthly pay the right default? **Default:** semi-monthly only; monthly payroll is a stretch goal.
-3. Will Wagecraft run on **one computer**, or must several PCs share the same data? (This is the biggest architectural question.) **Default:** one PC.
-4. Should Staff clock in with their own login, or through a shared kiosk screen? **Default:** a kiosk screen with employee number + 4–6 digit PIN (PIN hashed like a password). Staff sign in with a password only to see leave and payslips.
-5. Is React acceptable, or do you prefer Svelte or Vue? **Default:** React + TypeScript.
-6. Can Admin also perform HR tasks, or must the roles be strictly separate? **Default:** Admin has all HR permissions; no maker–checker in v1.
-7. Do you want a specific payslip layout or report format? **Default:** the payslip layout in §6.6.
-8. What is the deadline or demo date, and how many hours per week should I plan for? **Default:** 15 hours a week; demo in the week of January 11, 2027.
+1. Are Philippine payroll rules fine, or do you want generic or configurable-only deductions? **Decision:** Philippine rules as the PH-2026 rule pack, built last in Phase 5.
+2. Is semi-monthly pay the right default? **Decision:** semi-monthly only; monthly payroll is a stretch goal.
+3. Will Wagecraft run on **one computer**, or must several PCs share the same data? (This is the biggest architectural question.) **Decision:** one PC.
+4. Should Staff clock in with their own login, or through a shared kiosk screen? **Decision:** a kiosk screen with employee number + 4–6 digit PIN (PIN hashed like a password). Staff sign in with a password only to see leave and payslips.
+5. Is React acceptable, or do you prefer Svelte or Vue? **Decision:** React + TypeScript.
+6. Can Admin also perform HR tasks, or must the roles be strictly separate? **Decision:** Admin has all HR permissions; no maker–checker in v1.
+7. Do you want a specific payslip layout or report format? **Decision:** the payslip layout in §6.6.
+8. What is the deadline or demo date, and how many hours per week should I plan for? **Decision:** all 18 features by Nov 1, 2026 (`v1.0.0`), buffer week Nov 2–8, trainer review in about a month; the owner has about 15 hours a week, mostly for PR review.
 
 ---
 
