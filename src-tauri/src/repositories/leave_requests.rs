@@ -75,10 +75,12 @@ pub async fn pending<'e>(db: impl SqliteExecutor<'e>) -> sqlx::Result<Vec<LeaveR
 pub struct LeaveEmployee {
     pub id: i64,
     pub archived_at: Option<String>,
+    pub hire_date: String,
+    pub separation_date: Option<String>,
     pub work_days: Option<String>,
 }
 
-const EMPLOYEE: &str = "SELECT e.id, e.archived_at, s.work_days \
+const EMPLOYEE: &str = "SELECT e.id, e.archived_at, e.hire_date, e.separation_date, s.work_days \
     FROM employees e LEFT JOIN work_schedules s ON s.id = e.schedule_id";
 
 pub async fn employee_by_id(
@@ -315,19 +317,39 @@ pub async fn approved_on<'e>(
     .await
 }
 
-/// Whether the employee has approved whole-day leave on `date`.
+/// Whether the employee has approved whole-day leave on `date`, or with `or_pending`,
+/// pending whole-day leave too.
 pub async fn full_day_leave_on(
     conn: &mut SqliteConnection,
     employee_id: i64,
     date: &str,
+    or_pending: bool,
 ) -> sqlx::Result<bool> {
     sqlx::query_scalar(
         "SELECT EXISTS (SELECT 1 FROM leave_requests WHERE employee_id = ?1 \
-         AND status = 'APPROVED' AND half_day = 0 AND ?2 BETWEEN start_date AND end_date)",
+         AND (status = 'APPROVED' OR (?3 AND status = 'PENDING')) AND half_day = 0 \
+         AND ?2 BETWEEN start_date AND end_date)",
     )
     .bind(employee_id)
     .bind(date)
+    .bind(or_pending)
     .fetch_one(conn)
+    .await
+}
+
+/// The employee's pending and approved requests that end after `date`.
+pub async fn live_after(
+    conn: &mut SqliteConnection,
+    employee_id: i64,
+    date: &str,
+) -> sqlx::Result<Vec<LeaveRequest>> {
+    sqlx::query_as(&format!(
+        "{REQUEST} WHERE r.employee_id = ?1 AND r.status IN ('PENDING', 'APPROVED') \
+         AND r.end_date > ?2 ORDER BY r.start_date"
+    ))
+    .bind(employee_id)
+    .bind(date)
+    .fetch_all(conn)
     .await
 }
 

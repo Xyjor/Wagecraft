@@ -9,6 +9,7 @@ use crate::error::{AppError, FieldError};
 use crate::repositories::holidays as repo;
 use crate::services::auth::field;
 use crate::services::leave_requests::recount_on;
+use crate::services::overtime::recheck_on;
 use crate::time;
 use chrono::{DateTime, Datelike, NaiveDate, Utc};
 use serde_json::json;
@@ -100,6 +101,7 @@ pub async fn create(
     check_date(&mut tx, &h, None).await?;
     let id = repo::insert(&mut tx, &h.date, &h.name, h.kind).await?;
     recount_on(&mut tx, actor, &h.date, now).await?;
+    recheck_on(&mut tx, &h.date).await?;
     let created = repo::by_id(&mut *tx, id)
         .await?
         .ok_or(AppError::NotFound("Holiday"))?;
@@ -133,8 +135,10 @@ pub async fn update(
     check_date(&mut tx, &h, Some(id)).await?;
     repo::update(&mut tx, id, &h.date, &h.name, h.kind, &time::to_db(now)).await?;
     recount_on(&mut tx, actor, &before.date, now).await?;
+    recheck_on(&mut tx, &before.date).await?;
     if h.date != before.date {
         recount_on(&mut tx, actor, &h.date, now).await?;
+        recheck_on(&mut tx, &h.date).await?;
     }
     let after = repo::by_id(&mut *tx, id)
         .await?
@@ -165,6 +169,7 @@ pub async fn delete(
     }
     repo::delete(&mut tx, id).await?;
     recount_on(&mut tx, actor, &before.date, now).await?;
+    recheck_on(&mut tx, &before.date).await?;
     let entry = Entry {
         action: "holiday.delete",
         entity: Some(("holiday", id)),

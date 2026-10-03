@@ -201,7 +201,7 @@ pub async fn save(
     if before.as_ref().is_some_and(|r| r.locked) {
         return Err(AppError::Conflict(LOCKED));
     }
-    if leave_repo::full_day_leave_on(&mut tx, input.employee_id, &date).await? {
+    if leave_repo::full_day_leave_on(&mut tx, input.employee_id, &date, false).await? {
         return Err(AppError::Conflict(ON_LEAVE));
     }
 

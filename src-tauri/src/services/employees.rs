@@ -10,8 +10,8 @@ use crate::domain::validation as rules;
 use crate::error::{AppError, FieldError};
 use crate::repositories::employees::{self as repo, EmployeeFields, Unique};
 use crate::repositories::org;
-use crate::services::accounts;
 use crate::services::auth::field;
+use crate::services::{accounts, leave_requests, overtime};
 use crate::time;
 use chrono::{DateTime, Months, NaiveDate, Utc};
 use serde_json::json;
@@ -91,6 +91,15 @@ pub async fn update(
     let after = repo::get(&mut *tx, id)
         .await?
         .ok_or(AppError::NotFound("Employee"))?;
+    if let Some(last) = after
+        .separation_date
+        .as_deref()
+        .filter(|last| before.separation_date.as_deref() != Some(*last))
+    {
+        // Leave and overtime after the last day of work no longer make sense.
+        leave_requests::cancel_after_separation(&mut tx, actor, id, last, now).await?;
+        overtime::cancel_after_separation(&mut tx, actor, id, last, now).await?;
+    }
     let entry = Entry {
         action: "employee.update",
         entity: Some(("employee", id)),
@@ -927,5 +936,40 @@ mod tests {
             update(&db, hr(), 9, juan(), today(), now()).await,
             Err(AppError::NotFound("Employee"))
         ));
+    }
+
+    #[tokio::test]
+    async fn a_separation_date_cancels_later_leave_and_overtime() {
+        let (_dir, db) = db().await;
+        let e = create(&db, hr(), juan(), today(), now())
+            .await
+            .expect("create");
+        sqlx::query(
+            "INSERT INTO leave_requests (employee_id, leave_type_id, start_date, end_date, \
+             halfdays, reason) SELECT ?1, id, '2026-10-05', '2026-10-06', 4, 'Trip' \
+             FROM leave_types WHERE code = 'VL'; \
+             INSERT INTO overtime_requests (employee_id, work_date, start_at, end_at, minutes, \
+             reason) VALUES (?1, '2026-10-06', '2026-10-06T17:00:00', '2026-10-06T19:00:00', \
+             120, 'Rush')",
+        )
+        .bind(e.id)
+        .execute(&db)
+        .await
+        .expect("requests");
+        let resigned = EmployeeInput {
+            employment_status: "RESIGNED".into(),
+            separation_date: Some("2026-09-30".into()),
+            ..juan()
+        };
+        update(&db, hr(), e.id, resigned, today(), now())
+            .await
+            .expect("resign");
+        let statuses: Vec<String> = sqlx::query_scalar(
+            "SELECT status FROM leave_requests UNION ALL SELECT status FROM overtime_requests",
+        )
+        .fetch_all(&db)
+        .await
+        .expect("statuses");
+        assert_eq!(statuses, ["CANCELLED", "CANCELLED"]);
     }
 }
