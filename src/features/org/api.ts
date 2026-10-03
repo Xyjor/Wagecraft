@@ -1,6 +1,8 @@
 import type { Department } from "@/bindings/Department";
 import type { DepartmentInput } from "@/bindings/DepartmentInput";
 import type { Position } from "@/bindings/Position";
+import type { Holiday } from "@/bindings/Holiday";
+import type { HolidayInput } from "@/bindings/HolidayInput";
 import type { PositionInput } from "@/bindings/PositionInput";
 import type { WorkSchedule } from "@/bindings/WorkSchedule";
 import type { WorkScheduleInput } from "@/bindings/WorkScheduleInput";
@@ -29,3 +31,9 @@ export const updateSchedule = (id: number, input: WorkScheduleInput) =>
   call<WorkSchedule>("schedule_update", { id, input });
 export const setScheduleActive = (id: number, active: boolean) =>
   call<void>("schedule_set_active", { id, active });
+
+export const listHolidays = (year: number) => call<Holiday[]>("holiday_list", { year });
+export const createHoliday = (input: HolidayInput) => call<Holiday>("holiday_create", { input });
+export const updateHoliday = (id: number, input: HolidayInput) =>
+  call<Holiday>("holiday_update", { id, input });
+export const deleteHoliday = (id: number) => call<void>("holiday_delete", { id });

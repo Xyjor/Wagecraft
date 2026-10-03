@@ -1,3 +1,4 @@
+import type { HolidayInput } from "@/bindings/HolidayInput";
 import type { DepartmentInput } from "@/bindings/DepartmentInput";
 import type { PositionInput } from "@/bindings/PositionInput";
 import type { WorkScheduleInput } from "@/bindings/WorkScheduleInput";
@@ -100,4 +101,27 @@ export function checkSchedule(v: Record<string, string>): Result<WorkScheduleInp
   if (!workDays) errors.workDays = "Pick at least one work day";
   if (Object.keys(errors).length) return { ok: false, errors };
   return { ok: true, value: { name, startTime, endTime, breakMinutes, graceMinutes, workDays } };
+}
+
+export const HOLIDAY_KINDS = ["REGULAR", "SPECIAL_NON_WORKING", "SPECIAL_WORKING"] as const;
+
+/** Checks the holiday form. The date must be a real calendar day from 2000 to 2100. */
+export function checkHoliday(v: Record<string, string>): Result<HolidayInput> {
+  const errors: Record<string, string> = {};
+  const date = (v.date ?? "").trim();
+  const name = (v.name ?? "").trim().replace(/\s+/g, " ");
+  const kind = HOLIDAY_KINDS.find((k) => k === v.kind);
+  if (!isRealDate(date)) errors.date = "Enter a date from 2000 to 2100";
+  if (name.length < 2 || name.length > 80) errors.name = "Enter a name (2 to 80 characters)";
+  if (!kind) errors.kind = "Pick a holiday type";
+  if (Object.keys(errors).length || !kind) return { ok: false, errors };
+  return { ok: true, value: { date, name, kind } };
+}
+
+function isRealDate(iso: string): boolean {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso);
+  if (!m) return false;
+  const [y, mo, d] = [Number(m[1]), Number(m[2]), Number(m[3])];
+  const date = new Date(y, mo - 1, d);
+  return y >= 2000 && y <= 2100 && date.getMonth() === mo - 1 && date.getDate() === d;
 }
