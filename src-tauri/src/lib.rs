@@ -95,6 +95,14 @@ pub fn run() {
             commands::overtime::overtime_list,
             commands::overtime::overtime_pending,
             commands::overtime::overtime_decide,
+            commands::leave::leave_types_list,
+            commands::leave::leave_type_create,
+            commands::leave::leave_type_update,
+            commands::leave::leave_type_set_active,
+            commands::leave::leave_my_balances,
+            commands::leave::leave_balances_for,
+            commands::leave::leave_balance_grant,
+            commands::leave::leave_balance_adjust,
             commands::reports::report_masterlist_csv,
         ])
         .run(tauri::generate_context!())

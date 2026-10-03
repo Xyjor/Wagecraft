@@ -1,6 +1,7 @@
 pub mod attendance;
 pub mod auth;
 pub mod employees;
+pub mod leave;
 pub mod org;
 pub mod overtime;
 pub mod reports;

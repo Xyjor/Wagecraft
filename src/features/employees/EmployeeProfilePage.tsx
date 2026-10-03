@@ -5,6 +5,7 @@ import type { Employee } from "@/bindings/Employee";
 import { FormAlert } from "@/components/form";
 import { attendanceForEmployee } from "@/features/attendance/api";
 import { AttendanceMonth } from "@/features/attendance/AttendanceMonth";
+import { LeaveTab } from "@/features/leave/LeaveTab";
 import { quietButton } from "@/components/ui";
 import type { AppError } from "@/lib/ipc";
 import { archiveEmployee, getEmployee } from "./api";
@@ -69,6 +70,7 @@ export function EmployeeProfilePage() {
       extraTabs={[
         { name: "Compensation", content: <CompensationTab employee={e} /> },
         { name: "Attendance", content: <AttendanceMonth load={loadAttendance} /> },
+        { name: "Leave", content: <LeaveTab employee={e} /> },
         { name: "Sign-in account", content: <AccountTab employee={e} /> },
         { name: "Kiosk PIN", content: <KioskPinTab employee={e} onSaved={reload} /> },
       ]}
