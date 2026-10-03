@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } fro
 import type { Me } from "@/bindings/Me";
 import type { SetupStatus } from "@/bindings/SetupStatus";
 import { call, SIGNED_OUT_EVENT } from "@/lib/ipc";
+import { KioskPage } from "@/features/attendance/KioskPage";
 import { ChangePasswordPage } from "./ChangePasswordPage";
 import { LoginPage } from "./LoginPage";
 import { SessionContext } from "./session";
@@ -11,6 +12,7 @@ type State =
   | { kind: "loading" }
   | { kind: "setup" }
   | { kind: "signedOut"; notice?: string }
+  | { kind: "kiosk" }
   | { kind: "signedIn"; me: Me };
 
 /**
@@ -86,7 +88,15 @@ export function AuthGate({
     case "setup":
       return <SetupWizard onDone={signIn} />;
     case "signedOut":
-      return <LoginPage onSignedIn={signIn} notice={state.notice} />;
+      return (
+        <LoginPage
+          onSignedIn={signIn}
+          onOpenKiosk={() => setState({ kind: "kiosk" })}
+          notice={state.notice}
+        />
+      );
+    case "kiosk":
+      return <KioskPage onClose={() => setState({ kind: "signedOut" })} />;
     case "signedIn":
       if (state.me.mustChangePassword) return <ChangePasswordPage me={state.me} onDone={signIn} />;
       return <SessionContext.Provider value={session}>{children}</SessionContext.Provider>;

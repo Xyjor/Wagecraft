@@ -75,3 +75,15 @@ export function checkEmployee(v: Record<string, string>): Result {
     },
   };
 }
+
+/** Checks the kiosk PIN form: 4 to 6 digits, typed the same twice. */
+export function checkPin(
+  v: Record<string, string>,
+): { ok: true; value: string } | { ok: false; errors: Record<string, string> } {
+  const pin = v.pin ?? "";
+  if (!/^[0-9]{4,6}$/.test(pin)) return { ok: false, errors: { pin: "Use 4 to 6 digits" } };
+  if (pin !== (v.confirmPin ?? "")) {
+    return { ok: false, errors: { confirmPin: "The two PINs don't match" } };
+  }
+  return { ok: true, value: pin };
+}

@@ -28,7 +28,12 @@ pub struct Summary {
     pub positions: usize,
     pub employees: usize,
     pub rates: usize,
+    /// Current employees given the demo kiosk PIN.
+    pub kiosk_pins: usize,
 }
+
+/// Every current demo employee's kiosk PIN, so the kiosk can be tried at once.
+pub const DEMO_PIN: &str = "1234";
 
 /// Opens the database at `path` (creating it if needed) and adds the demo company.
 pub fn run(path: &Path, count: usize) -> anyhow::Result<Summary> {
@@ -503,6 +508,17 @@ pub(crate) async fn demo_company(
             employees::set_archived(db, SEED, employee.id, true, now).await?;
         }
     }
+
+    // One shared hash is fine for demo data; HR sets a real PIN per person.
+    let pin_hash = crate::auth::password::hash(DEMO_PIN)?;
+    let pinned = sqlx::query(
+        "UPDATE employees SET kiosk_pin_hash = ? \
+         WHERE archived_at IS NULL AND employment_status NOT IN ('RESIGNED', 'TERMINATED')",
+    )
+    .bind(&pin_hash)
+    .execute(db)
+    .await?;
+    summary.kiosk_pins = pinned.rows_affected() as usize;
     Ok(summary)
 }
 
@@ -555,6 +571,7 @@ mod tests {
         assert_eq!(summary.positions, 17);
         assert_eq!(summary.employees, 200);
         assert!(summary.rates >= 200, "{summary:?}");
+        assert!((150..200).contains(&summary.kiosk_pins), "{summary:?}");
 
         // Plan §2.3: employee search returns in under 200 ms with 200 employees.
         let started = Instant::now();

@@ -1,12 +1,13 @@
 //! Employee records. Reading needs `employee.read_all`; changes need `employee.write`.
 //! Staff see only their own record, through `employee_me`.
 
+use crate::auth::kiosk_lock::KioskLock;
 use crate::auth::permissions::Permission;
 use crate::domain::compensation::{Compensation, CompensationInput};
 use crate::domain::employee::{Employee, EmployeeInput, EmployeePage, EmployeeQuery};
 use crate::error::AppError;
 use crate::services::accounts::{self, AccountSummary, NewStaffAccount};
-use crate::services::{compensation, employees};
+use crate::services::{compensation, employees, kiosk};
 use crate::state::AppState;
 use chrono::{Local, Utc};
 use tauri::State;
@@ -132,4 +133,17 @@ pub async fn employee_link_user(
 pub async fn employee_unlink_user(state: State<'_, AppState>, id: i64) -> Result<(), AppError> {
     let session = state.require(Permission::EmployeeWrite).await?;
     accounts::unlink(&state.db, session.actor(), id, Utc::now()).await
+}
+
+/// Sets or replaces the employee's kiosk PIN, and lifts any kiosk lockout on their number.
+#[tauri::command]
+pub async fn employee_set_kiosk_pin(
+    state: State<'_, AppState>,
+    id: i64,
+    pin: String,
+) -> Result<Employee, AppError> {
+    let session = state.require(Permission::EmployeeWrite).await?;
+    let employee_no = kiosk::set_pin(&state.db, session.actor(), id, &pin, Utc::now()).await?;
+    state.kiosk.clear(&KioskLock::key(&employee_no));
+    employees::get(&state.db, id).await
 }

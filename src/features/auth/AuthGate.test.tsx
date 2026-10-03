@@ -130,4 +130,12 @@ describe("AuthGate", () => {
     await signIn({ ...admin, userId: 5, username: "jose", role: "STAFF" });
     expect(onUserChanged).toHaveBeenCalledTimes(1);
   });
+
+  it("opens the time clock from the sign-in screen and comes back", async () => {
+    setup({ needsSetup: false });
+    fireEvent.click(await screen.findByRole("button", { name: "Clock in or out" }));
+    expect(screen.getByRole("heading", { name: "Time clock" })).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Back to sign in" }));
+    expect(screen.getByRole("heading", { name: "Sign in" })).toBeTruthy();
+  });
 });

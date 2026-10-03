@@ -276,6 +276,23 @@ pub async fn set_archived_at(
     Ok(())
 }
 
+/// Stores a new kiosk PIN hash, replacing any old one.
+pub async fn set_kiosk_pin(
+    conn: &mut SqliteConnection,
+    employee_id: i64,
+    pin_hash: &str,
+) -> sqlx::Result<()> {
+    sqlx::query(
+        "UPDATE employees SET kiosk_pin_hash = ?, \
+         updated_at = strftime('%Y-%m-%dT%H:%M:%SZ', 'now') WHERE id = ?",
+    )
+    .bind(pin_hash)
+    .bind(employee_id)
+    .execute(conn)
+    .await?;
+    Ok(())
+}
+
 /// The schedule's id if it exists, with whether it is active.
 pub async fn schedule_active(conn: &mut SqliteConnection, id: i64) -> sqlx::Result<Option<bool>> {
     sqlx::query_scalar("SELECT is_active FROM work_schedules WHERE id = ?")

@@ -1,3 +1,4 @@
+pub mod attendance;
 pub mod auth;
 pub mod employees;
 pub mod org;
@@ -18,7 +19,9 @@ mod tests {
         "auth_setup_status",
         "auth_setup_create_admin", // refuses once any user exists
         "auth_login",
-        "auth_logout", // ending no session is harmless
+        "auth_logout",     // ending no session is harmless
+        "kiosk_clock_in",  // checks the employee number and PIN, with a lockout
+        "kiosk_clock_out", // same
     ];
 
     /// Every `#[tauri::command]` as (name, body), from every file in src/commands.

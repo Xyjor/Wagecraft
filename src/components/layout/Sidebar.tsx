@@ -7,6 +7,7 @@ import { useSession } from "@/features/auth/session";
 const ITEMS: { to: string; label: string; roles?: Role[] }[] = [
   { to: "/", label: "Home" },
   { to: "/me", label: "My profile" },
+  { to: "/my-attendance", label: "My attendance" },
   { to: "/employees", label: "Employees", roles: ["ADMIN", "HR"] },
   { to: "/organization", label: "Organization", roles: ["ADMIN", "HR"] },
   { to: "/users", label: "Users", roles: ["ADMIN"] },

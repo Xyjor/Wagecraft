@@ -3,8 +3,11 @@ import type { ReactNode } from "react";
 type FieldProps = {
   name: string;
   label: string;
-  type?: "text" | "password" | "date" | "email" | "tel" | "time" | "number";
+  type?: "text" | "password" | "date" | "email" | "tel" | "time" | "number" | "month";
   autoComplete?: string;
+  /** Which on-screen keyboard to offer, such as "numeric" for a PIN. */
+  inputMode?: "numeric" | "text";
+  maxLength?: number;
   autoFocus?: boolean;
   defaultValue?: string;
   error?: string;
@@ -16,6 +19,8 @@ export function Field({
   label,
   type = "text",
   autoComplete,
+  inputMode,
+  maxLength,
   autoFocus,
   defaultValue,
   error,
@@ -31,6 +36,8 @@ export function Field({
         name={name}
         type={type}
         autoComplete={autoComplete}
+        inputMode={inputMode}
+        maxLength={maxLength}
         autoFocus={autoFocus}
         defaultValue={defaultValue}
         aria-invalid={error ? true : undefined}
