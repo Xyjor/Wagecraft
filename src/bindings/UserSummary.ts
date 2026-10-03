@@ -4,7 +4,7 @@ import type { Role } from "./Role";
 /**
  * One row of the Users screen.
  */
-export type UserSummary = { id: number, username: string, role: Role, employeeId: number | null, isActive: boolean, mustChangePassword: boolean, 
+export type UserSummary = { id: number, username: string, role: Role, employeeId: number | null, employeeLabel: string | null, isActive: boolean, mustChangePassword: boolean, 
 /**
  * True while too many wrong passwords keep the account locked.
  */

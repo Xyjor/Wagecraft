@@ -10,6 +10,7 @@ use crate::domain::validation as rules;
 use crate::error::{AppError, FieldError};
 use crate::repositories::employees::{self as repo, EmployeeFields, Unique};
 use crate::repositories::org;
+use crate::services::accounts;
 use crate::services::auth::field;
 use crate::time;
 use chrono::{DateTime, Months, NaiveDate, Utc};
@@ -124,6 +125,9 @@ pub async fn set_archived(
     }
     let at = time::to_db(now);
     repo::set_archived_at(&mut tx, id, archived.then_some(at.as_str()), &at).await?;
+    if archived {
+        accounts::deactivate_staff_of(&mut tx, actor, id, now).await?;
+    }
     let entry = Entry {
         action: if archived {
             "employee.archive"

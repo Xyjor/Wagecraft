@@ -115,6 +115,8 @@ pub struct ListRow {
     pub username: String,
     pub role: String,
     pub employee_id: Option<i64>,
+    /// "EMP-0001 Maria Santos" for a linked account.
+    pub employee_label: Option<String>,
     pub is_active: bool,
     pub must_change_password: bool,
     pub locked_until: Option<String>,
@@ -123,8 +125,10 @@ pub struct ListRow {
 
 pub async fn list(db: &SqlitePool) -> sqlx::Result<Vec<ListRow>> {
     sqlx::query_as(
-        "SELECT id, username, role, employee_id, is_active, must_change_password, \
-         locked_until, last_login_at FROM users ORDER BY username",
+        "SELECT u.id, u.username, u.role, u.employee_id, \
+         e.employee_no || ' ' || e.first_name || ' ' || e.last_name AS employee_label, \
+         u.is_active, u.must_change_password, u.locked_until, u.last_login_at \
+         FROM users u LEFT JOIN employees e ON e.id = u.employee_id ORDER BY u.username",
     )
     .fetch_all(db)
     .await
@@ -183,5 +187,42 @@ pub async fn reset_password(
     .bind(id)
     .execute(conn)
     .await?;
+    Ok(())
+}
+
+/// The account linked to an employee, if any. `employee_id` is UNIQUE, so at most one.
+pub async fn by_employee<'e>(
+    db: impl SqliteExecutor<'e>,
+    employee_id: i64,
+) -> sqlx::Result<Option<UserRow>> {
+    sqlx::query_as(&format!(
+        "SELECT {COLUMNS} FROM users WHERE employee_id = ?"
+    ))
+    .bind(employee_id)
+    .fetch_optional(db)
+    .await
+}
+
+/// Accounts not linked to any employee, for the "link an existing account" picker.
+pub async fn unlinked<'e>(db: impl SqliteExecutor<'e>) -> sqlx::Result<Vec<UserRow>> {
+    sqlx::query_as(&format!(
+        "SELECT {COLUMNS} FROM users WHERE employee_id IS NULL ORDER BY username"
+    ))
+    .fetch_all(db)
+    .await
+}
+
+pub async fn set_employee(
+    conn: &mut SqliteConnection,
+    id: i64,
+    employee_id: Option<i64>,
+    now: &str,
+) -> sqlx::Result<()> {
+    sqlx::query("UPDATE users SET employee_id = ?, updated_at = ? WHERE id = ?")
+        .bind(employee_id)
+        .bind(now)
+        .bind(id)
+        .execute(conn)
+        .await?;
     Ok(())
 }

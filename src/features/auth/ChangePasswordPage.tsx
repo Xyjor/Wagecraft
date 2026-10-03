@@ -35,7 +35,7 @@ export function ChangePasswordPage({ me, onDone }: { me: Me; onDone: (me: Me) =>
   return (
     <AuthCard
       title="Change your password"
-      intro="Your password was set by an Admin. Pick your own before you continue."
+      intro="Your password was set for you by someone else. Pick your own before you continue."
     >
       <form onSubmit={submit} noValidate className="flex flex-col gap-4">
         <FormAlert message={alert} />

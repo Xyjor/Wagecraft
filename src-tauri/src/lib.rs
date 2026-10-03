@@ -63,6 +63,11 @@ pub fn run() {
             commands::employees::employee_archive,
             commands::employees::employee_compensation_history,
             commands::employees::employee_add_compensation,
+            commands::employees::employee_account,
+            commands::employees::employee_linkable_accounts,
+            commands::employees::employee_create_account,
+            commands::employees::employee_link_user,
+            commands::employees::employee_unlink_user,
         ])
         .run(tauri::generate_context!())
         .expect("error while running Wagecraft");

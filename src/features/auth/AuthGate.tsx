@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import type { Me } from "@/bindings/Me";
 import type { SetupStatus } from "@/bindings/SetupStatus";
 import { call, SIGNED_OUT_EVENT } from "@/lib/ipc";
@@ -18,8 +18,16 @@ type State =
  * change, or the app itself. The backend still checks every command; this only
  * keeps people from seeing screens they can't use.
  */
-export function AuthGate({ children }: { children: ReactNode }) {
+export function AuthGate({
+  children,
+  onUserChanged,
+}: {
+  children: ReactNode;
+  /** Called when someone other than the last user signs in, so the app can go home. */
+  onUserChanged?: () => void;
+}) {
   const [state, setState] = useState<State>({ kind: "loading" });
+  const lastUserId = useRef<number | null>(null);
 
   useEffect(() => {
     let live = true;
@@ -50,7 +58,17 @@ export function AuthGate({ children }: { children: ReactNode }) {
     return () => window.removeEventListener(SIGNED_OUT_EVENT, onSignedOut);
   }, []);
 
-  const signIn = useCallback((me: Me) => setState({ kind: "signedIn", me }), []);
+  useEffect(() => {
+    if (state.kind === "signedIn") lastUserId.current = state.me.userId;
+  }, [state]);
+
+  const signIn = useCallback(
+    (me: Me) => {
+      if (lastUserId.current !== null && lastUserId.current !== me.userId) onUserChanged?.();
+      setState({ kind: "signedIn", me });
+    },
+    [onUserChanged],
+  );
   const signOut = useCallback(async () => {
     try {
       await call("auth_logout");

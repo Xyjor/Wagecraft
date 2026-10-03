@@ -24,6 +24,7 @@ pub struct UserSummary {
     pub role: Role,
     #[ts(type = "number | null")]
     pub employee_id: Option<i64>,
+    pub employee_label: Option<String>,
     pub is_active: bool,
     pub must_change_password: bool,
     /// True while too many wrong passwords keep the account locked.
@@ -102,18 +103,19 @@ pub async fn set_role(
     role: Role,
     now: DateTime<Utc>,
 ) -> Result<(), AppError> {
-    if role == Role::Staff {
-        return Err(AppError::Validation(vec![field(
-            "role",
-            "Staff accounts are created from the employee's profile",
-        )]));
-    }
     let mut tx = db.begin().await?;
     let user = users::by_id(&mut *tx, id)
         .await?
         .ok_or(AppError::NotFound("User"))?;
     if user.role == role.as_db() {
         return Ok(());
+    }
+    if role == Role::Staff && user.employee_id.is_none() {
+        // Plan §3.1: Staff accounts must be linked to an employee record.
+        return Err(AppError::Validation(vec![field(
+            "role",
+            "Link this account to an employee before making it Staff",
+        )]));
     }
     if user.role == Role::Admin.as_db() {
         if actor.user_id == Some(id) {
@@ -148,6 +150,11 @@ pub async fn set_active(
         .ok_or(AppError::NotFound("User"))?;
     if user.is_active == active {
         return Ok(());
+    }
+    if active && user.role == Role::Staff.as_db() && user.employee_id.is_none() {
+        return Err(AppError::Conflict(
+            "Link this Staff account to an employee before turning it back on",
+        ));
     }
     if !active {
         if actor.user_id == Some(id) {
@@ -220,6 +227,7 @@ fn summary(r: ListRow, now: DateTime<Utc>) -> Result<UserSummary, AppError> {
         username: r.username,
         role,
         employee_id: r.employee_id,
+        employee_label: r.employee_label,
         is_active: r.is_active,
         must_change_password: r.must_change_password,
         locked,
@@ -323,7 +331,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn staff_accounts_wait_for_the_employee_module() {
+    async fn staff_accounts_need_an_employee() {
         let (_dir, pool) = with_admin().await;
         let staff = NewUser {
             username: "juan".into(),
@@ -331,6 +339,12 @@ mod tests {
             password: TEMP.into(),
         };
         let err = create(&pool, admin(), staff, t0()).await.unwrap_err();
+        assert_eq!(fields(err), ["role"]);
+
+        let hr = add(&pool, "maria", Role::Hr).await;
+        let err = set_role(&pool, admin(), hr.id, Role::Staff, t0())
+            .await
+            .unwrap_err();
         assert_eq!(fields(err), ["role"]);
     }
 

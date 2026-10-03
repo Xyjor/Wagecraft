@@ -94,6 +94,7 @@ function UserAdmin({ myId }: { myId: number }) {
             <tr>
               <th className="py-2 font-medium">Username</th>
               <th className="py-2 font-medium">Role</th>
+              <th className="py-2 font-medium">Employee</th>
               <th className="py-2 font-medium">Status</th>
               <th className="py-2 font-medium">Last sign-in</th>
               <th className="py-2 font-medium">
@@ -160,13 +161,14 @@ function UserRow({ user: u, isMe, resetting, ...on }: RowProps) {
                 {o.label}
               </option>
             ))}
-            {u.role === "STAFF" && (
-              <option value="STAFF" disabled>
+            {(u.role === "STAFF" || u.employeeId !== null) && (
+              <option value="STAFF" disabled={u.employeeId === null}>
                 Staff
               </option>
             )}
           </select>
         </td>
+        <td className="py-2 text-zinc-600 dark:text-zinc-400">{u.employeeLabel}</td>
         <td className="py-2">
           <div className="flex flex-wrap gap-1">
             <ActiveBadge active={u.isActive} />
@@ -200,7 +202,7 @@ function UserRow({ user: u, isMe, resetting, ...on }: RowProps) {
       </tr>
       {resetting && (
         <tr>
-          <td colSpan={5} className="py-2">
+          <td colSpan={6} className="py-2">
             <ResetPasswordForm
               username={u.username}
               onSave={on.onResetDone}
@@ -272,7 +274,7 @@ function AddUserForm({
         error={errors.password}
       />
       <p className="text-sm text-zinc-600 dark:text-zinc-400">
-        Staff accounts are created from the employee's profile.
+        Staff accounts are created from the employee's profile, on the Sign-in account tab.
       </p>
       <div className="flex gap-2">
         <button type="submit" disabled={busy} className={primary}>
