@@ -11,7 +11,7 @@ import { useSession } from "@/features/auth/session";
 import { listDepartments } from "@/features/org/api";
 import { formatDate } from "@/lib/dates";
 import type { AppError } from "@/lib/ipc";
-import { listEmployees } from "./api";
+import { exportMasterlist, listEmployees } from "./api";
 import { listName, STATUS_LABELS } from "./format";
 
 const PAGE_SIZE = 25;
@@ -50,6 +50,22 @@ function EmployeeList() {
   const [result, setResult] = useState<EmployeePage | null>(null);
   const [departments, setDepartments] = useState<Department[]>([]);
   const [alert, setAlert] = useState<string>();
+  const [exportNote, setExportNote] = useState<string>();
+  const [exporting, setExporting] = useState(false);
+
+  async function exportCsv() {
+    setAlert(undefined);
+    setExportNote(undefined);
+    setExporting(true);
+    try {
+      const saved = await exportMasterlist(query);
+      if (saved) setExportNote(`Saved the masterlist to ${saved}`);
+    } catch (e) {
+      setAlert((e as AppError).message);
+    } finally {
+      setExporting(false);
+    }
+  }
 
   /** Changes filters or sort, and goes back to page 1. */
   const refine = (change: Partial<EmployeeQuery>) =>
@@ -89,11 +105,26 @@ function EmployeeList() {
     <section className="space-y-4">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold tracking-tight">Employees</h1>
-        <Link to="/employees/new" className={primaryButton}>
-          Add employee
-        </Link>
+        <div className="flex gap-2">
+          <button
+            type="button"
+            className={`${quietButton} border border-zinc-300 dark:border-zinc-700`}
+            disabled={exporting}
+            onClick={exportCsv}
+          >
+            Export CSV
+          </button>
+          <Link to="/employees/new" className={primaryButton}>
+            Add employee
+          </Link>
+        </div>
       </div>
       <FormAlert message={alert} />
+      {exportNote && (
+        <p role="status" className="text-sm text-emerald-700 dark:text-emerald-300">
+          {exportNote}
+        </p>
+      )}
 
       <div className="flex flex-wrap items-end gap-3">
         <label className="flex flex-col gap-1 text-sm">
