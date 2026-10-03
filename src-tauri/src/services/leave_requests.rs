@@ -637,6 +637,42 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn a_request_spans_at_most_60_days() {
+        let (_d, db) = db().await;
+        // Oct 1 to Nov 29 is 60 days; one more is refused.
+        let longest = leave(&db, "LWOP", "2026-10-01", "2026-11-29").await;
+        file(&db, juan(), Some(1), longest, today(), t0())
+            .await
+            .expect("60 days");
+        let too_long = LeaveRequestInput {
+            employee_no: Some("EMP-4".into()),
+            ..leave(&db, "LWOP", "2026-10-01", "2026-11-30").await
+        };
+        let err = file(&db, hr(), None, too_long, today(), t0())
+            .await
+            .unwrap_err();
+        assert_eq!(message(err), "File at most 60 days at a time");
+    }
+
+    #[tokio::test]
+    async fn a_switched_off_leave_type_cant_be_filed() {
+        let (_d, db) = db().await;
+        let vl = type_id(&db, "VL").await;
+        crate::services::leave::set_type_active(&db, hr(), vl, false, t0())
+            .await
+            .expect("switch off");
+        let input = leave(&db, "VL", "2026-10-12", "2026-10-12").await;
+        assert_eq!(
+            fields(
+                file(&db, juan(), Some(1), input, today(), t0())
+                    .await
+                    .unwrap_err()
+            ),
+            ["leaveTypeId"]
+        );
+    }
+
+    #[tokio::test]
     async fn filing_needs_a_current_employee_with_a_schedule() {
         let (_d, db) = db().await;
         let input = leave(&db, "LWOP", "2026-10-12", "2026-10-12").await;

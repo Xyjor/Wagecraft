@@ -99,6 +99,16 @@ pub async fn leave_balance_adjust(
     leave::adjust(&state.db, session.actor(), id, input, Utc::now()).await
 }
 
+/// Filing for someone else (an employee number is given) is HR's job; filing for
+/// yourself needs only your own leave permission.
+fn filing_permission(input: &LeaveRequestInput) -> Permission {
+    if input.employee_no.is_some() {
+        Permission::LeaveDecide
+    } else {
+        Permission::SelfLeave
+    }
+}
+
 /// Files leave. With an employee number, it's HR filing for someone, which needs
 /// `leave.decide`; without one, it's for the signed-in person.
 #[tauri::command]
@@ -106,11 +116,7 @@ pub async fn leave_request_create(
     state: State<'_, AppState>,
     input: LeaveRequestInput,
 ) -> Result<LeaveRequest, AppError> {
-    let session = if input.employee_no.is_some() {
-        state.require(Permission::LeaveDecide).await?
-    } else {
-        state.require(Permission::SelfLeave).await?
-    };
+    let session = state.require(filing_permission(&input)).await?;
     let own = accounts::employee_of(&state.db, session.user_id).await?;
     let today = Local::now().date_naive();
     leave_requests::file(&state.db, session.actor(), own, input, today, Utc::now()).await
@@ -177,4 +183,31 @@ pub async fn leave_request_decide(
         Utc::now(),
     )
     .await
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::auth::permissions::Role;
+
+    fn input(employee_no: Option<&str>) -> LeaveRequestInput {
+        LeaveRequestInput {
+            employee_no: employee_no.map(String::from),
+            leave_type_id: 1,
+            start_date: "2026-10-12".into(),
+            end_date: "2026-10-12".into(),
+            half_day: false,
+            reason: "Family trip".into(),
+        }
+    }
+
+    #[test]
+    fn staff_file_only_for_themselves() {
+        let for_someone = filing_permission(&input(Some("EMP-2")));
+        let for_self = filing_permission(&input(None));
+        assert!(!Role::Staff.allows(for_someone));
+        assert!(Role::Staff.allows(for_self));
+        assert!(Role::Hr.allows(for_someone));
+        assert!(Role::Admin.allows(for_someone));
+    }
 }
