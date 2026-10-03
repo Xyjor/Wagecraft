@@ -198,7 +198,9 @@ function EmployeeList() {
               {result.items.length === 0 && (
                 <tr>
                   <td colSpan={6} className="py-3 text-zinc-500">
-                    No employees match.
+                    {isFiltered(query)
+                      ? "No employees match these filters."
+                      : "No employees yet. Use Add employee to start the list."}
                   </td>
                 </tr>
               )}
@@ -280,5 +282,13 @@ function Pager({ page, onPage }: { page: EmployeePage; onPage: (page: number) =>
         </button>
       </div>
     </div>
+  );
+}
+
+/** True when the list is narrowed, so an empty result means "no match", not "none yet". */
+function isFiltered(q: EmployeeQuery): boolean {
+  return (
+    Boolean(q.search || q.departmentId || q.positionId || q.employmentStatus) ||
+    q.archived !== "exclude"
   );
 }

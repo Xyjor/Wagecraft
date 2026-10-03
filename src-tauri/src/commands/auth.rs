@@ -72,7 +72,6 @@ pub async fn auth_login(
     state.auth.sign_in(Session {
         user_id: user.id,
         username: user.username.clone(),
-        employee_id: user.employee_id,
         role: user.role,
         last_activity: Instant::now(),
     });

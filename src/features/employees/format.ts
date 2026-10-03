@@ -35,3 +35,7 @@ export function listName(e: Named): string {
 export function fullName(e: Named): string {
   return [e.firstName, e.middleName, e.lastName, e.suffix].filter(Boolean).join(" ");
 }
+
+/** Resigned or terminated: the only employees that can be archived. */
+export const isSeparated = (e: { employmentStatus: string }) =>
+  e.employmentStatus === "RESIGNED" || e.employmentStatus === "TERMINATED";

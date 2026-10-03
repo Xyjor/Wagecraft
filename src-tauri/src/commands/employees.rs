@@ -26,11 +26,15 @@ pub async fn employee_get(state: State<'_, AppState>, id: i64) -> Result<Employe
     employees::get(&state.db, id).await
 }
 
-/// The signed-in user's own record. Uses the session's employee, never an id from the UI.
+/// The signed-in user's own record. "Self" commands find the employee from the signed-in
+/// account, never from an id the UI sends (plan §3.3).
 #[tauri::command]
 pub async fn employee_me(state: State<'_, AppState>) -> Result<Employee, AppError> {
     let session = state.require(Permission::SelfProfile).await?;
-    let id = session.employee_id.ok_or(AppError::NotFound("Employee"))?;
+    // Read the link fresh: HR may have linked or unlinked this account since sign-in.
+    let id = accounts::employee_of(&state.db, session.user_id)
+        .await?
+        .ok_or(AppError::NotFound("Employee"))?;
     employees::get(&state.db, id).await
 }
 
