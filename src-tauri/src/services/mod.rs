@@ -5,6 +5,7 @@ pub mod compensation;
 pub mod employees;
 pub mod holidays;
 pub mod kiosk;
+pub mod leave;
 pub mod org;
 pub mod overtime;
 pub mod reports;
