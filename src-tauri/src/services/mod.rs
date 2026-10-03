@@ -3,6 +3,7 @@ pub mod attendance;
 pub mod auth;
 pub mod compensation;
 pub mod employees;
+pub mod holidays;
 pub mod kiosk;
 pub mod org;
 pub mod reports;

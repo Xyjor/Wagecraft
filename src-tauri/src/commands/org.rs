@@ -1,11 +1,12 @@
-//! Departments, positions and work schedules. Lists need `employee.read_all`; changes need `org.manage`.
+//! Departments, positions, work schedules and holidays. Lists need `employee.read_all`; changes need `org.manage`.
 
 use crate::auth::permissions::Permission;
 use crate::domain::org::{
-    Department, DepartmentInput, Position, PositionInput, WorkSchedule, WorkScheduleInput,
+    Department, DepartmentInput, Holiday, HolidayInput, Position, PositionInput, WorkSchedule,
+    WorkScheduleInput,
 };
 use crate::error::AppError;
-use crate::services::org;
+use crate::services::{holidays, org};
 use crate::state::AppState;
 use chrono::Utc;
 use tauri::State;
@@ -113,4 +114,35 @@ pub async fn schedule_set_active(
 ) -> Result<(), AppError> {
     let session = state.require(Permission::OrgManage).await?;
     org::set_schedule_active(&state.db, session.actor(), id, active, Utc::now()).await
+}
+
+#[tauri::command]
+pub async fn holiday_list(state: State<'_, AppState>, year: i32) -> Result<Vec<Holiday>, AppError> {
+    state.require(Permission::EmployeeReadAll).await?;
+    holidays::list(&state.db, year).await
+}
+
+#[tauri::command]
+pub async fn holiday_create(
+    state: State<'_, AppState>,
+    input: HolidayInput,
+) -> Result<Holiday, AppError> {
+    let session = state.require(Permission::OrgManage).await?;
+    holidays::create(&state.db, session.actor(), input, Utc::now()).await
+}
+
+#[tauri::command]
+pub async fn holiday_update(
+    state: State<'_, AppState>,
+    id: i64,
+    input: HolidayInput,
+) -> Result<Holiday, AppError> {
+    let session = state.require(Permission::OrgManage).await?;
+    holidays::update(&state.db, session.actor(), id, input, Utc::now()).await
+}
+
+#[tauri::command]
+pub async fn holiday_delete(state: State<'_, AppState>, id: i64) -> Result<(), AppError> {
+    let session = state.require(Permission::OrgManage).await?;
+    holidays::delete(&state.db, session.actor(), id, Utc::now()).await
 }

@@ -1,3 +1,4 @@
+import type { Holiday } from "@/bindings/Holiday";
 import type { WorkSchedule } from "@/bindings/WorkSchedule";
 import { WEEKDAYS } from "./validation";
 
@@ -24,4 +25,16 @@ export function workDaysLabel(workDays: string): string {
 export function scheduleHours(s: WorkSchedule): string {
   const nextDay = s.endTime <= s.startTime ? " (next day)" : "";
   return `${s.startTime}–${s.endTime}${nextDay}`;
+}
+
+export const HOLIDAY_KIND_LABELS: Record<Holiday["kind"], string> = {
+  REGULAR: "Regular holiday",
+  SPECIAL_NON_WORKING: "Special non-working day",
+  SPECIAL_WORKING: "Special working day",
+};
+
+/** "2026-11-30" → "Mon". Built from parts, so no time zone can shift the day. */
+export function weekdayOf(iso: string): string {
+  const [y, m, d] = iso.split("-").map(Number);
+  return new Date(y, m - 1, d).toLocaleDateString("en-PH", { weekday: "short" });
 }

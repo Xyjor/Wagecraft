@@ -95,3 +95,32 @@ pub struct WorkScheduleInput {
     pub grace_minutes: i64,
     pub work_days: String,
 }
+
+/// Holiday types, as stored in `holidays.type`. The type decides the pay premium (plan §7.3).
+pub const HOLIDAY_KINDS: [&str; 3] = ["REGULAR", "SPECIAL_NON_WORKING", "SPECIAL_WORKING"];
+
+/// A holiday on the company calendar. A double holiday is two rows on the same date.
+#[derive(Debug, Clone, Serialize, FromRow, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export)]
+pub struct Holiday {
+    #[ts(type = "number")]
+    pub id: i64,
+    /// `YYYY-MM-DD`.
+    pub date: String,
+    pub name: String,
+    #[ts(type = "\"REGULAR\" | \"SPECIAL_NON_WORKING\" | \"SPECIAL_WORKING\"")]
+    pub kind: String,
+    /// The date is in a posted payroll period, so the holiday can't be changed.
+    pub locked: bool,
+}
+
+#[derive(Debug, Clone, Deserialize, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export)]
+pub struct HolidayInput {
+    pub date: String,
+    pub name: String,
+    #[ts(type = "\"REGULAR\" | \"SPECIAL_NON_WORKING\" | \"SPECIAL_WORKING\"")]
+    pub kind: String,
+}

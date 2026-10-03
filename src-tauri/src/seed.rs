@@ -8,8 +8,8 @@
 use crate::audit::Actor;
 use crate::domain::compensation::{pay_period_start, CompensationInput};
 use crate::domain::employee::EmployeeInput;
-use crate::domain::org::{DepartmentInput, PositionInput, WorkScheduleInput};
-use crate::services::{compensation, employees, org};
+use crate::domain::org::{DepartmentInput, HolidayInput, PositionInput, WorkScheduleInput};
+use crate::services::{compensation, employees, holidays, org};
 use chrono::{Datelike, Days, Months, NaiveDate, Utc};
 use sqlx::SqlitePool;
 use std::collections::HashSet;
@@ -30,6 +30,7 @@ pub struct Summary {
     pub rates: usize,
     /// Current employees given the demo kiosk PIN.
     pub kiosk_pins: usize,
+    pub holidays: usize,
 }
 
 /// Every current demo employee's kiosk PIN, so the kiosk can be tried at once.
@@ -288,6 +289,32 @@ impl Rng {
     }
 }
 
+/// 2026 holidays for the demo: the regular holidays set by law (RA 9492) and the usual
+/// special days. HR enters the real list from each year's proclamation.
+const HOLIDAYS_2026: &[(&str, &str, &str)] = &[
+    ("2026-01-01", "New Year's Day", "REGULAR"),
+    ("2026-02-17", "Chinese New Year", "SPECIAL_NON_WORKING"),
+    ("2026-04-02", "Maundy Thursday", "REGULAR"),
+    ("2026-04-03", "Good Friday", "REGULAR"),
+    ("2026-04-04", "Black Saturday", "SPECIAL_NON_WORKING"),
+    ("2026-04-09", "Araw ng Kagitingan", "REGULAR"),
+    ("2026-05-01", "Labor Day", "REGULAR"),
+    ("2026-06-12", "Independence Day", "REGULAR"),
+    ("2026-08-21", "Ninoy Aquino Day", "SPECIAL_NON_WORKING"),
+    ("2026-08-31", "National Heroes Day", "REGULAR"),
+    ("2026-11-01", "All Saints' Day", "SPECIAL_NON_WORKING"),
+    ("2026-11-30", "Bonifacio Day", "REGULAR"),
+    (
+        "2026-12-08",
+        "Feast of the Immaculate Conception",
+        "SPECIAL_NON_WORKING",
+    ),
+    ("2026-12-24", "Christmas Eve", "SPECIAL_NON_WORKING"),
+    ("2026-12-25", "Christmas Day", "REGULAR"),
+    ("2026-12-30", "Rizal Day", "REGULAR"),
+    ("2026-12-31", "Last Day of the Year", "SPECIAL_NON_WORKING"),
+];
+
 pub(crate) async fn demo_company(
     db: &SqlitePool,
     count: usize,
@@ -325,6 +352,24 @@ pub(crate) async fn demo_company(
             }
         };
         schedule_ids.push(id);
+    }
+
+    // Holidays, skipping any already on the calendar.
+    let existing_holidays = holidays::list(db, 2026).await?;
+    for (date, name, kind) in HOLIDAYS_2026 {
+        if existing_holidays
+            .iter()
+            .any(|h| h.date == *date && h.name == *name)
+        {
+            continue;
+        }
+        let input = HolidayInput {
+            date: (*date).into(),
+            name: (*name).into(),
+            kind: (*kind).into(),
+        };
+        holidays::create(db, SEED, input, now).await?;
+        summary.holidays += 1;
     }
 
     // Departments and positions, reusing any that already exist by code or title.
@@ -567,6 +612,7 @@ mod tests {
             .expect("open");
         let summary = demo_company(&db, 200, today()).await.expect("seed");
         assert_eq!(summary.schedules, 3);
+        assert_eq!(summary.holidays, 17);
         assert_eq!(summary.departments, 6);
         assert_eq!(summary.positions, 17);
         assert_eq!(summary.employees, 200);
