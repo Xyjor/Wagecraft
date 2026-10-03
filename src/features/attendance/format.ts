@@ -27,3 +27,14 @@ export function monthRange(month: string): { from: string; to: string } {
 export function thisMonth(today = new Date()): string {
   return `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}`;
 }
+
+/** Today on the PC's calendar, as `YYYY-MM-DD`. */
+export function todayIso(today = new Date()): string {
+  return `${thisMonth(today)}-${String(today.getDate()).padStart(2, "0")}`;
+}
+
+/** `YYYY-MM-DD` moved by `days`, built from parts so no time zone can shift it. */
+export function shiftDate(iso: string, days: number): string {
+  const [y, m, d] = iso.split("-").map(Number);
+  return todayIso(new Date(y, m - 1, d + days));
+}

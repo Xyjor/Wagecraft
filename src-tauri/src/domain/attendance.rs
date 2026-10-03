@@ -30,6 +30,8 @@ pub struct AttendanceRecord {
     pub source: String,
     pub needs_review: bool,
     pub review_note: Option<String>,
+    /// Inside a posted payroll period, so it can no longer change.
+    pub locked: bool,
 }
 
 /// Clock in or clock out.
@@ -62,4 +64,47 @@ pub struct KioskPunch {
 pub struct DateRange {
     pub from: String,
     pub to: String,
+}
+
+/// One employee's line on HR's day grid.
+#[derive(Debug, Clone, Serialize, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export)]
+pub struct DayRow {
+    #[ts(type = "number")]
+    pub employee_id: i64,
+    pub employee_no: String,
+    /// "Dela Cruz, Juan".
+    pub employee_name: String,
+    pub department_name: Option<String>,
+    /// The record's status, or what the day works out to without one (ABSENT, REST_DAY,
+    /// HOLIDAY). `None` when the employee has no work schedule to tell.
+    pub status: Option<String>,
+    /// The holiday on this date, if any.
+    pub holiday: Option<String>,
+    pub record: Option<AttendanceRecord>,
+}
+
+/// A record flagged for HR, with whose it is.
+#[derive(Debug, Clone, Serialize, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export)]
+pub struct ReviewItem {
+    pub employee_no: String,
+    pub employee_name: String,
+    pub record: AttendanceRecord,
+}
+
+/// HR adding or correcting one day. Times are `HH:MM` on the office clock; a time out
+/// earlier than the time in is the next day. The reason is required and audited.
+#[derive(Debug, Clone, Deserialize, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export)]
+pub struct AttendanceInput {
+    #[ts(type = "number")]
+    pub employee_id: i64,
+    pub work_date: String,
+    pub time_in: String,
+    pub time_out: Option<String>,
+    pub reason: String,
 }

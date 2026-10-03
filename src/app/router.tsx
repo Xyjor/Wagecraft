@@ -1,5 +1,6 @@
 import { createBrowserRouter } from "react-router";
 import { AppShell } from "./AppShell";
+import { AttendancePage } from "@/features/attendance/AttendancePage";
 import { MyAttendancePage } from "@/features/attendance/MyAttendancePage";
 import { EmployeeFormPage } from "@/features/employees/EmployeeFormPage";
 import { EmployeeProfilePage } from "@/features/employees/EmployeeProfilePage";
@@ -16,6 +17,7 @@ export const router = createBrowserRouter([
       { index: true, element: <HomePage /> },
       { path: "me", element: <MyProfilePage /> },
       { path: "my-attendance", element: <MyAttendancePage /> },
+      { path: "attendance", element: <AttendancePage /> },
       { path: "employees", element: <EmployeesPage /> },
       { path: "employees/new", element: <EmployeeFormPage /> },
       { path: "employees/:id", element: <EmployeeProfilePage /> },

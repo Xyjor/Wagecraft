@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { formatClock, formatMinutes, monthRange, thisMonth } from "./format";
+import { formatClock, formatMinutes, monthRange, shiftDate, thisMonth, todayIso } from "./format";
 
 describe("attendance format", () => {
   it("shows local times on a 12-hour clock", () => {
@@ -22,5 +22,12 @@ describe("attendance format", () => {
     expect(monthRange("2028-02")).toEqual({ from: "2028-02-01", to: "2028-02-29" });
     expect(monthRange("2026-10")).toEqual({ from: "2026-10-01", to: "2026-10-31" });
     expect(thisMonth(new Date(2026, 0, 9))).toBe("2026-01");
+  });
+
+  it("moves dates across month and year ends", () => {
+    expect(todayIso(new Date(2026, 9, 5))).toBe("2026-10-05");
+    expect(shiftDate("2026-10-31", 1)).toBe("2026-11-01");
+    expect(shiftDate("2026-01-01", -1)).toBe("2025-12-31");
+    expect(shiftDate("2028-02-28", 1)).toBe("2028-02-29");
   });
 });

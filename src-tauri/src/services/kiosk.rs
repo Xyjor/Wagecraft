@@ -345,8 +345,8 @@ mod tests {
         async fn record(&self, employee_id: i64) -> crate::domain::attendance::AttendanceRecord {
             sqlx::query_as(
                 "SELECT id, employee_id, work_date, time_in, time_out, status, late_minutes, \
-                 undertime_minutes, worked_minutes, night_minutes, source, needs_review, review_note \
-                 FROM attendance_records WHERE employee_id = ? ORDER BY id DESC LIMIT 1",
+                 undertime_minutes, worked_minutes, night_minutes, source, needs_review, review_note, \
+                 0 AS locked FROM attendance_records WHERE employee_id = ? ORDER BY id DESC LIMIT 1",
             )
             .bind(employee_id)
             .fetch_one(&self.db)
