@@ -11,4 +11,8 @@ status: string, lateMinutes: number, undertimeMinutes: number, workedMinutes: nu
 /**
  * CLOCK (kiosk) or MANUAL (entered by HR).
  */
-source: string, needsReview: boolean, reviewNote: string | null, };
+source: string, needsReview: boolean, reviewNote: string | null, 
+/**
+ * Inside a posted payroll period, so it can no longer change.
+ */
+locked: boolean, };

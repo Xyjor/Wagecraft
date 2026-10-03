@@ -35,6 +35,7 @@ const record = (over: Partial<AttendanceRecord>): AttendanceRecord => ({
   source: "CLOCK",
   needsReview: false,
   reviewNote: null,
+  locked: false,
   ...over,
 });
 

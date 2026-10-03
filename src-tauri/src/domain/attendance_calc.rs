@@ -6,7 +6,7 @@
 //!
 //! Minutes are whole minutes, rounded down: 7 min 59 s late counts as 7 minutes late.
 
-use chrono::{Duration, NaiveDate, NaiveDateTime, NaiveTime};
+use chrono::{Datelike, Duration, NaiveDate, NaiveDateTime, NaiveTime, Weekday};
 
 /// Night shift differential window (Labor Code art. 86): 10:00 PM to 6:00 AM.
 const NIGHT_START: NaiveTime = match NaiveTime::from_hms_opt(22, 0, 0) {
@@ -188,6 +188,99 @@ pub fn work_date_for(shift: Option<&Shift>, punch: NaiveDateTime) -> NaiveDate {
     } else {
         today
     }
+}
+
+/// Holiday types (plan §5.3). A special working day is an ordinary work day.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum HolidayKind {
+    Regular,
+    SpecialNonWorking,
+    SpecialWorking,
+}
+
+impl HolidayKind {
+    pub fn from_db(s: &str) -> Option<Self> {
+        match s {
+            "REGULAR" => Some(Self::Regular),
+            "SPECIAL_NON_WORKING" => Some(Self::SpecialNonWorking),
+            "SPECIAL_WORKING" => Some(Self::SpecialWorking),
+            _ => None,
+        }
+    }
+}
+
+/// Attendance status for one day (plan §6.3).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum DayStatus {
+    Present,
+    Absent,
+    RestDay,
+    Holiday,
+    OnLeave,
+}
+
+impl DayStatus {
+    pub fn as_db(self) -> &'static str {
+        match self {
+            Self::Present => "PRESENT",
+            Self::Absent => "ABSENT",
+            Self::RestDay => "REST_DAY",
+            Self::Holiday => "HOLIDAY",
+            Self::OnLeave => "ON_LEAVE",
+        }
+    }
+}
+
+/// The facts that decide a day's status.
+#[derive(Debug, Clone, Copy, Default)]
+pub struct DayFacts {
+    /// The employee's schedule includes this weekday.
+    pub scheduled: bool,
+    pub holiday: Option<HolidayKind>,
+    pub on_approved_leave: bool,
+    pub clocked_in: bool,
+}
+
+/// Approved leave wins, then a punch, then a holiday, then the rest day. A scheduled
+/// day with none of these is an absence. Working on a holiday or rest day still shows
+/// PRESENT; the premium comes from the day type in payroll.
+pub fn day_status(f: DayFacts) -> DayStatus {
+    let day_off_holiday = matches!(
+        f.holiday,
+        Some(HolidayKind::Regular | HolidayKind::SpecialNonWorking)
+    );
+    if f.on_approved_leave {
+        DayStatus::OnLeave
+    } else if f.clocked_in {
+        DayStatus::Present
+    } else if day_off_holiday {
+        DayStatus::Holiday
+    } else if !f.scheduled {
+        DayStatus::RestDay
+    } else {
+        DayStatus::Absent
+    }
+}
+
+/// Parses a schedule's work days, `MON,TUE,WED,THU,FRI`. Unknown names are skipped.
+pub fn parse_work_days(s: &str) -> Vec<Weekday> {
+    s.split(',')
+        .filter_map(|d| match d.trim().to_ascii_uppercase().as_str() {
+            "MON" => Some(Weekday::Mon),
+            "TUE" => Some(Weekday::Tue),
+            "WED" => Some(Weekday::Wed),
+            "THU" => Some(Weekday::Thu),
+            "FRI" => Some(Weekday::Fri),
+            "SAT" => Some(Weekday::Sat),
+            "SUN" => Some(Weekday::Sun),
+            _ => None,
+        })
+        .collect()
+}
+
+/// True if `work_days` (as stored) includes the weekday of `date`.
+pub fn is_work_day(work_days: &str, date: NaiveDate) -> bool {
+    parse_work_days(work_days).contains(&date.weekday())
 }
 
 #[cfg(test)]
@@ -416,5 +509,65 @@ mod tests {
             work_date_for(Some(&night()), at("2026-10-06 06:05")),
             d("2026-10-05")
         );
+    }
+
+    #[test]
+    fn day_status_follows_leave_punch_holiday_rest_day_order() {
+        let base = DayFacts {
+            scheduled: true,
+            ..DayFacts::default()
+        };
+        assert_eq!(day_status(base), DayStatus::Absent);
+        assert_eq!(
+            day_status(DayFacts {
+                clocked_in: true,
+                ..base
+            }),
+            DayStatus::Present
+        );
+        assert_eq!(
+            day_status(DayFacts {
+                on_approved_leave: true,
+                clocked_in: true,
+                ..base
+            }),
+            DayStatus::OnLeave
+        );
+        assert_eq!(
+            day_status(DayFacts {
+                holiday: Some(HolidayKind::Regular),
+                ..base
+            }),
+            DayStatus::Holiday
+        );
+        assert_eq!(
+            day_status(DayFacts {
+                holiday: Some(HolidayKind::Regular),
+                clocked_in: true,
+                ..base
+            }),
+            DayStatus::Present
+        );
+        // A special working day is an ordinary work day.
+        assert_eq!(
+            day_status(DayFacts {
+                holiday: Some(HolidayKind::SpecialWorking),
+                ..base
+            }),
+            DayStatus::Absent
+        );
+        assert_eq!(day_status(DayFacts::default()), DayStatus::RestDay);
+    }
+
+    #[test]
+    fn work_days_parse_from_the_stored_list() {
+        assert_eq!(
+            parse_work_days("MON,TUE, wed,XYZ"),
+            vec![Weekday::Mon, Weekday::Tue, Weekday::Wed]
+        );
+        assert!(is_work_day("MON,TUE,WED,THU,FRI", d("2026-10-05")));
+        assert!(!is_work_day("MON,TUE,WED,THU,FRI", d("2026-10-04")));
+        assert_eq!(HolidayKind::from_db("REGULAR"), Some(HolidayKind::Regular));
+        assert_eq!(HolidayKind::from_db("x"), None);
     }
 }

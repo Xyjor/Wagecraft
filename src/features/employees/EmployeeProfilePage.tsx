@@ -1,7 +1,10 @@
 import { useCallback, useEffect, useState } from "react";
+import type { DateRange } from "@/bindings/DateRange";
 import { Link, useParams } from "react-router";
 import type { Employee } from "@/bindings/Employee";
 import { FormAlert } from "@/components/form";
+import { attendanceForEmployee } from "@/features/attendance/api";
+import { AttendanceMonth } from "@/features/attendance/AttendanceMonth";
 import { quietButton } from "@/components/ui";
 import type { AppError } from "@/lib/ipc";
 import { archiveEmployee, getEmployee } from "./api";
@@ -18,6 +21,7 @@ export function EmployeeProfilePage() {
   const [alert, setAlert] = useState<string>();
 
   const reload = useCallback(async () => setEmployee(await getEmployee(id)), [id]);
+  const loadAttendance = useCallback((range: DateRange) => attendanceForEmployee(id, range), [id]);
 
   useEffect(() => {
     getEmployee(id)
@@ -64,6 +68,7 @@ export function EmployeeProfilePage() {
       }
       extraTabs={[
         { name: "Compensation", content: <CompensationTab employee={e} /> },
+        { name: "Attendance", content: <AttendanceMonth load={loadAttendance} /> },
         { name: "Sign-in account", content: <AccountTab employee={e} /> },
         { name: "Kiosk PIN", content: <KioskPinTab employee={e} onSaved={reload} /> },
       ]}

@@ -80,6 +80,11 @@ pub fn run() {
             commands::attendance::kiosk_clock_in,
             commands::attendance::kiosk_clock_out,
             commands::attendance::attendance_mine,
+            commands::attendance::attendance_day,
+            commands::attendance::attendance_review_queue,
+            commands::attendance::attendance_for_employee,
+            commands::attendance::attendance_save,
+            commands::attendance::attendance_mark_reviewed,
             commands::reports::report_masterlist_csv,
         ])
         .run(tauri::generate_context!())

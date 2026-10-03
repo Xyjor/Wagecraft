@@ -9,6 +9,7 @@ const ITEMS: { to: string; label: string; roles?: Role[] }[] = [
   { to: "/me", label: "My profile" },
   { to: "/my-attendance", label: "My attendance" },
   { to: "/employees", label: "Employees", roles: ["ADMIN", "HR"] },
+  { to: "/attendance", label: "Attendance", roles: ["ADMIN", "HR"] },
   { to: "/organization", label: "Organization", roles: ["ADMIN", "HR"] },
   { to: "/users", label: "Users", roles: ["ADMIN"] },
 ];
