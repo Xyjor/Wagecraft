@@ -239,6 +239,7 @@ function Attendance() {
                     <td className="py-2">{row.departmentName}</td>
                     <td className="space-x-1 py-2">
                       <StatusBadge status={row.status} isToday={date === today} />
+                      {row.leave && <span className="text-zinc-500">{row.leave}</span>}
                       {r?.needsReview && <Badge tone="muted">Needs review</Badge>}
                       {r?.source === "MANUAL" && <Badge tone="muted">Corrected</Badge>}
                     </td>

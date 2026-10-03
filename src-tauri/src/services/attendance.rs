@@ -6,6 +6,7 @@ use crate::domain::attendance::{AttendanceInput, AttendanceRecord, DateRange, Da
 use crate::domain::attendance_calc::{self, DayFacts, HolidayKind, Shift};
 use crate::error::{AppError, FieldError};
 use crate::repositories::attendance::{self as repo, Manual};
+use crate::repositories::leave_requests as leave_repo;
 use crate::services::auth::field;
 use crate::time;
 use chrono::{DateTime, Duration, NaiveDate, NaiveDateTime, NaiveTime, Utc};
@@ -14,6 +15,8 @@ use sqlx::SqlitePool;
 use std::collections::HashMap;
 
 const LOCKED: &str = "This day is in a posted payroll period, so it can't be changed.";
+const ON_LEAVE: &str = "This employee is on approved leave this day. Cancel the leave first if \
+    they worked.";
 
 /// Longest range one request may ask for: two months and change.
 const MAX_RANGE_DAYS: i64 = 62;
@@ -63,6 +66,11 @@ pub async fn day(db: &SqlitePool, date: &str) -> Result<Vec<DayRow>, AppError> {
         .into_iter()
         .map(|r| (r.employee_id, r))
         .collect();
+    let mut leave: HashMap<i64, (String, bool)> = leave_repo::approved_on(db, &iso)
+        .await?
+        .into_iter()
+        .map(|l| (l.employee_id, (l.leave_type_name, l.half_day)))
+        .collect();
     let holidays = repo::holidays_on(db, &iso).await?;
     let holiday = strongest_holiday(&holidays);
     let holiday_name = (!holidays.is_empty()).then(|| {
@@ -77,14 +85,14 @@ pub async fn day(db: &SqlitePool, date: &str) -> Result<Vec<DayRow>, AppError> {
         .into_iter()
         .map(|e| {
             let record = records.remove(&e.id);
+            let on_leave = leave.remove(&e.id);
             let status = match &record {
                 Some(r) => Some(r.status.clone()),
                 None => e.work_days.as_deref().map(|days| {
                     let facts = DayFacts {
                         scheduled: attendance_calc::is_work_day(days, date),
                         holiday,
-                        // Leave arrives with the leave module (plan Phase 4).
-                        on_approved_leave: false,
+                        on_approved_leave: on_leave.is_some(),
                         clocked_in: false,
                     };
                     attendance_calc::day_status(facts).as_db().to_string()
@@ -97,6 +105,13 @@ pub async fn day(db: &SqlitePool, date: &str) -> Result<Vec<DayRow>, AppError> {
                 department_name: e.department_name,
                 status,
                 holiday: holiday_name.clone(),
+                leave: on_leave.map(|(name, half)| {
+                    if half {
+                        format!("{name} (half day)")
+                    } else {
+                        name
+                    }
+                }),
                 record,
             }
         })
@@ -185,6 +200,9 @@ pub async fn save(
     let before = repo::on_date(&mut tx, input.employee_id, &date).await?;
     if before.as_ref().is_some_and(|r| r.locked) {
         return Err(AppError::Conflict(LOCKED));
+    }
+    if leave_repo::full_day_leave_on(&mut tx, input.employee_id, &date).await? {
+        return Err(AppError::Conflict(ON_LEAVE));
     }
 
     let shift = shift_of(&employee);
@@ -680,5 +698,69 @@ mod tests {
             .await
             .expect("q")
             .is_empty());
+    }
+
+    async fn approve_leave(db: &SqlitePool, employee_id: i64, from: &str, to: &str, half: bool) {
+        sqlx::query(
+            "INSERT INTO leave_requests (employee_id, leave_type_id, start_date, end_date, \
+             half_day, halfdays, reason, status) SELECT ?, id, ?, ?, ?, ?, 'Trip', 'APPROVED' \
+             FROM leave_types WHERE code = 'VL'",
+        )
+        .bind(employee_id)
+        .bind(from)
+        .bind(to)
+        .bind(half)
+        .bind(if half { 1 } else { 4 })
+        .execute(db)
+        .await
+        .expect("leave");
+    }
+
+    #[tokio::test]
+    async fn approved_leave_shows_on_the_grid_and_blocks_entering_time() {
+        let (_d, db) = db().await;
+        approve_leave(&db, 1, "2026-10-05", "2026-10-06", false).await;
+        approve_leave(&db, 2, "2026-10-05", "2026-10-05", true).await;
+        let rows = day(&db, "2026-10-05").await.expect("grid");
+        let juan = rows
+            .iter()
+            .find(|r| r.employee_no == "EMP-1")
+            .expect("juan");
+        assert_eq!(
+            (juan.status.as_deref(), juan.leave.as_deref()),
+            (Some("ON_LEAVE"), Some("Vacation Leave"))
+        );
+        let ana = rows.iter().find(|r| r.employee_no == "EMP-2").expect("ana");
+        assert_eq!(ana.leave.as_deref(), Some("Vacation Leave (half day)"));
+        // The next week is back to normal.
+        let later = day(&db, "2026-10-07").await.expect("grid");
+        assert_eq!(
+            later
+                .iter()
+                .find(|r| r.employee_no == "EMP-1")
+                .and_then(|r| r.status.as_deref()),
+            Some("ABSENT")
+        );
+
+        let err = save(
+            &db,
+            hr(),
+            input(1, "2026-10-06", "08:00", Some("17:00")),
+            today(),
+            now(),
+        )
+        .await
+        .unwrap_err();
+        assert!(matches!(err, AppError::Conflict(ON_LEAVE)), "{err:?}");
+        // A half day off still leaves the other half to record.
+        save(
+            &db,
+            hr(),
+            input(2, "2026-10-05", "22:00", Some("02:00")),
+            today(),
+            now(),
+        )
+        .await
+        .expect("half day worked");
     }
 }

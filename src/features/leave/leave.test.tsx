@@ -10,7 +10,8 @@ vi.mock("@/lib/ipc", async (orig) => ({
   call: (cmd: string, args?: Record<string, unknown>) => call(cmd, args),
 }));
 
-import { formatDays, leaveDates, parseDays } from "./format";
+import { formatDays, leaveDates, monthWeeks, parseDays } from "./format";
+import { LeaveCalendarPage } from "./LeaveCalendarPage";
 import { LeavePage } from "./LeavePage";
 import { LeaveTab } from "./LeaveTab";
 import { MyLeavePage } from "./MyLeavePage";
@@ -322,5 +323,74 @@ describe("leaveDates", () => {
     expect(
       leaveDates({ startDate: "2026-10-12", endDate: "2026-10-16", halfDay: false }),
     ).toContain(" – ");
+  });
+});
+
+describe("monthWeeks", () => {
+  it("starts weeks on Monday and pads the edges", () => {
+    // October 2026 starts on a Thursday and ends on a Saturday.
+    const weeks = monthWeeks("2026-10");
+    expect(weeks[0]).toEqual([
+      null,
+      null,
+      null,
+      "2026-10-01",
+      "2026-10-02",
+      "2026-10-03",
+      "2026-10-04",
+    ]);
+    expect(weeks[weeks.length - 1]).toEqual([
+      "2026-10-26",
+      "2026-10-27",
+      "2026-10-28",
+      "2026-10-29",
+      "2026-10-30",
+      "2026-10-31",
+      null,
+    ]);
+    expect(weeks.flat().filter(Boolean)).toHaveLength(31);
+  });
+});
+
+describe("LeaveCalendarPage", () => {
+  it("puts approved and waiting leave on each day it covers", async () => {
+    call.mockImplementation(async (cmd: string) =>
+      cmd === "leave_request_list"
+        ? [
+            leaveRequest({ startDate: "2026-10-12", endDate: "2026-10-13", status: "APPROVED" }),
+            leaveRequest({
+              id: 2,
+              employeeName: "Reyes, Ana",
+              leaveTypeCode: "SL",
+              startDate: "2026-10-13",
+              endDate: "2026-10-13",
+              halfDay: true,
+            }),
+            leaveRequest({
+              id: 3,
+              employeeName: "Cruz, Leo",
+              startDate: "2026-10-14",
+              endDate: "2026-10-14",
+              status: "REJECTED",
+            }),
+          ]
+        : [],
+    );
+    as(hr, <LeaveCalendarPage initialMonth="2026-10" />);
+    const tuesday = await screen.findByRole("cell", { name: "2026-10-13: 2 away" });
+    expect(within(tuesday).getByText("Dela Cruz · VL")).toBeTruthy();
+    expect(within(tuesday).getByText(/Reyes · SL ½ \(waiting\)/)).toBeTruthy();
+    // Rejected leave isn't on the calendar.
+    expect(screen.getByRole("cell", { name: "2026-10-14: nobody away" })).toBeTruthy();
+    expect(call).toHaveBeenCalledWith("leave_request_list", {
+      status: null,
+      range: { from: "2026-10-01", to: "2026-10-31" },
+    });
+  });
+
+  it("keeps staff out", () => {
+    as({ ...hr, role: "STAFF" }, <LeaveCalendarPage initialMonth="2026-10" />);
+    expect(screen.getByText(/Only Admin and HR can see everyone's leave/)).toBeTruthy();
+    expect(call).not.toHaveBeenCalled();
   });
 });

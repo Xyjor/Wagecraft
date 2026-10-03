@@ -40,3 +40,16 @@ export function leaveDates(r: Pick<LeaveRequest, "startDate" | "endDate" | "half
       : `${formatDate(r.startDate)} – ${formatDate(r.endDate)}`;
   return r.halfDay ? `${dates} (half day)` : dates;
 }
+
+/** The weeks of a `YYYY-MM` month, Monday first, as ISO dates with `null` for padding. */
+export function monthWeeks(month: string): (string | null)[][] {
+  const [y, m] = month.split("-").map(Number);
+  const days = new Date(y, m, 0).getDate();
+  const offset = (new Date(y, m - 1, 1).getDay() + 6) % 7;
+  const cells: (string | null)[] = Array.from({ length: offset }, () => null);
+  for (let d = 1; d <= days; d++) cells.push(`${month}-${String(d).padStart(2, "0")}`);
+  while (cells.length % 7) cells.push(null);
+  const weeks: (string | null)[][] = [];
+  for (let i = 0; i < cells.length; i += 7) weeks.push(cells.slice(i, i + 7));
+  return weeks;
+}
