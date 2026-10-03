@@ -1,55 +1,52 @@
 import { useCallback, useEffect, useState } from "react";
-import type { OvertimeRequest } from "@/bindings/OvertimeRequest";
+import type { LeaveRequest } from "@/bindings/LeaveRequest";
+import type { LeaveType } from "@/bindings/LeaveType";
 import { FormAlert } from "@/components/form";
 import { RejectForm } from "@/components/RejectForm";
 import { primaryButton, quietButton } from "@/components/ui";
-import { useSession } from "@/features/auth/session";
 import { monthRange, thisMonth } from "@/features/attendance/format";
 import type { AppError } from "@/lib/ipc";
-import { cancelOvertime, decideOvertime, listOvertime, pendingOvertime } from "./api";
-import { STATUS_LABELS } from "./format";
-import { OvertimeForm } from "./OvertimeForm";
-import { OvertimeTable } from "./OvertimeTable";
+import { cancelLeave, decideLeave, listLeaveRequests, pendingLeave } from "./api";
+import { leaveDates, STATUS_LABELS } from "./format";
+import { LeaveRequestForm } from "./LeaveRequestForm";
+import { LeaveRequestTable } from "./LeaveRequestTable";
 
-type Status = OvertimeRequest["status"];
+type Status = LeaveRequest["status"];
 
-/** HR's overtime screen (`/overtime`): the queue to decide, and every request by month. */
-export function OvertimePage() {
-  const { me } = useSession();
-  if (me.role === "STAFF") {
-    return (
-      <p className="text-zinc-600 dark:text-zinc-400">
-        Only Admin and HR can decide overtime. File your own from My attendance.
-      </p>
-    );
-  }
-  return <Overtime myEmployeeId={me.employeeId} />;
-}
-
-function Overtime({ myEmployeeId }: { myEmployeeId: number | null }) {
-  const [pending, setPending] = useState<OvertimeRequest[] | null>(null);
-  const [history, setHistory] = useState<OvertimeRequest[] | null>(null);
+/** HR's side of leave requests: the queue to decide, every request by month, and filing. */
+export function LeaveRequests({
+  types,
+  myEmployeeId,
+}: {
+  types: LeaveType[];
+  myEmployeeId: number | null;
+}) {
+  const [pending, setPending] = useState<LeaveRequest[] | null>(null);
+  const [history, setHistory] = useState<LeaveRequest[] | null>(null);
   const [month, setMonth] = useState(thisMonth);
   const [status, setStatus] = useState<Status | "">("");
   const [alert, setAlert] = useState<string>();
   const [filing, setFiling] = useState(false);
   const [rejecting, setRejecting] = useState<number | null>(null);
 
+  const load = useCallback(
+    () =>
+      Promise.all([
+        pendingLeave(),
+        month ? listLeaveRequests(status || null, monthRange(month)) : Promise.resolve([]),
+      ]),
+    [month, status],
+  );
+
   const reload = useCallback(async () => {
-    const [p, h] = await Promise.all([
-      pendingOvertime(),
-      month ? listOvertime(status || null, monthRange(month)) : Promise.resolve([]),
-    ]);
+    const [p, h] = await load();
     setPending(p);
     setHistory(h);
-  }, [month, status]);
+  }, [load]);
 
   useEffect(() => {
     let live = true;
-    Promise.all([
-      pendingOvertime(),
-      month ? listOvertime(status || null, monthRange(month)) : Promise.resolve([]),
-    ])
+    load()
       .then(([p, h]) => {
         if (!live) return;
         setPending(p);
@@ -59,7 +56,7 @@ function Overtime({ myEmployeeId }: { myEmployeeId: number | null }) {
     return () => {
       live = false;
     };
-  }, [month, status]);
+  }, [load]);
 
   async function act(change: Promise<unknown>) {
     setAlert(undefined);
@@ -72,16 +69,16 @@ function Overtime({ myEmployeeId }: { myEmployeeId: number | null }) {
     }
   }
 
-  function decisionButtons(r: OvertimeRequest) {
+  function decisionButtons(r: LeaveRequest) {
     if (r.employeeId === myEmployeeId) {
       return <span className="text-zinc-500">Your own: someone else decides</span>;
     }
     if (rejecting === r.id) {
       return (
         <RejectForm
-          label={`Reject ${r.employeeName}'s overtime`}
+          label={`Reject ${r.employeeName}'s leave`}
           onCancel={() => setRejecting(null)}
-          onReject={(note) => act(decideOvertime(r.id, false, note))}
+          onReject={(note) => act(decideLeave(r.id, false, note))}
         />
       );
     }
@@ -90,15 +87,15 @@ function Overtime({ myEmployeeId }: { myEmployeeId: number | null }) {
         <button
           type="button"
           className={quietButton}
-          aria-label={`Approve ${r.employeeName}'s overtime`}
-          onClick={() => act(decideOvertime(r.id, true, null))}
+          aria-label={`Approve ${r.employeeName}'s leave`}
+          onClick={() => act(decideLeave(r.id, true, null))}
         >
           Approve
         </button>
         <button
           type="button"
           className={quietButton}
-          aria-label={`Reject ${r.employeeName}'s overtime`}
+          aria-label={`Reject ${r.employeeName}'s leave`}
           onClick={() => setRejecting(r.id)}
         >
           Reject
@@ -107,7 +104,7 @@ function Overtime({ myEmployeeId }: { myEmployeeId: number | null }) {
     );
   }
 
-  function cancelButton(r: OvertimeRequest) {
+  function cancelButton(r: LeaveRequest) {
     if (r.locked) return <span className="text-zinc-500">Payroll posted</span>;
     if (r.status !== "PENDING" && r.status !== "APPROVED") return null;
     return (
@@ -115,8 +112,8 @@ function Overtime({ myEmployeeId }: { myEmployeeId: number | null }) {
         <button
           type="button"
           className={quietButton}
-          aria-label={`Cancel ${r.employeeName}'s overtime on ${r.workDate}`}
-          onClick={() => act(cancelOvertime(r.id))}
+          aria-label={`Cancel ${r.employeeName}'s leave on ${leaveDates(r)}`}
+          onClick={() => act(cancelLeave(r.id))}
         >
           Cancel
         </button>
@@ -127,7 +124,7 @@ function Overtime({ myEmployeeId }: { myEmployeeId: number | null }) {
   return (
     <div className="space-y-8">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold tracking-tight">Overtime</h1>
+        <h2 className="text-lg font-semibold">Requests</h2>
         {!filing && (
           <button type="button" className={primaryButton} onClick={() => setFiling(true)}>
             File for an employee
@@ -136,7 +133,8 @@ function Overtime({ myEmployeeId }: { myEmployeeId: number | null }) {
       </div>
       <FormAlert message={alert} />
       {filing && (
-        <OvertimeForm
+        <LeaveRequestForm
+          types={types}
           forSomeone
           onCancel={() => setFiling(false)}
           onSaved={async () => {
@@ -147,23 +145,27 @@ function Overtime({ myEmployeeId }: { myEmployeeId: number | null }) {
       )}
 
       <section className="space-y-3" aria-labelledby="pending-heading">
-        <h2 id="pending-heading" className="text-lg font-semibold">
+        <h3 id="pending-heading" className="font-semibold">
           Waiting for a decision
-        </h2>
+        </h3>
         {pending && (
-          <OvertimeTable
+          <LeaveRequestTable
             requests={pending}
             empty="Nothing to decide."
             showEmployee
             actions={decisionButtons}
           />
         )}
+        <p className="max-w-prose text-sm text-zinc-600 dark:text-zinc-400">
+          Approving paid leave takes the days from the employee&apos;s balance. Cancelling approved
+          leave gives them back.
+        </p>
       </section>
 
       <section className="space-y-3" aria-labelledby="history-heading">
-        <h2 id="history-heading" className="text-lg font-semibold">
+        <h3 id="history-heading" className="font-semibold">
           All requests
-        </h2>
+        </h3>
         <div className="flex flex-wrap gap-4">
           <div className="flex flex-col gap-1">
             <label htmlFor="month" className="text-sm font-medium">
@@ -197,9 +199,9 @@ function Overtime({ myEmployeeId }: { myEmployeeId: number | null }) {
           </div>
         </div>
         {history && (
-          <OvertimeTable
+          <LeaveRequestTable
             requests={history}
-            empty="No overtime requests match."
+            empty="No leave requests match."
             showEmployee
             actions={cancelButton}
           />

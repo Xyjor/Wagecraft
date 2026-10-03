@@ -10,12 +10,12 @@ vi.mock("@/lib/ipc", async (orig) => ({
   call: (cmd: string, args?: Record<string, unknown>) => call(cmd, args),
 }));
 
-import { formatDays, parseDays } from "./format";
+import { formatDays, leaveDates, parseDays } from "./format";
 import { LeavePage } from "./LeavePage";
 import { LeaveTab } from "./LeaveTab";
 import { MyLeavePage } from "./MyLeavePage";
-import { balance, hr, leaveType } from "./testData";
-import { checkLeaveType } from "./validation";
+import { balance, hr, leaveRequest, leaveType } from "./testData";
+import { checkLeaveRequest, checkLeaveType } from "./validation";
 
 function as(me: Me, ui: React.ReactNode) {
   render(
@@ -52,13 +52,63 @@ describe("formatDays and parseDays", () => {
 
 describe("MyLeavePage", () => {
   it("shows this year's balances", async () => {
-    call.mockResolvedValue([balance({})]);
+    call.mockImplementation(async (cmd: string) =>
+      cmd === "leave_my_balances" ? [balance({})] : [],
+    );
     as({ ...hr, role: "STAFF" }, <MyLeavePage year={2026} />);
     const row = await screen.findByRole("row", { name: /Vacation Leave/ });
     expect(within(row).getByText("5 days")).toBeTruthy();
     expect(within(row).getByText("1½ days")).toBeTruthy();
     expect(within(row).getByText("3½ days")).toBeTruthy();
     expect(call).toHaveBeenCalledWith("leave_my_balances", { year: 2026 });
+  });
+
+  it("files leave and lists it with a cancel button until HR decides", async () => {
+    const filed: unknown[] = [];
+    call.mockImplementation(async (cmd: string, args?: Record<string, unknown>) => {
+      if (cmd === "leave_types_list")
+        return [leaveType({ id: 2, code: "VL", name: "Vacation Leave" })];
+      if (cmd === "leave_my_requests") return filed.length ? [leaveRequest({})] : [];
+      if (cmd === "leave_request_create") filed.push(args);
+      return [];
+    });
+    as({ ...hr, role: "STAFF" }, <MyLeavePage year={2026} />);
+    expect(await screen.findByText("You haven't filed leave for 2026.")).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "File leave" }));
+    type("First day", "2026-10-12");
+    type("Last day", "2026-10-16");
+    type("What it's for", "Family trip");
+    fireEvent.click(
+      within(screen.getByRole("form", { name: "File leave" })).getByRole("button", {
+        name: "File leave",
+      }),
+    );
+    await waitFor(() =>
+      expect(call).toHaveBeenCalledWith("leave_request_create", {
+        input: {
+          employeeNo: null,
+          leaveTypeId: 2,
+          startDate: "2026-10-12",
+          endDate: "2026-10-16",
+          halfDay: false,
+          reason: "Family trip",
+        },
+      }),
+    );
+    const row = await screen.findByRole("row", { name: /Family trip/ });
+    expect(within(row).getByText("4 days")).toBeTruthy();
+    expect(within(row).getByText("Waiting for HR")).toBeTruthy();
+    fireEvent.click(within(row).getByRole("button", { name: /Cancel leave/ }));
+    await waitFor(() => expect(call).toHaveBeenCalledWith("leave_request_cancel", { id: 1 }));
+  });
+
+  it("hides cancel once leave is approved", async () => {
+    call.mockImplementation(async (cmd: string) =>
+      cmd === "leave_my_requests" ? [leaveRequest({ status: "APPROVED" })] : [],
+    );
+    as({ ...hr, role: "STAFF" }, <MyLeavePage year={2026} />);
+    const row = await screen.findByRole("row", { name: /Family trip/ });
+    expect(within(row).queryByRole("button")).toBeNull();
   });
 
   it("explains when the account has no employee record", () => {
@@ -85,7 +135,7 @@ describe("LeavePage", () => {
     call.mockImplementation(async (cmd: string) => {
       if (cmd === "leave_types_list") return types;
       if (cmd === "leave_balance_grant") return 412;
-      return {};
+      return [];
     });
     as(hr, <LeavePage thisYear={2026} />);
     await screen.findByRole("row", { name: /Service Incentive Leave/ });
@@ -95,7 +145,7 @@ describe("LeavePage", () => {
   });
 
   it("shows HR the types without changing them", async () => {
-    call.mockResolvedValue(types);
+    call.mockImplementation(async (cmd: string) => (cmd === "leave_types_list" ? types : []));
     as(hr, <LeavePage thisYear={2026} />);
     const sil = await screen.findByRole("row", { name: /Service Incentive Leave/ });
     expect(within(sil).getByText("12 months")).toBeTruthy();
@@ -107,7 +157,7 @@ describe("LeavePage", () => {
   });
 
   it("lets Admin add a type", async () => {
-    call.mockImplementation(async (cmd: string) => (cmd === "leave_types_list" ? types : {}));
+    call.mockImplementation(async (cmd: string) => (cmd === "leave_types_list" ? types : []));
     as({ ...hr, role: "ADMIN" }, <LeavePage thisYear={2026} />);
     await screen.findByRole("row", { name: /Service Incentive Leave/ });
     fireEvent.click(screen.getByRole("button", { name: "Add leave type" }));
@@ -126,6 +176,69 @@ describe("LeavePage", () => {
         },
       }),
     );
+  });
+});
+
+describe("LeavePage requests", () => {
+  function setUp(
+    pending = [
+      leaveRequest({}),
+      leaveRequest({ id: 9, employeeId: 3, employeeName: "Santos, Maria" }),
+    ],
+  ) {
+    call.mockImplementation(async (cmd: string) => {
+      if (cmd === "leave_request_pending") return pending;
+      if (cmd === "leave_request_list") {
+        return [
+          leaveRequest({ id: 4, status: "APPROVED", employeeName: "Reyes, Ana" }),
+          leaveRequest({ id: 5, status: "APPROVED", employeeName: "Cruz, Leo", locked: true }),
+        ];
+      }
+      return [];
+    });
+    as(hr, <LeavePage thisYear={2026} />);
+  }
+
+  it("approves, and never offers HR their own request", async () => {
+    setUp();
+    const own = await screen.findByRole("row", { name: /Santos, Maria/ });
+    expect(within(own).getByText("Your own: someone else decides")).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Approve Dela Cruz, Juan's leave" }));
+    await waitFor(() =>
+      expect(call).toHaveBeenCalledWith("leave_request_decide", {
+        id: 1,
+        approve: true,
+        note: null,
+      }),
+    );
+  });
+
+  it("rejects only with a note", async () => {
+    setUp([leaveRequest({})]);
+    fireEvent.click(await screen.findByRole("button", { name: "Reject Dela Cruz, Juan's leave" }));
+    const form = screen.getByRole("form", { name: "Reject Dela Cruz, Juan's leave" });
+    fireEvent.click(within(form).getByRole("button", { name: "Reject" }));
+    expect(await screen.findByText("Say why, in 3 to 200 characters")).toBeTruthy();
+    fireEvent.change(within(form).getByLabelText("Why it's rejected"), {
+      target: { value: "Peak season" },
+    });
+    fireEvent.click(within(form).getByRole("button", { name: "Reject" }));
+    await waitFor(() =>
+      expect(call).toHaveBeenCalledWith("leave_request_decide", {
+        id: 1,
+        approve: false,
+        note: "Peak season",
+      }),
+    );
+  });
+
+  it("cancels approved leave, except where payroll is posted", async () => {
+    setUp([]);
+    expect(await screen.findByText("Nothing to decide.")).toBeTruthy();
+    const posted = await screen.findByRole("row", { name: /Cruz, Leo/ });
+    expect(within(posted).getByText("Payroll posted")).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: /Cancel Reyes, Ana's leave/ }));
+    await waitFor(() => expect(call).toHaveBeenCalledWith("leave_request_cancel", { id: 4 }));
   });
 });
 
@@ -174,5 +287,40 @@ describe("checkLeaveType", () => {
     });
     expect(r.ok).toBe(false);
     if (!r.ok) expect(r.errors.defaultDays).toMatch(/Unpaid/);
+  });
+});
+
+describe("checkLeaveRequest", () => {
+  const base = { leaveTypeId: "2", startDate: "2026-10-12", reason: "Family trip" };
+
+  it("treats an empty last day as a one-day leave", () => {
+    const r = checkLeaveRequest(base, false);
+    expect(r.ok && r.value.endDate).toBe("2026-10-12");
+  });
+
+  it("keeps a half day to one date and a request to one year", () => {
+    const half = checkLeaveRequest({ ...base, endDate: "2026-10-13", halfDay: "on" }, false);
+    expect(!half.ok && half.errors.halfDay).toMatch(/same date/);
+    const across = checkLeaveRequest(
+      { ...base, startDate: "2026-12-28", endDate: "2027-01-02" },
+      false,
+    );
+    expect(!across.ok && across.errors.endDate).toMatch(/New Year/);
+  });
+
+  it("needs the employee number when HR files", () => {
+    const r = checkLeaveRequest(base, true);
+    expect(!r.ok && r.errors.employeeNo).toBe("Enter the employee number");
+  });
+});
+
+describe("leaveDates", () => {
+  it("shows one date for a single day and marks half days", () => {
+    expect(leaveDates({ startDate: "2026-10-12", endDate: "2026-10-12", halfDay: true })).toMatch(
+      /2026 \(half day\)$/,
+    );
+    expect(
+      leaveDates({ startDate: "2026-10-12", endDate: "2026-10-16", halfDay: false }),
+    ).toContain(" – ");
   });
 });

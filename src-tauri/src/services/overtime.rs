@@ -17,6 +17,8 @@ use chrono::{DateTime, Duration, NaiveDate, NaiveTime, Utc};
 use serde_json::json;
 use sqlx::SqlitePool;
 
+const DECIDED: &str = "This request has already been decided.";
+const CHANGED: &str = "Someone else just changed this request. Refresh to see it.";
 const LOCKED: &str = "This day is in a posted payroll period, so its overtime can't change.";
 /// How far ahead overtime can be filed, so a planned job can be approved before the day.
 const MAX_DAYS_AHEAD: i64 = 31;
@@ -226,7 +228,7 @@ pub async fn decide(
         .await?
         .ok_or(AppError::NotFound("Overtime request"))?;
     if before.status != "PENDING" {
-        return Err(AppError::Conflict("This request has already been decided."));
+        return Err(AppError::Conflict(DECIDED));
     }
     if own_employee == Some(before.employee_id) {
         return Err(AppError::Conflict(
@@ -237,15 +239,19 @@ pub async fn decide(
         return Err(AppError::Conflict(LOCKED));
     }
     let status = if approve { "APPROVED" } else { "REJECTED" };
-    repo::set_status(
+    if !repo::set_status(
         &mut tx,
         id,
+        "PENDING",
         status,
         actor.user_id,
         note.as_deref(),
         &time::to_db(now),
     )
-    .await?;
+    .await?
+    {
+        return Err(AppError::Conflict(DECIDED));
+    }
     let after = repo::by_id(&mut *tx, id)
         .await?
         .ok_or(AppError::NotFound("Overtime request"))?;
@@ -298,15 +304,19 @@ pub async fn cancel(
     if before.locked {
         return Err(AppError::Conflict(LOCKED));
     }
-    repo::set_status(
+    if !repo::set_status(
         &mut tx,
         id,
+        &before.status,
         "CANCELLED",
         actor.user_id,
         None,
         &time::to_db(now),
     )
-    .await?;
+    .await?
+    {
+        return Err(AppError::Conflict(CHANGED));
+    }
     let after = repo::by_id(&mut *tx, id)
         .await?
         .ok_or(AppError::NotFound("Overtime request"))?;
@@ -831,5 +841,43 @@ mod tests {
             audit_rows::actions(&db).await,
             ["overtime.file", "overtime.file", "overtime.approve"]
         );
+    }
+
+    #[tokio::test]
+    async fn an_approval_and_a_rejection_at_the_same_moment_decide_once() {
+        let (_d, db) = db().await;
+        let r = file(
+            &db,
+            juan(),
+            Some(1),
+            ot("2026-10-07", "17:00", "20:00"),
+            today(),
+            t0(),
+        )
+        .await
+        .expect("file");
+        let (a, b) = tokio::join!(
+            decide(&db, hr(), None, r.id, true, None, t0()),
+            decide(
+                &db,
+                hr(),
+                None,
+                r.id,
+                false,
+                Some("Not needed".into()),
+                t0()
+            ),
+        );
+        let refused = [a, b]
+            .into_iter()
+            .filter_map(Result::err)
+            .collect::<Vec<_>>();
+        assert_eq!(refused.len(), 1, "{refused:?}");
+        assert!(
+            matches!(refused[0], AppError::Conflict(DECIDED)),
+            "{refused:?}"
+        );
+        let decisions = audit_rows::actions(&db).await;
+        assert_eq!(decisions, ["overtime.file", "overtime.approve"]);
     }
 }

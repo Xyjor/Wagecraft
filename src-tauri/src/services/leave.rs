@@ -160,7 +160,7 @@ pub async fn set_type_active(
 /// Adds the year's missing balances for current employees, or just `only`. Existing
 /// balances are left alone, so running it again is safe and picks up anyone who has
 /// since served long enough (such as a first work anniversary for SIL).
-async fn grant_in(
+pub(crate) async fn grant_in(
     conn: &mut SqliteConnection,
     year: i32,
     today: NaiveDate,
