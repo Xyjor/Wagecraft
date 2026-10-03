@@ -27,6 +27,7 @@ anyhow = "1"
 log = "0.4"
 tauri-plugin-log = "2"
 ts-rs = "10"
+argon2 = { version = "0.5", features = ["std"] }
 
 
 # Read the optimization guideline for more details: https://tauri.app/concept/size/#cargo-configuration
