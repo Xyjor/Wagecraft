@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { Department } from "@/bindings/Department";
 import type { Me } from "@/bindings/Me";
 import type { Position } from "@/bindings/Position";
+import type { WorkSchedule } from "@/bindings/WorkSchedule";
 import { SessionContext } from "@/features/auth/session";
 
 const call = vi.fn();
@@ -24,6 +25,7 @@ const hr: Me = {
 
 let departments: Department[];
 let positions: Position[];
+let schedules: WorkSchedule[];
 
 function renderAs(who: Me = hr) {
   render(
@@ -63,9 +65,34 @@ describe("OrganizationPage", () => {
         isActive: true,
       },
     ];
+    schedules = [
+      {
+        id: 1,
+        name: "Office",
+        startTime: "08:00",
+        endTime: "17:00",
+        breakMinutes: 60,
+        graceMinutes: 10,
+        workDays: "MON,TUE,WED,THU,FRI",
+        isActive: true,
+        employeeCount: 12,
+      },
+      {
+        id: 2,
+        name: "Night shift",
+        startTime: "22:00",
+        endTime: "06:00",
+        breakMinutes: 60,
+        graceMinutes: 0,
+        workDays: "MON,WED,FRI",
+        isActive: true,
+        employeeCount: 0,
+      },
+    ];
     call.mockImplementation(async (cmd: string) => {
       if (cmd === "department_list") return departments;
       if (cmd === "position_list") return positions;
+      if (cmd === "schedule_list") return schedules;
       return {};
     });
   });
@@ -173,6 +200,7 @@ describe("OrganizationPage", () => {
     call.mockImplementation(async (cmd: string) => {
       if (cmd === "department_list") return departments;
       if (cmd === "position_list") return positions;
+      if (cmd === "schedule_list") return schedules;
       throw {
         code: "VALIDATION",
         message: "Some fields are invalid",
@@ -187,5 +215,68 @@ describe("OrganizationPage", () => {
     fireEvent.click(screen.getByRole("button", { name: "Save department" }));
 
     expect(await screen.findByText("Another department already uses this code")).toBeTruthy();
+  });
+
+  it("lists work schedules with readable hours and days", async () => {
+    renderAs();
+    const office = await screen.findByRole("row", { name: /^Office\b/ });
+    expect(within(office).getByText("08:00–17:00")).toBeTruthy();
+    expect(within(office).getByText("Mon–Fri")).toBeTruthy();
+    expect(within(office).getByText("12")).toBeTruthy();
+    const night = screen.getByRole("row", { name: /^Night shift\b/ });
+    expect(within(night).getByText("22:00–06:00 (next day)")).toBeTruthy();
+    expect(within(night).getByText("Mon, Wed, Fri")).toBeTruthy();
+  });
+
+  it("creates a work schedule from the picked days", async () => {
+    renderAs();
+    await screen.findByRole("row", { name: /^Office\b/ });
+    fireEvent.click(screen.getByRole("button", { name: "Add schedule" }));
+    const form = screen.getByRole("form", { name: "Add schedule" });
+    type("Name", "Warehouse");
+    type("Starts", "07:00");
+    type("Ends", "16:00");
+    fireEvent.click(within(form).getByLabelText("Sat"));
+    fireEvent.click(screen.getByRole("button", { name: "Save schedule" }));
+
+    await waitFor(() =>
+      expect(call).toHaveBeenCalledWith("schedule_create", {
+        input: {
+          name: "Warehouse",
+          startTime: "07:00",
+          endTime: "16:00",
+          breakMinutes: 60,
+          graceMinutes: 0,
+          workDays: "MON,TUE,WED,THU,FRI,SAT",
+        },
+      }),
+    );
+  });
+
+  it("needs at least one work day and a break shorter than the shift", async () => {
+    renderAs();
+    await screen.findByRole("row", { name: /^Office\b/ });
+    fireEvent.click(screen.getByRole("button", { name: "Add schedule" }));
+    const form = screen.getByRole("form", { name: "Add schedule" });
+    type("Name", "Short");
+    type("Starts", "08:00");
+    type("Ends", "09:00");
+    for (const day of ["Mon", "Tue", "Wed", "Thu", "Fri"]) {
+      fireEvent.click(within(form).getByLabelText(day));
+    }
+    fireEvent.click(screen.getByRole("button", { name: "Save schedule" }));
+
+    expect(await screen.findByText("Pick at least one work day")).toBeTruthy();
+    expect(screen.getByText("The break must be shorter than the shift")).toBeTruthy();
+    expect(call).not.toHaveBeenCalledWith("schedule_create", expect.anything());
+  });
+
+  it("deactivates a work schedule", async () => {
+    renderAs();
+    await screen.findByRole("row", { name: /^Office\b/ });
+    fireEvent.click(screen.getByRole("button", { name: "Deactivate Office" }));
+    await waitFor(() =>
+      expect(call).toHaveBeenCalledWith("schedule_set_active", { id: 1, active: false }),
+    );
   });
 });

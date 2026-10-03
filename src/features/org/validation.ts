@@ -1,5 +1,6 @@
 import type { DepartmentInput } from "@/bindings/DepartmentInput";
 import type { PositionInput } from "@/bindings/PositionInput";
+import type { WorkScheduleInput } from "@/bindings/WorkScheduleInput";
 import { parsePesos } from "@/lib/money";
 
 // Mirrors services/org.rs, so the form can point at a mistake before the round trip.
@@ -45,4 +46,58 @@ export function checkPosition(v: Record<string, string>): Result<PositionInput> 
     ok: true,
     value: { departmentId, title, minRateCents: min ?? null, maxRateCents: max ?? null },
   };
+}
+
+/** Weekday codes as the backend stores them, in calendar order. */
+export const WEEKDAYS = ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"] as const;
+
+/** Minutes from start to end, wrapping past midnight: 22:00 to 06:00 is 480. */
+export function shiftMinutes(start: string, end: string): number {
+  const toMin = (t: string) => Number(t.slice(0, 2)) * 60 + Number(t.slice(3, 5));
+  const m = toMin(end) - toMin(start);
+  return m <= 0 ? m + 24 * 60 : m;
+}
+
+/**
+ * Checks the schedule form. Work days arrive as one field per checked day (`day-MON`),
+ * because FormData keeps only one value per name.
+ */
+export function checkSchedule(v: Record<string, string>): Result<WorkScheduleInput> {
+  const errors: Record<string, string> = {};
+  const name = (v.name ?? "").trim();
+  const startTime = (v.startTime ?? "").trim();
+  const endTime = (v.endTime ?? "").trim();
+  const breakMinutes = Number(v.breakMinutes);
+  const graceMinutes = Number(v.graceMinutes);
+  const workDays = WEEKDAYS.filter((d) => v[`day-${d}`]).join(",");
+  const time = /^([01]\d|2[0-3]):[0-5]\d$/;
+  if (!name || name.length > 60) errors.name = "Enter a name (up to 60 characters)";
+  if (!time.test(startTime)) errors.startTime = "Enter a time like 08:00";
+  if (!time.test(endTime)) errors.endTime = "Enter a time like 17:00";
+  else if (startTime === endTime) errors.endTime = "The shift must end at a different time";
+  if (
+    !v.breakMinutes?.trim() ||
+    !Number.isInteger(breakMinutes) ||
+    breakMinutes < 0 ||
+    breakMinutes > 240
+  ) {
+    errors.breakMinutes = "Enter 0 to 240 minutes";
+  } else if (
+    !errors.startTime &&
+    !errors.endTime &&
+    breakMinutes >= shiftMinutes(startTime, endTime)
+  ) {
+    errors.breakMinutes = "The break must be shorter than the shift";
+  }
+  if (
+    !v.graceMinutes?.trim() ||
+    !Number.isInteger(graceMinutes) ||
+    graceMinutes < 0 ||
+    graceMinutes > 60
+  ) {
+    errors.graceMinutes = "Enter 0 to 60 minutes";
+  }
+  if (!workDays) errors.workDays = "Pick at least one work day";
+  if (Object.keys(errors).length) return { ok: false, errors };
+  return { ok: true, value: { name, startTime, endTime, breakMinutes, graceMinutes, workDays } };
 }

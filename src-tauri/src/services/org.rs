@@ -1,12 +1,14 @@
-//! Departments and positions (plan §6.2). Deactivate instead of delete; every change audited.
+//! Departments, positions and work schedules (plan §6.2). Deactivate instead of delete; every change audited.
 
 use crate::audit::{self, Actor, Entry};
-use crate::domain::org::{Department, DepartmentInput, Position, PositionInput};
+use crate::domain::org::{
+    Department, DepartmentInput, Position, PositionInput, WorkSchedule, WorkScheduleInput, WEEKDAYS,
+};
 use crate::error::{AppError, FieldError};
-use crate::repositories::org::{self as repo, PositionFields};
+use crate::repositories::org::{self as repo, PositionFields, ScheduleFields};
 use crate::services::auth::field;
 use crate::time;
-use chrono::{DateTime, Utc};
+use chrono::{DateTime, NaiveTime, Utc};
 use serde_json::json;
 use sqlx::SqlitePool;
 
@@ -306,6 +308,216 @@ pub async fn set_position_active(
     Ok(())
 }
 
+pub async fn list_schedules(db: &SqlitePool) -> Result<Vec<WorkSchedule>, AppError> {
+    Ok(repo::schedules(db).await?)
+}
+
+/// Longest unpaid break and grace period a schedule may have.
+const MAX_BREAK_MINUTES: i64 = 240;
+const MAX_GRACE_MINUTES: i64 = 60;
+
+/// Trimmed and checked schedule fields, with times as `HH:MM` and work days in calendar
+/// order.
+struct CleanSchedule {
+    name: String,
+    start_time: String,
+    end_time: String,
+    work_days: String,
+}
+
+/// Accepts `8:00`, `08:00` or `08:00:00`; returns the time as `HH:MM`.
+fn clean_time(s: &str) -> Option<String> {
+    let s = s.trim();
+    NaiveTime::parse_from_str(s, "%H:%M")
+        .or_else(|_| NaiveTime::parse_from_str(s, "%H:%M:%S"))
+        .ok()
+        .map(|t| t.format("%H:%M").to_string())
+}
+
+/// `fri, mon,TUE` becomes `MON,TUE,FRI`. None if a day is unknown or none is given.
+fn clean_work_days(s: &str) -> Option<String> {
+    let picked: Vec<String> = s
+        .split(',')
+        .map(|d| d.trim().to_ascii_uppercase())
+        .filter(|d| !d.is_empty())
+        .collect();
+    if picked.is_empty() || picked.iter().any(|d| !WEEKDAYS.contains(&d.as_str())) {
+        return None;
+    }
+    let ordered: Vec<&str> = WEEKDAYS
+        .into_iter()
+        .filter(|w| picked.iter().any(|d| d == w))
+        .collect();
+    Some(ordered.join(","))
+}
+
+/// Minutes from start to end, wrapping past midnight: 22:00 to 06:00 is 480.
+fn shift_minutes(start: &str, end: &str) -> i64 {
+    let parse = |s: &str| NaiveTime::parse_from_str(s, "%H:%M").ok();
+    match (parse(start), parse(end)) {
+        (Some(a), Some(b)) => {
+            let m = (b - a).num_minutes();
+            if m <= 0 {
+                m + 24 * 60
+            } else {
+                m
+            }
+        }
+        _ => 0,
+    }
+}
+
+fn clean_schedule(input: &WorkScheduleInput) -> Result<CleanSchedule, Vec<FieldError>> {
+    let name = input.name.trim().to_string();
+    let start_time = clean_time(&input.start_time);
+    let end_time = clean_time(&input.end_time);
+    let work_days = clean_work_days(&input.work_days);
+    let mut errors = Vec::new();
+    if name.is_empty() || name.chars().count() > 60 {
+        errors.push(field("name", "Enter a name (up to 60 characters)"));
+    }
+    if start_time.is_none() {
+        errors.push(field("startTime", "Enter a time like 08:00"));
+    }
+    match (&start_time, &end_time) {
+        (_, None) => errors.push(field("endTime", "Enter a time like 17:00")),
+        (Some(a), Some(b)) if a == b => {
+            errors.push(field("endTime", "The shift must end at a different time"))
+        }
+        _ => {}
+    }
+    let length = match (&start_time, &end_time) {
+        (Some(a), Some(b)) => shift_minutes(a, b),
+        _ => 24 * 60,
+    };
+    if !(0..=MAX_BREAK_MINUTES).contains(&input.break_minutes) {
+        errors.push(field("breakMinutes", "Enter 0 to 240 minutes"));
+    } else if input.break_minutes >= length {
+        errors.push(field(
+            "breakMinutes",
+            "The break must be shorter than the shift",
+        ));
+    }
+    if !(0..=MAX_GRACE_MINUTES).contains(&input.grace_minutes) {
+        errors.push(field("graceMinutes", "Enter 0 to 60 minutes"));
+    }
+    if work_days.is_none() {
+        errors.push(field("workDays", "Pick at least one work day"));
+    }
+    match (start_time, end_time, work_days) {
+        (Some(start_time), Some(end_time), Some(work_days)) if errors.is_empty() => {
+            Ok(CleanSchedule {
+                name,
+                start_time,
+                end_time,
+                work_days,
+            })
+        }
+        _ => Err(errors),
+    }
+}
+
+fn schedule_fields<'a>(s: &'a CleanSchedule, input: &WorkScheduleInput) -> ScheduleFields<'a> {
+    ScheduleFields {
+        name: &s.name,
+        start_time: &s.start_time,
+        end_time: &s.end_time,
+        break_minutes: input.break_minutes,
+        grace_minutes: input.grace_minutes,
+        work_days: &s.work_days,
+    }
+}
+
+fn schedule_name_taken() -> AppError {
+    AppError::Validation(vec![field(
+        "name",
+        "Another schedule already uses this name",
+    )])
+}
+
+pub async fn create_schedule(
+    db: &SqlitePool,
+    actor: Actor<'_>,
+    input: WorkScheduleInput,
+    now: DateTime<Utc>,
+) -> Result<WorkSchedule, AppError> {
+    let s = clean_schedule(&input).map_err(AppError::Validation)?;
+    let mut tx = db.begin().await?;
+    if repo::schedule_name_taken(&mut tx, &s.name, None).await? {
+        return Err(schedule_name_taken());
+    }
+    let id = repo::insert_schedule(&mut tx, &schedule_fields(&s, &input)).await?;
+    let created = repo::schedule(&mut *tx, id)
+        .await?
+        .ok_or(AppError::NotFound("Work schedule"))?;
+    let entry = Entry {
+        action: "schedule.create",
+        entity: Some(("work_schedule", id)),
+        after: Some(json!(created)),
+        ..Default::default()
+    };
+    audit::record(&mut tx, now, actor, entry).await?;
+    tx.commit().await?;
+    Ok(created)
+}
+
+pub async fn update_schedule(
+    db: &SqlitePool,
+    actor: Actor<'_>,
+    id: i64,
+    input: WorkScheduleInput,
+    now: DateTime<Utc>,
+) -> Result<WorkSchedule, AppError> {
+    let s = clean_schedule(&input).map_err(AppError::Validation)?;
+    let mut tx = db.begin().await?;
+    let before = repo::schedule(&mut *tx, id)
+        .await?
+        .ok_or(AppError::NotFound("Work schedule"))?;
+    if repo::schedule_name_taken(&mut tx, &s.name, Some(id)).await? {
+        return Err(schedule_name_taken());
+    }
+    repo::update_schedule(&mut tx, id, &schedule_fields(&s, &input), &time::to_db(now)).await?;
+    let after = repo::schedule(&mut *tx, id)
+        .await?
+        .ok_or(AppError::NotFound("Work schedule"))?;
+    let entry = Entry {
+        action: "schedule.update",
+        entity: Some(("work_schedule", id)),
+        before: Some(json!(before)),
+        after: Some(json!(after)),
+    };
+    audit::record(&mut tx, now, actor, entry).await?;
+    tx.commit().await?;
+    Ok(after)
+}
+
+/// Deactivating hides the schedule from new picks. Employees already on it keep it.
+pub async fn set_schedule_active(
+    db: &SqlitePool,
+    actor: Actor<'_>,
+    id: i64,
+    active: bool,
+    now: DateTime<Utc>,
+) -> Result<(), AppError> {
+    let mut tx = db.begin().await?;
+    let before = repo::schedule(&mut *tx, id)
+        .await?
+        .ok_or(AppError::NotFound("Work schedule"))?;
+    if before.is_active == active {
+        return Ok(());
+    }
+    repo::set_schedule_active(&mut tx, id, active, &time::to_db(now)).await?;
+    let entry = Entry {
+        action: "schedule.set_active",
+        entity: Some(("work_schedule", id)),
+        before: Some(json!({ "isActive": before.is_active })),
+        after: Some(json!({ "isActive": active })),
+    };
+    audit::record(&mut tx, now, actor, entry).await?;
+    tx.commit().await?;
+    Ok(())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -560,5 +772,136 @@ mod tests {
             .await
             .expect("no-op");
         assert_eq!(audit_rows::actions(&db).await, ["department.create"]);
+    }
+
+    fn sched(name: &str, start: &str, end: &str, days: &str) -> WorkScheduleInput {
+        WorkScheduleInput {
+            name: name.into(),
+            start_time: start.into(),
+            end_time: end.into(),
+            break_minutes: 60,
+            grace_minutes: 10,
+            work_days: days.into(),
+        }
+    }
+
+    #[tokio::test]
+    async fn creates_a_schedule_with_tidy_times_and_days() {
+        let (_dir, db) = db().await;
+        let s = create_schedule(
+            &db,
+            hr(),
+            sched(" Day shift ", "8:00", "17:00:00", "fri,mon, Tue"),
+            t0(),
+        )
+        .await
+        .expect("create");
+        assert_eq!(s.name, "Day shift");
+        assert_eq!(
+            (s.start_time.as_str(), s.end_time.as_str()),
+            ("08:00", "17:00")
+        );
+        assert_eq!(s.work_days, "MON,TUE,FRI");
+        assert_eq!(s.employee_count, 0);
+        assert!(s.is_active);
+    }
+
+    #[tokio::test]
+    async fn a_night_schedule_may_end_the_next_day() {
+        let (_dir, db) = db().await;
+        let s = create_schedule(&db, hr(), sched("Night", "22:00", "06:00", "MON"), t0())
+            .await
+            .expect("create");
+        assert_eq!(s.end_time, "06:00");
+    }
+
+    #[tokio::test]
+    async fn schedule_fields_are_checked() {
+        let (_dir, db) = db().await;
+        let mut bad = sched(" ", "25:00", "8 pm", "");
+        bad.grace_minutes = 90;
+        let err = create_schedule(&db, hr(), bad, t0()).await.unwrap_err();
+        assert_eq!(
+            fields(err),
+            ["name", "startTime", "endTime", "graceMinutes", "workDays"]
+        );
+
+        let same = sched("Same", "08:00", "08:00", "MON");
+        let err = create_schedule(&db, hr(), same, t0()).await.unwrap_err();
+        assert_eq!(fields(err), ["endTime"]);
+
+        let mut long_break = sched("Short", "09:00", "10:00", "MON");
+        long_break.break_minutes = 60;
+        let err = create_schedule(&db, hr(), long_break, t0())
+            .await
+            .unwrap_err();
+        assert_eq!(fields(err), ["breakMinutes"]);
+
+        let unknown_day = sched("Odd", "09:00", "17:00", "MON,FUNDAY");
+        let err = create_schedule(&db, hr(), unknown_day, t0())
+            .await
+            .unwrap_err();
+        assert_eq!(fields(err), ["workDays"]);
+    }
+
+    #[tokio::test]
+    async fn schedule_names_are_unique_but_a_schedule_keeps_its_own() {
+        let (_dir, db) = db().await;
+        let day = create_schedule(&db, hr(), sched("Day", "08:00", "17:00", "MON"), t0())
+            .await
+            .expect("create");
+        let err = create_schedule(&db, hr(), sched("day", "09:00", "18:00", "MON"), t0())
+            .await
+            .unwrap_err();
+        assert_eq!(fields(err), ["name"]);
+        update_schedule(
+            &db,
+            hr(),
+            day.id,
+            sched("Day", "07:00", "16:00", "MON"),
+            t0(),
+        )
+        .await
+        .expect("keeps its own name");
+    }
+
+    #[tokio::test]
+    async fn schedule_changes_are_audited() {
+        let (_dir, db) = db().await;
+        let day = create_schedule(&db, hr(), sched("Day", "08:00", "17:00", "MON"), t0())
+            .await
+            .expect("create");
+        update_schedule(
+            &db,
+            hr(),
+            day.id,
+            sched("Day", "07:30", "16:30", "MON,TUE"),
+            t0(),
+        )
+        .await
+        .expect("update");
+        set_schedule_active(&db, hr(), day.id, false, t0())
+            .await
+            .expect("off");
+        set_schedule_active(&db, hr(), day.id, false, t0())
+            .await
+            .expect("no-op");
+        let rows = audit_rows::all(&db).await;
+        let actions: Vec<_> = rows.iter().map(|r| r.action.as_str()).collect();
+        assert_eq!(
+            actions,
+            ["schedule.create", "schedule.update", "schedule.set_active"]
+        );
+        assert!(rows[1]
+            .before_json
+            .as_deref()
+            .unwrap()
+            .contains("\"08:00\""));
+        assert!(rows[1].after_json.as_deref().unwrap().contains("\"07:30\""));
+
+        let err = update_schedule(&db, hr(), 999, sched("X", "08:00", "17:00", "MON"), t0())
+            .await
+            .unwrap_err();
+        assert!(matches!(err, AppError::NotFound(_)), "{err:?}");
     }
 }

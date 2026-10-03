@@ -3,9 +3,11 @@ import { Link, useNavigate, useParams } from "react-router";
 import type { Department } from "@/bindings/Department";
 import type { Employee } from "@/bindings/Employee";
 import type { Position } from "@/bindings/Position";
+import type { WorkSchedule } from "@/bindings/WorkSchedule";
 import { Field, FormAlert, SelectField } from "@/components/form";
 import { primaryButton, quietButton } from "@/components/ui";
-import { listDepartments, listPositions } from "@/features/org/api";
+import { listDepartments, listPositions, listSchedules } from "@/features/org/api";
+import { scheduleHours, workDaysLabel } from "@/features/org/format";
 import { formValues, serverErrors } from "@/lib/formData";
 import { formatId } from "@/lib/govIds";
 import type { AppError } from "@/lib/ipc";
@@ -13,7 +15,12 @@ import { createEmployee, getEmployee, updateEmployee } from "./api";
 import { CIVIL_STATUS_LABELS, fullName, SEX_LABELS, STATUS_LABELS } from "./format";
 import { checkEmployee } from "./validation";
 
-type Loaded = { departments: Department[]; positions: Position[]; employee: Employee | null };
+type Loaded = {
+  departments: Department[];
+  positions: Position[];
+  schedules: WorkSchedule[];
+  employee: Employee | null;
+};
 
 const options = (labels: Record<string, string>, blank?: string) => [
   ...(blank === undefined ? [] : [{ value: "", label: blank }]),
@@ -27,8 +34,15 @@ export function EmployeeFormPage() {
   const [alert, setAlert] = useState<string>();
 
   useEffect(() => {
-    Promise.all([listDepartments(), listPositions(), id ? getEmployee(Number(id)) : null])
-      .then(([departments, positions, employee]) => setLoaded({ departments, positions, employee }))
+    Promise.all([
+      listDepartments(),
+      listPositions(),
+      listSchedules(),
+      id ? getEmployee(Number(id)) : null,
+    ])
+      .then(([departments, positions, schedules, employee]) =>
+        setLoaded({ departments, positions, schedules, employee }),
+      )
       .catch((e: AppError) => setAlert(e.message));
   }, [id]);
 
@@ -36,7 +50,7 @@ export function EmployeeFormPage() {
   return <EmployeeForm {...loaded} />;
 }
 
-function EmployeeForm({ departments, positions, employee }: Loaded) {
+function EmployeeForm({ departments, positions, schedules, employee }: Loaded) {
   const navigate = useNavigate();
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [alert, setAlert] = useState<string>();
@@ -50,6 +64,7 @@ function EmployeeForm({ departments, positions, employee }: Loaded) {
   const positionOptions = positions.filter(
     (p) => String(p.departmentId) === departmentId && (p.isActive || p.id === employee?.positionId),
   );
+  const scheduleOptions = schedules.filter((s) => s.isActive || s.id === employee?.scheduleId);
   const keepsPosition = departmentId === String(employee?.departmentId ?? "");
 
   async function submit(e: FormEvent<HTMLFormElement>) {
@@ -211,6 +226,19 @@ function EmployeeForm({ departments, positions, employee }: Loaded) {
           ]}
           defaultValue={keepsPosition ? String(e?.positionId ?? "") : ""}
           error={errors.positionId}
+        />
+        <SelectField
+          name="scheduleId"
+          label="Work schedule"
+          options={[
+            { value: "", label: "No schedule" },
+            ...scheduleOptions.map((s) => ({
+              value: String(s.id),
+              label: `${s.name} · ${scheduleHours(s)}, ${workDaysLabel(s.workDays)}`,
+            })),
+          ]}
+          defaultValue={String(e?.scheduleId ?? "")}
+          error={errors.scheduleId}
         />
       </Section>
 

@@ -1,5 +1,5 @@
-//! Adds a demo company (6 departments, 200 employees with salary history) to an empty
-//! Wagecraft database. Usage, from the repository root:
+//! Adds a demo company (3 work schedules, 6 departments, 200 employees with salary
+//! history) to an empty Wagecraft database. Usage, from the repository root:
 //!
 //!     pnpm seed                 # the app's own database
 //!     pnpm seed path/to.db      # any other database file
@@ -25,8 +25,8 @@ fn seed() -> anyhow::Result<()> {
     println!("Seeding {}", path.display());
     let s = wagecraft_lib::seed::run(&path, 200)?;
     println!(
-        "Added {} departments, {} positions, {} employees and {} pay rates.",
-        s.departments, s.positions, s.employees, s.rates
+        "Added {} work schedules, {} departments, {} positions, {} employees and {} pay rates.",
+        s.schedules, s.departments, s.positions, s.employees, s.rates
     );
     Ok(())
 }

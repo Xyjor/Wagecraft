@@ -3,7 +3,7 @@ import type { ReactNode } from "react";
 type FieldProps = {
   name: string;
   label: string;
-  type?: "text" | "password" | "date" | "email" | "tel";
+  type?: "text" | "password" | "date" | "email" | "tel" | "time" | "number";
   autoComplete?: string;
   autoFocus?: boolean;
   defaultValue?: string;
