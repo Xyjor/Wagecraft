@@ -23,6 +23,9 @@ pub enum AppError {
     NotFound(&'static str),
     #[error("Wrong username or password")]
     InvalidCredentials,
+    /// The kiosk's version of `InvalidCredentials`: never says which part was wrong.
+    #[error("Wrong employee number or PIN")]
+    InvalidPin,
     /// A business rule refused the change. The message says which rule, in plain words.
     #[error("{0}")]
     Conflict(&'static str),
@@ -41,6 +44,7 @@ impl AppError {
             AppError::Validation(_) => "VALIDATION",
             AppError::NotFound(_) => "NOT_FOUND",
             AppError::InvalidCredentials => "INVALID_CREDENTIALS",
+            AppError::InvalidPin => "INVALID_PIN",
             AppError::Conflict(_) => "CONFLICT",
             AppError::Database(_) => "DATABASE",
             AppError::Internal(_) => "INTERNAL",

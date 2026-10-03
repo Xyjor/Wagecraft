@@ -1,5 +1,5 @@
 //! Adds a demo company (3 work schedules, 6 departments, 200 employees with salary
-//! history) to an empty Wagecraft database. Usage, from the repository root:
+//! history and kiosk PIN 1234) to an empty Wagecraft database. Usage, from the repository root:
 //!
 //!     pnpm seed                 # the app's own database
 //!     pnpm seed path/to.db      # any other database file
@@ -27,6 +27,11 @@ fn seed() -> anyhow::Result<()> {
     println!(
         "Added {} work schedules, {} departments, {} positions, {} employees and {} pay rates.",
         s.schedules, s.departments, s.positions, s.employees, s.rates
+    );
+    println!(
+        "{} current employees can use the kiosk with PIN {} (for example EMP-0001).",
+        s.kiosk_pins,
+        wagecraft_lib::seed::DEMO_PIN
     );
     Ok(())
 }

@@ -6,9 +6,12 @@ import { formValues } from "@/lib/formData";
 
 export function LoginPage({
   onSignedIn,
+  onOpenKiosk,
   notice,
 }: {
   onSignedIn: (me: Me) => void;
+  /** Opens the shared time clock, where staff clock in with their employee number and PIN. */
+  onOpenKiosk?: () => void;
   notice?: string;
 }) {
   const [alert, setAlert] = useState<string>();
@@ -34,6 +37,15 @@ export function LoginPage({
         <Field name="password" label="Password" type="password" autoComplete="current-password" />
         <SubmitButton busy={busy}>Sign in</SubmitButton>
       </form>
+      {onOpenKiosk && (
+        <button
+          type="button"
+          onClick={onOpenKiosk}
+          className="mt-4 w-full rounded-md border border-zinc-300 px-3 py-2 text-sm hover:bg-zinc-50 focus-visible:ring-2 focus-visible:ring-sky-500 dark:border-zinc-700 dark:hover:bg-zinc-800"
+        >
+          Clock in or out
+        </button>
+      )}
     </AuthCard>
   );
 }

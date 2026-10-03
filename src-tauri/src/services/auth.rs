@@ -309,14 +309,14 @@ pub(crate) async fn hash_blocking(password: String) -> Result<String, AppError> 
     Ok(hashed)
 }
 
-async fn verify_blocking(password: String, stored: String) -> Result<bool, AppError> {
+pub(crate) async fn verify_blocking(password: String, stored: String) -> Result<bool, AppError> {
     let ok = tauri::async_runtime::spawn_blocking(move || password::verify(&password, &stored))
         .await
         .map_err(|e| anyhow::anyhow!("verify task failed: {e}"))?;
     Ok(ok)
 }
 
-fn dummy_hash() -> &'static str {
+pub(crate) fn dummy_hash() -> &'static str {
     static DUMMY: OnceLock<String> = OnceLock::new();
     DUMMY.get_or_init(|| password::hash("not a real password").expect("hash dummy password"))
 }

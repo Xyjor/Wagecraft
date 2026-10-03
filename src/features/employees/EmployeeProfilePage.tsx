@@ -8,6 +8,7 @@ import { archiveEmployee, getEmployee } from "./api";
 import { AccountTab } from "./AccountTab";
 import { CompensationTab } from "./CompensationTab";
 import { isSeparated } from "./format";
+import { KioskPinTab } from "./KioskPinTab";
 import { ProfileView } from "./ProfileView";
 
 /** HR's view of any employee (`/employees/:id`), with edit, archive, pay and account. */
@@ -64,6 +65,7 @@ export function EmployeeProfilePage() {
       extraTabs={[
         { name: "Compensation", content: <CompensationTab employee={e} /> },
         { name: "Sign-in account", content: <AccountTab employee={e} /> },
+        { name: "Kiosk PIN", content: <KioskPinTab employee={e} onSaved={reload} /> },
       ]}
     />
   );

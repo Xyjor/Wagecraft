@@ -34,6 +34,7 @@ pub fn run() {
             app.manage(state::AppState {
                 db: pool,
                 auth: auth::session::Auth::new(IDLE_TIMEOUT),
+                kiosk: auth::kiosk_lock::KioskLock::default(),
             });
             Ok(())
         })
@@ -75,6 +76,10 @@ pub fn run() {
             commands::employees::employee_create_account,
             commands::employees::employee_link_user,
             commands::employees::employee_unlink_user,
+            commands::employees::employee_set_kiosk_pin,
+            commands::attendance::kiosk_clock_in,
+            commands::attendance::kiosk_clock_out,
+            commands::attendance::attendance_mine,
             commands::reports::report_masterlist_csv,
         ])
         .run(tauri::generate_context!())

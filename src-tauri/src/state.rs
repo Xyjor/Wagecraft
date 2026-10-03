@@ -1,3 +1,4 @@
+use crate::auth::kiosk_lock::KioskLock;
 use crate::auth::permissions::Permission;
 use crate::auth::session::{Auth, Refusal, Session};
 use crate::error::AppError;
@@ -9,6 +10,8 @@ use std::time::Instant;
 pub struct AppState {
     pub db: sqlx::SqlitePool,
     pub auth: Auth,
+    /// Kiosk PIN lockouts, by employee number.
+    pub kiosk: KioskLock,
 }
 
 impl AppState {
@@ -52,6 +55,7 @@ mod tests {
         let state = AppState {
             db,
             auth: Auth::new(Duration::from_secs(60)),
+            kiosk: KioskLock::default(),
         };
         state.auth.sign_in(Session {
             user_id: id,

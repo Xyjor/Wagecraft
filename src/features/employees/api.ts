@@ -32,3 +32,5 @@ export const unlinkAccount = (id: number) => call<void>("employee_unlink_user", 
 export const exportMasterlist = (query: EmployeeQuery) =>
   call<string | null>("report_masterlist_csv", { query });
 export const getMyProfile = () => call<Employee>("employee_me");
+export const setKioskPin = (id: number, pin: string) =>
+  call<Employee>("employee_set_kiosk_pin", { id, pin });
