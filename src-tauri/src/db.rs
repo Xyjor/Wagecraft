@@ -27,6 +27,11 @@ pub async fn open(path: &Path) -> anyhow::Result<SqlitePool> {
 mod tests {
     use super::*;
 
+    /// How many migration files the app ships with, so these tests don't change with every migration.
+    fn shipped_migrations() -> i64 {
+        sqlx::migrate!("./migrations").migrations.len() as i64
+    }
+
     #[tokio::test]
     async fn open_creates_wal_database_and_runs_migrations() {
         let dir = tempfile::tempdir().expect("temp dir");
@@ -48,7 +53,7 @@ mod tests {
             .fetch_one(&pool)
             .await
             .expect("migrations table");
-        assert_eq!(applied, 1);
+        assert_eq!(applied, shipped_migrations());
     }
 
     #[tokio::test]
@@ -62,6 +67,6 @@ mod tests {
             .fetch_one(&pool)
             .await
             .expect("migrations table");
-        assert_eq!(applied, 1);
+        assert_eq!(applied, shipped_migrations());
     }
 }

@@ -43,7 +43,13 @@ mod tests {
         let h = health(&pool).await.expect("health");
 
         assert!(h.db_ok);
-        assert_eq!(h.schema_version, 1);
+        let newest = sqlx::migrate!("./migrations")
+            .migrations
+            .iter()
+            .map(|m| m.version)
+            .max()
+            .expect("at least one migration");
+        assert_eq!(h.schema_version, newest);
     }
 
     #[test]
