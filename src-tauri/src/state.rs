@@ -56,7 +56,6 @@ mod tests {
         state.auth.sign_in(Session {
             user_id: id,
             username: "maria".into(),
-            employee_id: None,
             role: Role::Hr,
             last_activity: Instant::now() - Duration::from_secs(61),
         });

@@ -6,6 +6,7 @@ import { useSession } from "@/features/auth/session";
 // the backend still checks every command, so this is only to keep the menu tidy.
 const ITEMS: { to: string; label: string; roles?: Role[] }[] = [
   { to: "/", label: "Home" },
+  { to: "/me", label: "My profile" },
   { to: "/employees", label: "Employees", roles: ["ADMIN", "HR"] },
   { to: "/organization", label: "Organization", roles: ["ADMIN", "HR"] },
   { to: "/users", label: "Users", roles: ["ADMIN"] },

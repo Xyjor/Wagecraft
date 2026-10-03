@@ -31,3 +31,4 @@ export const unlinkAccount = (id: number) => call<void>("employee_unlink_user", 
 /** Opens the Save dialog. Resolves to the saved path, or null if the user cancelled. */
 export const exportMasterlist = (query: EmployeeQuery) =>
   call<string | null>("report_masterlist_csv", { query });
+export const getMyProfile = () => call<Employee>("employee_me");

@@ -14,8 +14,6 @@ pub struct Session {
     pub user_id: i64,
     /// Kept for the audit trail, so entries name the user even after the account changes.
     pub username: String,
-    /// The employee this user is, if any. "Self" commands read this, never an id from the UI.
-    pub employee_id: Option<i64>,
     pub role: Role,
     pub last_activity: Instant,
 }
@@ -104,7 +102,6 @@ mod tests {
         Session {
             user_id: 1,
             username: "staff".into(),
-            employee_id: Some(7),
             role: Role::Staff,
             last_activity: at,
         }
@@ -126,7 +123,7 @@ mod tests {
         let s = auth
             .require_at(Permission::SelfPayslip, t0)
             .expect("allowed");
-        assert_eq!(s.employee_id, Some(7));
+        assert_eq!(s.user_id, 1);
         assert!(matches!(
             auth.require_at(Permission::EmployeeReadAll, t0),
             Err(AppError::Forbidden)

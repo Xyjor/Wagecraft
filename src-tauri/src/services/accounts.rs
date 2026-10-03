@@ -57,6 +57,11 @@ pub async fn linked(db: &SqlitePool, employee_id: i64) -> Result<Option<AccountS
         .transpose()
 }
 
+/// The employee a user account is linked to right now, if any.
+pub async fn employee_of(db: &SqlitePool, user_id: i64) -> Result<Option<i64>, AppError> {
+    Ok(users::by_id(db, user_id).await?.and_then(|u| u.employee_id))
+}
+
 /// Accounts not linked to anyone yet.
 pub async fn linkable(db: &SqlitePool) -> Result<Vec<AccountSummary>, AppError> {
     users::unlinked(db)
@@ -302,6 +307,7 @@ mod tests {
 
         let me = auth::login(&db, "juan", TEMP, now()).await.expect("login");
         assert_eq!(me.employee_id, Some(id));
+        assert_eq!(employee_of(&db, me.id).await.unwrap(), Some(id));
         assert!(me.must_change_password);
 
         let rows = audit_rows::all(&db).await;
@@ -358,6 +364,7 @@ mod tests {
         let account = create_staff(&db, hr(), id, juan(), now()).await.unwrap();
         unlink(&db, hr(), id, now()).await.expect("unlink");
         assert!(linked(&db, id).await.unwrap().is_none());
+        assert_eq!(employee_of(&db, account.user_id).await.unwrap(), None);
 
         let err = auth::login(&db, "juan", TEMP, now()).await.unwrap_err();
         assert!(matches!(err, AppError::InvalidCredentials), "{err:?}");

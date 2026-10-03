@@ -3,6 +3,7 @@ import { AppShell } from "./AppShell";
 import { EmployeeFormPage } from "@/features/employees/EmployeeFormPage";
 import { EmployeeProfilePage } from "@/features/employees/EmployeeProfilePage";
 import { EmployeesPage } from "@/features/employees/EmployeesPage";
+import { MyProfilePage } from "@/features/employees/MyProfilePage";
 import { HomePage } from "@/features/home/HomePage";
 import { OrganizationPage } from "@/features/org/OrganizationPage";
 import { UsersPage } from "@/features/users/UsersPage";
@@ -12,6 +13,7 @@ export const router = createBrowserRouter([
     element: <AppShell />,
     children: [
       { index: true, element: <HomePage /> },
+      { path: "me", element: <MyProfilePage /> },
       { path: "employees", element: <EmployeesPage /> },
       { path: "employees/new", element: <EmployeeFormPage /> },
       { path: "employees/:id", element: <EmployeeProfilePage /> },
