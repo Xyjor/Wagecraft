@@ -6,6 +6,7 @@
 use crate::audit::{self, Actor, Entry};
 use crate::domain::attendance::DateRange;
 use crate::domain::attendance_calc::{HolidayKind, Interval, Shift};
+use crate::domain::employee::employment_covers;
 use crate::domain::overtime::{self as rules, OvertimeInput, OvertimeRequest, MAX_MINUTES};
 use crate::error::AppError;
 use crate::repositories::attendance as attendance_repo;
@@ -137,21 +138,12 @@ pub async fn file(
         ));
     };
     let date = work_date.to_string();
-    if date < employee.hire_date {
-        return Err(AppError::Validation(vec![field(
-            "workDate",
-            &format!("This is before the hire date, {}", employee.hire_date),
-        )]));
-    }
-    if let Some(last) = employee
-        .separation_date
-        .as_deref()
-        .filter(|last| date.as_str() > *last)
-    {
-        return Err(AppError::Validation(vec![field(
-            "workDate",
-            &format!("This is after the last day of work, {last}"),
-        )]));
+    if let Err(message) = employment_covers(
+        &employee.hire_date,
+        employee.separation_date.as_deref(),
+        &date,
+    ) {
+        return Err(AppError::Validation(vec![field("workDate", &message)]));
     }
     if repo::day_locked(&mut tx, employee.id, &date).await? {
         return Err(AppError::Conflict(LOCKED));

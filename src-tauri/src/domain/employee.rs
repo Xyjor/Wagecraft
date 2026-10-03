@@ -163,3 +163,42 @@ pub const EMPLOYMENT_STATUSES: [&str; 5] = [
 ];
 pub const SEXES: [&str; 2] = ["MALE", "FEMALE"];
 pub const CIVIL_STATUSES: [&str; 4] = ["SINGLE", "MARRIED", "WIDOWED", "SEPARATED"];
+
+/// Whether `date` falls in the person's employment: on or after the hire date and, once
+/// a last day of work is set, on or before it. Leave and overtime both check this. The
+/// error is the message to show on the date field.
+pub fn employment_covers(
+    hire_date: &str,
+    separation_date: Option<&str>,
+    date: &str,
+) -> Result<(), String> {
+    if date < hire_date {
+        return Err(format!("This is before the hire date, {hire_date}"));
+    }
+    if let Some(last) = separation_date.filter(|last| date > *last) {
+        return Err(format!("This is after the last day of work, {last}"));
+    }
+    Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn a_date_must_fall_between_the_hire_date_and_the_last_day() {
+        assert_eq!(employment_covers("2025-01-06", None, "2025-01-06"), Ok(()));
+        assert_eq!(
+            employment_covers("2025-01-06", Some("2026-10-30"), "2026-10-30"),
+            Ok(())
+        );
+        assert_eq!(
+            employment_covers("2025-01-06", None, "2025-01-05"),
+            Err("This is before the hire date, 2025-01-06".to_string())
+        );
+        assert_eq!(
+            employment_covers("2025-01-06", Some("2026-10-30"), "2026-10-31"),
+            Err("This is after the last day of work, 2026-10-30".to_string())
+        );
+    }
+}

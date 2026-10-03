@@ -5,6 +5,7 @@
 
 use crate::audit::{self, Actor, Entry};
 use crate::domain::attendance::DateRange;
+use crate::domain::employee::employment_covers;
 use crate::domain::leave::{count_halfdays, LeaveRequest, LeaveRequestInput};
 use crate::error::AppError;
 use crate::repositories::leave as leave_repo;
@@ -170,21 +171,14 @@ pub async fn file(
         .ok_or_else(|| AppError::Validation(vec![field("leaveTypeId", "Pick a leave type")]))?;
 
     let (from, to) = (start.to_string(), end.to_string());
-    if from < employee.hire_date {
-        return Err(AppError::Validation(vec![field(
-            "startDate",
-            &format!("This is before the hire date, {}", employee.hire_date),
-        )]));
-    }
-    if let Some(last) = employee
-        .separation_date
-        .as_deref()
-        .filter(|last| to.as_str() > *last)
-    {
-        return Err(AppError::Validation(vec![field(
-            "endDate",
-            &format!("This is after the last day of work, {last}"),
-        )]));
+    for (name, date) in [("startDate", &from), ("endDate", &to)] {
+        if let Err(message) = employment_covers(
+            &employee.hire_date,
+            employee.separation_date.as_deref(),
+            date,
+        ) {
+            return Err(AppError::Validation(vec![field(name, &message)]));
+        }
     }
     let days_off: HashSet<NaiveDate> = repo::days_off(&mut tx, &from, &to)
         .await?
