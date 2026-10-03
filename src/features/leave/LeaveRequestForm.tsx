@@ -26,6 +26,8 @@ export function LeaveRequestForm({
   const options = types
     .filter((t) => t.isActive)
     .map((t) => ({ value: String(t.id), label: t.isPaid ? t.name : `${t.name} (unpaid)` }));
+  // No type is preselected, so nobody files unpaid leave just because it sorts first.
+  const choices = [{ value: "", label: "Choose a leave type" }, ...options];
 
   async function submit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -61,8 +63,8 @@ export function LeaveRequestForm({
       <SelectField
         name="leaveTypeId"
         label="Leave type"
-        options={options}
-        defaultValue={options[0]?.value}
+        options={choices}
+        defaultValue=""
         error={errors.leaveTypeId}
       />
       <div className="grid grid-cols-2 gap-4">

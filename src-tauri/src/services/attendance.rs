@@ -105,6 +105,7 @@ pub async fn day(db: &SqlitePool, date: &str) -> Result<Vec<DayRow>, AppError> {
                 department_name: e.department_name,
                 status,
                 holiday: holiday_name.clone(),
+                full_day_leave: on_leave.as_ref().is_some_and(|(_, half)| !half),
                 leave: on_leave.map(|(name, half)| {
                     if half {
                         format!("{name} (half day)")
@@ -730,8 +731,16 @@ mod tests {
             (juan.status.as_deref(), juan.leave.as_deref()),
             (Some("ON_LEAVE"), Some("Vacation Leave"))
         );
+        assert!(
+            juan.full_day_leave,
+            "a whole day off leaves nothing to record"
+        );
         let ana = rows.iter().find(|r| r.employee_no == "EMP-2").expect("ana");
         assert_eq!(ana.leave.as_deref(), Some("Vacation Leave (half day)"));
+        assert!(
+            !ana.full_day_leave,
+            "a half day still leaves the other half to record"
+        );
         // The next week is back to normal.
         let later = day(&db, "2026-10-07").await.expect("grid");
         assert_eq!(

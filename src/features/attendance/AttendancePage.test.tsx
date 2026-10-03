@@ -67,6 +67,7 @@ describe("AttendancePage", () => {
         status: "PRESENT",
         holiday: null,
         leave: null,
+        fullDayLeave: false,
         record: record({}),
       },
       {
@@ -77,6 +78,7 @@ describe("AttendancePage", () => {
         status: "ABSENT",
         holiday: null,
         leave: null,
+        fullDayLeave: false,
         record: null,
       },
       {
@@ -87,6 +89,7 @@ describe("AttendancePage", () => {
         status: null,
         holiday: null,
         leave: null,
+        fullDayLeave: false,
         record: null,
       },
     ];
@@ -120,11 +123,27 @@ describe("AttendancePage", () => {
   });
 
   it("shows approved leave and its type", async () => {
-    rows[1] = { ...rows[1], status: "ON_LEAVE", leave: "Vacation Leave" };
+    rows[1] = { ...rows[1], status: "ON_LEAVE", leave: "Vacation Leave", fullDayLeave: true };
     renderAs();
     const ana = await screen.findByRole("row", { name: /^Reyes, Ana/ });
     expect(within(ana).getByText("On leave")).toBeTruthy();
     expect(within(ana).getByText("Vacation Leave")).toBeTruthy();
+  });
+
+  it("offers no time entry on a whole day of leave, but keeps it for a half day", async () => {
+    rows[1] = { ...rows[1], status: "ON_LEAVE", leave: "Vacation Leave", fullDayLeave: true };
+    rows[2] = {
+      ...rows[2],
+      record: null,
+      status: "ON_LEAVE",
+      leave: "Sick Leave (half day)",
+      fullDayLeave: false,
+    };
+    renderAs();
+    const ana = await screen.findByRole("row", { name: /^Reyes, Ana/ });
+    expect(within(ana).queryByRole("button")).toBeNull();
+    const third = screen.getByRole("row", { name: new RegExp(`^${rows[2].employeeName}`) });
+    expect(within(third).getByRole("button", { name: /^Add/ })).toBeTruthy();
   });
 
   it("shows everyone's day with their status", async () => {
