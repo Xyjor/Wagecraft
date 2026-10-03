@@ -5,10 +5,12 @@
 
 use crate::audit::{self, Actor, Entry};
 use crate::domain::attendance::DateRange;
+use crate::domain::employee::employment_covers;
 use crate::domain::leave::{count_halfdays, LeaveRequest, LeaveRequestInput};
 use crate::error::AppError;
 use crate::repositories::leave as leave_repo;
 use crate::repositories::leave_requests::{self as repo, NewRequest};
+use crate::repositories::overtime as overtime_repo;
 use crate::services::attendance::check_range;
 use crate::services::auth::field;
 use crate::services::leave::grant_in;
@@ -28,6 +30,10 @@ const NO_DAYS_LEFT: &str = "This would leave a leave request with no working day
     Cancel that leave first, then change the holiday.";
 const LONGER_THAN_BALANCE: &str = "This would make approved leave take more days than the \
     employee has left. Adjust their balance or cancel that leave first.";
+const OVERTIME: &str =
+    "There's overtime filed on a day in this leave. Reject or cancel the overtime first.";
+const RUNS_PAST_SEPARATION: &str = "This employee has leave that starts before and ends after \
+    their last day. Cancel that leave first, then save the separation.";
 const NOT_ENOUGH: &str = "There aren't enough days left in this leave balance.";
 /// Longest single request, in calendar days. Longer leave is filed in parts.
 const MAX_SPAN_DAYS: i64 = 60;
@@ -165,6 +171,15 @@ pub async fn file(
         .ok_or_else(|| AppError::Validation(vec![field("leaveTypeId", "Pick a leave type")]))?;
 
     let (from, to) = (start.to_string(), end.to_string());
+    for (name, date) in [("startDate", &from), ("endDate", &to)] {
+        if let Err(message) = employment_covers(
+            &employee.hire_date,
+            employee.separation_date.as_deref(),
+            date,
+        ) {
+            return Err(AppError::Validation(vec![field(name, &message)]));
+        }
+    }
     let days_off: HashSet<NaiveDate> = repo::days_off(&mut tx, &from, &to)
         .await?
         .iter()
@@ -185,6 +200,14 @@ pub async fn file(
             return Err(AppError::Validation(vec![field(
                 "startDate",
                 &format!("There's a time in on {day}, so that day can't be leave. HR can correct it first."),
+            )]));
+        }
+    }
+    if !input.half_day {
+        if let Some(day) = overtime_repo::first_live_in(&mut tx, employee.id, &from, &to).await? {
+            return Err(AppError::Validation(vec![field(
+                "startDate",
+                &format!("There's overtime filed for {day}. Cancel it first, or file a half day."),
             )]));
         }
     }
@@ -318,6 +341,19 @@ pub async fn decide(
         .is_some()
     {
         return Err(AppError::Conflict(WORKED));
+    }
+    if approve
+        && !before.half_day
+        && overtime_repo::first_live_in(
+            &mut tx,
+            before.employee_id,
+            &before.start_date,
+            &before.end_date,
+        )
+        .await?
+        .is_some()
+    {
+        return Err(AppError::Conflict(OVERTIME));
     }
     let stamp = time::to_db(now);
     let status = if approve { "APPROVED" } else { "REJECTED" };
@@ -508,6 +544,63 @@ pub(crate) async fn recount_on(
                 "halfdays": halfdays,
                 "employeeNo": r.employee_no,
                 "holidayDate": date,
+            })),
+        };
+        audit::record(conn, now, actor, entry).await?;
+    }
+    Ok(())
+}
+
+/// Cancels an employee's pending and approved leave after their last day of work, giving
+/// approved paid days back. Leave that straddles the last day is refused instead, since
+/// cutting it short is HR's call.
+pub(crate) async fn cancel_after_separation(
+    conn: &mut SqliteConnection,
+    actor: Actor<'_>,
+    employee_id: i64,
+    last_day: &str,
+    now: DateTime<Utc>,
+) -> Result<(), AppError> {
+    let stamp = time::to_db(now);
+    for r in repo::live_after(conn, employee_id, last_day).await? {
+        if r.start_date.as_str() <= last_day {
+            return Err(AppError::Conflict(RUNS_PAST_SEPARATION));
+        }
+        if r.locked {
+            return Err(AppError::Conflict(LOCKED));
+        }
+        if r.status == "APPROVED" && r.is_paid {
+            repo::restore_balance(
+                conn,
+                r.employee_id,
+                r.leave_type_id,
+                year_of(&r)?,
+                r.halfdays,
+                &stamp,
+            )
+            .await?;
+        }
+        if !repo::set_status(
+            conn,
+            r.id,
+            &r.status,
+            "CANCELLED",
+            actor.user_id,
+            None,
+            &stamp,
+        )
+        .await?
+        {
+            return Err(AppError::Conflict(CHANGED));
+        }
+        let entry = Entry {
+            action: "leave.cancel",
+            entity: Some(("leave_request", r.id)),
+            before: Some(json!({ "status": r.status })),
+            after: Some(json!({
+                "status": "CANCELLED",
+                "employeeNo": r.employee_no,
+                "reason": "After the employee's last day",
             })),
         };
         audit::record(conn, now, actor, entry).await?;
@@ -1433,6 +1526,221 @@ mod tests {
         assert_eq!(
             (halfdays_of(&db, r.id).await, used(&db, 1, "SL").await),
             (8, 8)
+        );
+    }
+
+    fn overtime(date: &str) -> crate::domain::overtime::OvertimeInput {
+        crate::domain::overtime::OvertimeInput {
+            employee_no: None,
+            work_date: date.into(),
+            start_time: "17:00".into(),
+            end_time: "20:00".into(),
+            reason: "Stock count".into(),
+        }
+    }
+
+    #[tokio::test]
+    async fn leave_and_overtime_dont_mix() {
+        let (_d, db) = db().await;
+        crate::services::overtime::file(
+            &db,
+            juan(),
+            Some(1),
+            overtime("2026-10-13"),
+            today(),
+            t0(),
+        )
+        .await
+        .expect("overtime");
+        let err = file(
+            &db,
+            juan(),
+            Some(1),
+            leave(&db, "VL", "2026-10-12", "2026-10-14").await,
+            today(),
+            t0(),
+        )
+        .await
+        .unwrap_err();
+        assert_eq!(
+            message(err),
+            "There's overtime filed for 2026-10-13. Cancel it first, or file a half day."
+        );
+        let mut half = leave(&db, "VL", "2026-10-13", "2026-10-13").await;
+        half.half_day = true;
+        file(&db, juan(), Some(1), half, today(), t0())
+            .await
+            .expect("half day beside overtime");
+
+        // The other way round: pending leave blocks new overtime.
+        file(
+            &db,
+            juan(),
+            Some(1),
+            leave(&db, "SL", "2026-10-19", "2026-10-20").await,
+            today(),
+            t0(),
+        )
+        .await
+        .expect("leave");
+        let err = crate::services::overtime::file(
+            &db,
+            juan(),
+            Some(1),
+            overtime("2026-10-19"),
+            today(),
+            t0(),
+        )
+        .await
+        .unwrap_err();
+        assert_eq!(fields(err), ["workDate"]);
+
+        // Overtime that slipped in anyway stops the approval.
+        let r = file(
+            &db,
+            juan(),
+            Some(1),
+            leave(&db, "VL", "2026-10-26", "2026-10-27").await,
+            today(),
+            t0(),
+        )
+        .await
+        .expect("leave");
+        sqlx::query(
+            "INSERT INTO overtime_requests (employee_id, work_date, start_at, end_at, minutes, reason) \
+             VALUES (1, '2026-10-26', '2026-10-26T17:00:00', '2026-10-26T19:00:00', 120, 'Rush')",
+        )
+        .execute(&db)
+        .await
+        .expect("overtime");
+        let err = decide(&db, hr(), None, r.id, true, None, t0())
+            .await
+            .unwrap_err();
+        assert!(matches!(err, AppError::Conflict(OVERTIME)), "{err:?}");
+    }
+
+    #[tokio::test]
+    async fn leave_stays_within_the_employment_dates() {
+        let (_d, db) = db().await;
+        // Ana was hired on 2026-02-02.
+        let early = LeaveRequestInput {
+            employee_no: Some("EMP-4".into()),
+            ..leave(&db, "LWOP", "2026-01-30", "2026-01-30").await
+        };
+        assert_eq!(
+            message(
+                file(&db, hr(), None, early, today(), t0())
+                    .await
+                    .unwrap_err()
+            ),
+            "This is before the hire date, 2026-02-02"
+        );
+        sqlx::query("UPDATE employees SET separation_date = '2026-10-30' WHERE id = 1")
+            .execute(&db)
+            .await
+            .expect("resign");
+        let late = leave(&db, "VL", "2026-11-02", "2026-11-03").await;
+        assert_eq!(
+            message(
+                file(&db, juan(), Some(1), late, today(), t0())
+                    .await
+                    .unwrap_err()
+            ),
+            "This is after the last day of work, 2026-10-30"
+        );
+        file(
+            &db,
+            juan(),
+            Some(1),
+            leave(&db, "VL", "2026-10-29", "2026-10-30").await,
+            today(),
+            t0(),
+        )
+        .await
+        .expect("up to the last day");
+    }
+
+    #[tokio::test]
+    async fn a_separation_cancels_leave_after_the_last_day_and_returns_the_days() {
+        let (_d, db) = db().await;
+        let pending = file(
+            &db,
+            juan(),
+            Some(1),
+            leave(&db, "VL", "2026-11-02", "2026-11-03").await,
+            today(),
+            t0(),
+        )
+        .await
+        .expect("pending");
+        let approved = file(
+            &db,
+            juan(),
+            Some(1),
+            leave(&db, "VL", "2026-11-09", "2026-11-10").await,
+            today(),
+            t0(),
+        )
+        .await
+        .expect("approved");
+        decide(&db, hr(), None, approved.id, true, None, t0())
+            .await
+            .expect("approve");
+        let before = file(
+            &db,
+            juan(),
+            Some(1),
+            leave(&db, "SL", "2026-10-19", "2026-10-20").await,
+            today(),
+            t0(),
+        )
+        .await
+        .expect("before the last day");
+        assert_eq!(used(&db, 1, "VL").await, 4);
+
+        let mut conn = db.acquire().await.expect("conn");
+        cancel_after_separation(&mut conn, hr(), 1, "2026-10-30", t0())
+            .await
+            .expect("cancel");
+        drop(conn);
+        for id in [pending.id, approved.id] {
+            assert_eq!(
+                repo::by_id(&db, id)
+                    .await
+                    .expect("read")
+                    .expect("row")
+                    .status,
+                "CANCELLED"
+            );
+        }
+        assert_eq!(
+            repo::by_id(&db, before.id)
+                .await
+                .expect("read")
+                .expect("row")
+                .status,
+            "PENDING"
+        );
+        assert_eq!(used(&db, 1, "VL").await, 0);
+
+        // Leave across the last day is HR's call, so the separation is refused.
+        file(
+            &db,
+            juan(),
+            Some(1),
+            leave(&db, "VL", "2026-11-26", "2026-12-01").await,
+            today(),
+            t0(),
+        )
+        .await
+        .expect("straddling");
+        let mut conn = db.acquire().await.expect("conn");
+        let err = cancel_after_separation(&mut conn, hr(), 1, "2026-11-27", t0())
+            .await
+            .unwrap_err();
+        assert!(
+            matches!(err, AppError::Conflict(RUNS_PAST_SEPARATION)),
+            "{err:?}"
         );
     }
 

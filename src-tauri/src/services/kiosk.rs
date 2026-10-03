@@ -133,7 +133,7 @@ async fn clock_in(
         .map(|s| attendance_calc::compute(&s, work_date, clock.local, None).late_minutes)
         .unwrap_or(0);
     let mut notes = clock_check(&mut tx, e.id, clock.local).await?;
-    if leave_repo::full_day_leave_on(&mut tx, e.id, &date).await? {
+    if leave_repo::full_day_leave_on(&mut tx, e.id, &date, false).await? {
         notes.push("This employee is on approved leave today. Cancel the leave if they worked.");
     }
     if shift.is_none() {

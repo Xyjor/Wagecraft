@@ -5,20 +5,25 @@
 
 use crate::audit::{self, Actor, Entry};
 use crate::domain::attendance::DateRange;
-use crate::domain::attendance_calc::{HolidayKind, Shift};
+use crate::domain::attendance_calc::{HolidayKind, Interval, Shift};
+use crate::domain::employee::employment_covers;
 use crate::domain::overtime::{self as rules, OvertimeInput, OvertimeRequest, MAX_MINUTES};
 use crate::error::AppError;
 use crate::repositories::attendance as attendance_repo;
+use crate::repositories::leave_requests as leave_repo;
 use crate::repositories::overtime::{self as repo, NewRequest, OvertimeEmployee};
 use crate::services::attendance::{check_range, strongest_holiday};
 use crate::services::auth::field;
 use crate::time;
 use chrono::{DateTime, Duration, NaiveDate, NaiveTime, Utc};
 use serde_json::json;
-use sqlx::SqlitePool;
+use sqlx::{SqliteConnection, SqlitePool};
 
 const DECIDED: &str = "This request has already been decided.";
 const CHANGED: &str = "Someone else just changed this request. Refresh to see it.";
+const ON_LEAVE: &str = "There's whole-day leave filed for this day. Settle the leave first.";
+const HOLIDAY_OVERTIME: &str = "Overtime during work hours was filed on this date because it \
+    was a holiday off. Cancel that overtime first, then change the holiday.";
 const LOCKED: &str = "This day is in a posted payroll period, so its overtime can't change.";
 /// How far ahead overtime can be filed, so a planned job can be approved before the day.
 const MAX_DAYS_AHEAD: i64 = 31;
@@ -133,8 +138,18 @@ pub async fn file(
         ));
     };
     let date = work_date.to_string();
+    if let Err(message) = employment_covers(
+        &employee.hire_date,
+        employee.separation_date.as_deref(),
+        &date,
+    ) {
+        return Err(AppError::Validation(vec![field("workDate", &message)]));
+    }
     if repo::day_locked(&mut tx, employee.id, &date).await? {
         return Err(AppError::Conflict(LOCKED));
+    }
+    if leave_repo::full_day_leave_on(&mut tx, employee.id, &date, true).await? {
+        return Err(AppError::Validation(vec![field("workDate", ON_LEAVE)]));
     }
 
     let ot = rules::place(work_date, start, end, Some(&shift));
@@ -238,6 +253,12 @@ pub async fn decide(
     if before.locked {
         return Err(AppError::Conflict(LOCKED));
     }
+    if approve
+        && leave_repo::full_day_leave_on(&mut tx, before.employee_id, &before.work_date, true)
+            .await?
+    {
+        return Err(AppError::Conflict(ON_LEAVE));
+    }
     let status = if approve { "APPROVED" } else { "REJECTED" };
     if !repo::set_status(
         &mut tx,
@@ -329,6 +350,82 @@ pub async fn cancel(
     audit::record(&mut tx, now, actor, entry).await?;
     tx.commit().await?;
     Ok(after)
+}
+
+/// After a holiday on `date` changed, checks that the overtime on that date still falls
+/// outside the schedule. Overtime during shift hours is allowed only on a holiday off, so
+/// removing that holiday would count the hours twice; the holiday change is refused.
+pub(crate) async fn recheck_on(conn: &mut SqliteConnection, date: &str) -> Result<(), AppError> {
+    let requests = repo::live_on(conn, date).await?;
+    if requests.is_empty() {
+        return Ok(());
+    }
+    let Ok(work_date) = NaiveDate::parse_from_str(date, "%Y-%m-%d") else {
+        return Ok(());
+    };
+    let holidays = attendance_repo::holidays_on(&mut *conn, date).await?;
+    let day_off = matches!(
+        strongest_holiday(&holidays),
+        Some(HolidayKind::Regular | HolidayKind::SpecialNonWorking)
+    );
+    for r in requests {
+        let Some(employee) = repo::employee_by_id(conn, r.employee_id).await? else {
+            continue;
+        };
+        let (Some((shift, work_days)), Some(start), Some(end)) = (
+            shift_of(&employee),
+            time::from_local_db(&r.start_at),
+            time::from_local_db(&r.end_at),
+        ) else {
+            continue;
+        };
+        let ot = Interval::new(start, end);
+        if rules::clashes_with_shift(&ot, work_date, &shift, work_days, day_off) {
+            return Err(AppError::Conflict(HOLIDAY_OVERTIME));
+        }
+    }
+    Ok(())
+}
+
+/// Cancels an employee's pending and approved overtime after their last day of work.
+pub(crate) async fn cancel_after_separation(
+    conn: &mut SqliteConnection,
+    actor: Actor<'_>,
+    employee_id: i64,
+    last_day: &str,
+    now: DateTime<Utc>,
+) -> Result<(), AppError> {
+    let stamp = time::to_db(now);
+    for r in repo::live_after(conn, employee_id, last_day).await? {
+        if r.locked {
+            return Err(AppError::Conflict(LOCKED));
+        }
+        if !repo::set_status(
+            conn,
+            r.id,
+            &r.status,
+            "CANCELLED",
+            actor.user_id,
+            None,
+            &stamp,
+        )
+        .await?
+        {
+            return Err(AppError::Conflict(CHANGED));
+        }
+        let entry = Entry {
+            action: "overtime.cancel",
+            entity: Some(("overtime_request", r.id)),
+            before: Some(json!({ "status": r.status })),
+            after: Some(json!({
+                "status": "CANCELLED",
+                "employeeNo": r.employee_no,
+                "reason": "After the employee's last day",
+            })),
+        };
+        audit::record(conn, now, actor, entry).await?;
+    }
+    Ok(())
 }
 
 #[cfg(test)]
@@ -879,5 +976,215 @@ mod tests {
         );
         let decisions = audit_rows::actions(&db).await;
         assert_eq!(decisions, ["overtime.file", "overtime.approve"]);
+    }
+
+    async fn leave_on(db: &SqlitePool, employee_id: i64, date: &str, status: &str, half: bool) {
+        sqlx::query(
+            "INSERT INTO leave_requests (employee_id, leave_type_id, start_date, end_date, \
+             half_day, halfdays, reason, status) SELECT ?, id, ?, ?, ?, ?, 'Trip', ? \
+             FROM leave_types WHERE code = 'VL'",
+        )
+        .bind(employee_id)
+        .bind(date)
+        .bind(date)
+        .bind(half)
+        .bind(if half { 1 } else { 2 })
+        .bind(status)
+        .execute(db)
+        .await
+        .expect("leave");
+    }
+
+    #[tokio::test]
+    async fn overtime_cant_be_on_a_day_of_leave() {
+        let (_d, db) = db().await;
+        leave_on(&db, 1, "2026-10-13", "PENDING", false).await;
+        let err = file(
+            &db,
+            juan(),
+            Some(1),
+            ot("2026-10-13", "17:00", "20:00"),
+            today(),
+            t0(),
+        )
+        .await
+        .unwrap_err();
+        assert_eq!(fields(err), ["workDate"]);
+        // A half day off leaves the rest of the day to work, so overtime is fine.
+        leave_on(&db, 1, "2026-10-14", "APPROVED", true).await;
+        file(
+            &db,
+            juan(),
+            Some(1),
+            ot("2026-10-14", "17:00", "20:00"),
+            today(),
+            t0(),
+        )
+        .await
+        .expect("after a half day");
+
+        // Leave filed after the overtime stops the approval.
+        let r = file(
+            &db,
+            juan(),
+            Some(1),
+            ot("2026-10-15", "17:00", "20:00"),
+            today(),
+            t0(),
+        )
+        .await
+        .expect("file");
+        leave_on(&db, 1, "2026-10-15", "APPROVED", false).await;
+        let err = decide(&db, hr(), None, r.id, true, None, t0())
+            .await
+            .unwrap_err();
+        assert!(matches!(err, AppError::Conflict(ON_LEAVE)), "{err:?}");
+    }
+
+    #[tokio::test]
+    async fn a_holiday_cant_go_while_overtime_depends_on_it() {
+        use crate::domain::org::HolidayInput;
+        use crate::services::holidays;
+        let (_d, db) = db().await;
+        let holiday = |date: &str, kind: &str| HolidayInput {
+            date: date.into(),
+            name: "Test Holiday".into(),
+            kind: kind.into(),
+        };
+        // Monday Oct 12 is a holiday off, so a full shift of overtime is allowed.
+        let h = holidays::create(&db, hr(), holiday("2026-10-12", "REGULAR"), t0())
+            .await
+            .expect("holiday");
+        file(
+            &db,
+            juan(),
+            Some(1),
+            ot("2026-10-12", "08:00", "17:00"),
+            today(),
+            t0(),
+        )
+        .await
+        .expect("holiday overtime");
+        let err = holidays::delete(&db, hr(), h.id, t0()).await.unwrap_err();
+        assert!(
+            matches!(err, AppError::Conflict(HOLIDAY_OVERTIME)),
+            "{err:?}"
+        );
+        let err = holidays::update(
+            &db,
+            hr(),
+            h.id,
+            holiday("2026-10-12", "SPECIAL_WORKING"),
+            t0(),
+        )
+        .await
+        .unwrap_err();
+        assert!(
+            matches!(err, AppError::Conflict(HOLIDAY_OVERTIME)),
+            "{err:?}"
+        );
+        assert_eq!(holidays::list(&db, 2026).await.expect("list").len(), 1);
+
+        // Overtime after hours never depended on the holiday, so that one can go.
+        let h2 = holidays::create(&db, hr(), holiday("2026-10-19", "REGULAR"), t0())
+            .await
+            .expect("holiday");
+        file(
+            &db,
+            juan(),
+            Some(1),
+            ot("2026-10-19", "17:00", "20:00"),
+            today(),
+            t0(),
+        )
+        .await
+        .expect("evening overtime");
+        holidays::delete(&db, hr(), h2.id, t0())
+            .await
+            .expect("delete");
+    }
+
+    #[tokio::test]
+    async fn a_separation_cancels_overtime_after_the_last_day() {
+        let (_d, db) = db().await;
+        let before = file(
+            &db,
+            juan(),
+            Some(1),
+            ot("2026-10-20", "17:00", "20:00"),
+            today(),
+            t0(),
+        )
+        .await
+        .expect("before");
+        let after = file(
+            &db,
+            juan(),
+            Some(1),
+            ot("2026-10-27", "17:00", "20:00"),
+            today(),
+            t0(),
+        )
+        .await
+        .expect("after");
+        decide(&db, hr(), None, after.id, true, None, t0())
+            .await
+            .expect("approve");
+        let mut conn = db.acquire().await.expect("conn");
+        cancel_after_separation(&mut conn, hr(), 1, "2026-10-21", t0())
+            .await
+            .expect("cancel");
+        drop(conn);
+        assert_eq!(
+            repo::by_id(&db, after.id)
+                .await
+                .expect("read")
+                .expect("row")
+                .status,
+            "CANCELLED"
+        );
+        assert_eq!(
+            repo::by_id(&db, before.id)
+                .await
+                .expect("read")
+                .expect("row")
+                .status,
+            "PENDING"
+        );
+        assert_eq!(
+            audit_rows::actions(&db).await.last().map(String::as_str),
+            Some("overtime.cancel")
+        );
+    }
+
+    #[tokio::test]
+    async fn overtime_stays_within_the_employment_dates() {
+        let (_d, db) = db().await;
+        let early = file(
+            &db,
+            juan(),
+            Some(1),
+            ot("2025-01-02", "17:00", "20:00"),
+            today(),
+            t0(),
+        )
+        .await
+        .unwrap_err();
+        assert_eq!(fields(early), ["workDate"]);
+        sqlx::query("UPDATE employees SET separation_date = '2026-10-09' WHERE id = 1")
+            .execute(&db)
+            .await
+            .expect("resign");
+        let late = file(
+            &db,
+            juan(),
+            Some(1),
+            ot("2026-10-12", "17:00", "20:00"),
+            today(),
+            t0(),
+        )
+        .await
+        .unwrap_err();
+        assert_eq!(fields(late), ["workDate"]);
     }
 }

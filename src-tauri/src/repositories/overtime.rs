@@ -75,6 +75,8 @@ pub async fn pending<'e>(db: impl SqliteExecutor<'e>) -> sqlx::Result<Vec<Overti
 pub struct OvertimeEmployee {
     pub id: i64,
     pub archived_at: Option<String>,
+    pub hire_date: String,
+    pub separation_date: Option<String>,
     pub start_time: Option<String>,
     pub end_time: Option<String>,
     pub break_minutes: Option<i64>,
@@ -82,7 +84,8 @@ pub struct OvertimeEmployee {
     pub work_days: Option<String>,
 }
 
-const EMPLOYEE: &str = "SELECT e.id, e.archived_at, s.start_time, s.end_time, \
+const EMPLOYEE: &str =
+    "SELECT e.id, e.archived_at, e.hire_date, e.separation_date, s.start_time, s.end_time, \
     s.break_minutes, s.grace_minutes, s.work_days \
     FROM employees e LEFT JOIN work_schedules s ON s.id = e.schedule_id";
 
@@ -194,4 +197,51 @@ pub async fn set_status(
     .execute(conn)
     .await?;
     Ok(res.rows_affected() == 1)
+}
+
+/// The first work date in `[from, to]` with the employee's pending or approved overtime.
+pub async fn first_live_in(
+    conn: &mut SqliteConnection,
+    employee_id: i64,
+    from: &str,
+    to: &str,
+) -> sqlx::Result<Option<String>> {
+    sqlx::query_scalar(
+        "SELECT MIN(work_date) FROM overtime_requests WHERE employee_id = ? \
+         AND status IN ('PENDING', 'APPROVED') AND work_date BETWEEN ? AND ?",
+    )
+    .bind(employee_id)
+    .bind(from)
+    .bind(to)
+    .fetch_one(conn)
+    .await
+}
+
+/// Pending and approved overtime worked on `work_date`.
+pub async fn live_on(
+    conn: &mut SqliteConnection,
+    work_date: &str,
+) -> sqlx::Result<Vec<OvertimeRequest>> {
+    sqlx::query_as(&format!(
+        "{REQUEST} WHERE o.work_date = ? AND o.status IN ('PENDING', 'APPROVED') ORDER BY o.id"
+    ))
+    .bind(work_date)
+    .fetch_all(conn)
+    .await
+}
+
+/// The employee's pending and approved overtime after `date`.
+pub async fn live_after(
+    conn: &mut SqliteConnection,
+    employee_id: i64,
+    date: &str,
+) -> sqlx::Result<Vec<OvertimeRequest>> {
+    sqlx::query_as(&format!(
+        "{REQUEST} WHERE o.employee_id = ? AND o.status IN ('PENDING', 'APPROVED') \
+         AND o.work_date > ? ORDER BY o.work_date"
+    ))
+    .bind(employee_id)
+    .bind(date)
+    .fetch_all(conn)
+    .await
 }
