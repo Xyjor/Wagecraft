@@ -97,7 +97,7 @@ pub struct EmployeeListItem {
     pub archived: bool,
 }
 
-#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Deserialize, TS)]
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Deserialize, Serialize, TS)]
 #[serde(rename_all = "camelCase")]
 #[ts(export)]
 pub enum EmployeeSort {
@@ -108,7 +108,7 @@ pub enum EmployeeSort {
     HireDate,
 }
 
-#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Deserialize, TS)]
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Deserialize, Serialize, TS)]
 #[serde(rename_all = "camelCase")]
 #[ts(export)]
 pub enum Archived {
@@ -120,7 +120,7 @@ pub enum Archived {
 }
 
 /// Search, filters, sort and page for `employee_list` (plan §4.6).
-#[derive(Debug, Clone, Default, Deserialize, TS)]
+#[derive(Debug, Clone, Default, Deserialize, Serialize, TS)]
 #[serde(rename_all = "camelCase", default)]
 #[ts(export)]
 pub struct EmployeeQuery {

@@ -28,3 +28,6 @@ export const createAccount = (id: number, input: NewStaffAccount) =>
 export const linkAccount = (id: number, userId: number) =>
   call<AccountSummary>("employee_link_user", { id, userId });
 export const unlinkAccount = (id: number) => call<void>("employee_unlink_user", { id });
+/** Opens the Save dialog. Resolves to the saved path, or null if the user cancelled. */
+export const exportMasterlist = (query: EmployeeQuery) =>
+  call<string | null>("report_masterlist_csv", { query });

@@ -4,6 +4,7 @@ mod commands;
 mod db;
 mod domain;
 mod error;
+mod export;
 mod repositories;
 pub mod seed;
 mod services;
@@ -20,6 +21,7 @@ const IDLE_TIMEOUT: Duration = Duration::from_secs(15 * 60);
 pub fn run() {
     tauri::Builder::default()
         // Info and up: sqlx logs every statement at Debug.
+        .plugin(tauri_plugin_dialog::init())
         .plugin(
             tauri_plugin_log::Builder::new()
                 .level(log::LevelFilter::Info)
@@ -69,6 +71,7 @@ pub fn run() {
             commands::employees::employee_create_account,
             commands::employees::employee_link_user,
             commands::employees::employee_unlink_user,
+            commands::reports::report_masterlist_csv,
         ])
         .run(tauri::generate_context!())
         .expect("error while running Wagecraft");

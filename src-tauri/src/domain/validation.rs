@@ -63,8 +63,54 @@ pub fn email(s: &str) -> bool {
         && domain.split('.').all(|part| !part.is_empty())
 }
 
+/// Shows stored digits in the official grouping, like `src/lib/govIds.ts`:
+/// TIN 000-000-000(-branch), SSS 00-0000000-0, PhilHealth 00-000000000-0, Pag-IBIG 0000-0000-0000.
+/// Anything with an unexpected length comes back unchanged.
+pub fn format_id(kind: IdKind, digits: &str) -> String {
+    let groups: &[usize] = match (kind, digits.len()) {
+        (IdKind::Tin, 9) => &[3, 3, 3],
+        (IdKind::Tin, n @ 12..=14) => match n {
+            12 => &[3, 3, 3, 3],
+            13 => &[3, 3, 3, 4],
+            _ => &[3, 3, 3, 5],
+        },
+        (IdKind::Sss, 10) => &[2, 7, 1],
+        (IdKind::Philhealth, 12) => &[2, 9, 1],
+        (IdKind::Pagibig, 12) => &[4, 4, 4],
+        _ => return digits.to_string(),
+    };
+    let mut parts = Vec::with_capacity(groups.len());
+    let mut at = 0;
+    for size in groups {
+        parts.push(&digits[at..at + size]);
+        at += size;
+    }
+    parts.join("-")
+}
+
+#[derive(Debug, Clone, Copy)]
+pub enum IdKind {
+    Tin,
+    Sss,
+    Philhealth,
+    Pagibig,
+}
+
 #[cfg(test)]
 mod tests {
+
+    #[test]
+    fn formats_ids_like_the_screens_do() {
+        assert_eq!(format_id(IdKind::Tin, "123456789"), "123-456-789");
+        assert_eq!(format_id(IdKind::Tin, "123456789000"), "123-456-789-000");
+        assert_eq!(format_id(IdKind::Sss, "3412345678"), "34-1234567-8");
+        assert_eq!(
+            format_id(IdKind::Philhealth, "123456789012"),
+            "12-345678901-2"
+        );
+        assert_eq!(format_id(IdKind::Pagibig, "123456789012"), "1234-5678-9012");
+        assert_eq!(format_id(IdKind::Sss, "123"), "123");
+    }
     use super::*;
 
     #[test]

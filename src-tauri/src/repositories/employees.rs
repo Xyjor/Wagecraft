@@ -1,7 +1,7 @@
 //! SQL for employees. No rules here: the employee service validates first.
 
 use crate::domain::employee::{Archived, Employee, EmployeeListItem, EmployeeQuery, EmployeeSort};
-use sqlx::{SqliteConnection, SqliteExecutor};
+use sqlx::{FromRow, SqliteConnection, SqliteExecutor};
 
 const PROFILE: &str = "SELECT e.id, e.employee_no, e.first_name, e.middle_name, e.last_name, \
     e.suffix, e.birth_date, e.sex, e.civil_status, e.email, e.mobile, e.address, e.hire_date, \
@@ -297,4 +297,72 @@ mod tests {
         assert_eq!(like_pattern(Some("  ")), None);
         assert_eq!(like_pattern(None), None);
     }
+}
+
+/// One masterlist row: the profile plus the latest pay rate.
+#[derive(Debug, FromRow)]
+pub struct MasterlistRow {
+    pub employee_no: String,
+    pub last_name: String,
+    pub first_name: String,
+    pub middle_name: Option<String>,
+    pub suffix: Option<String>,
+    pub department_name: Option<String>,
+    pub position_title: Option<String>,
+    pub employment_status: String,
+    pub hire_date: String,
+    pub regularization_date: Option<String>,
+    pub separation_date: Option<String>,
+    pub birth_date: Option<String>,
+    pub sex: Option<String>,
+    pub civil_status: Option<String>,
+    pub email: Option<String>,
+    pub mobile: Option<String>,
+    pub address: Option<String>,
+    pub tin: Option<String>,
+    pub sss_no: Option<String>,
+    pub philhealth_no: Option<String>,
+    pub pagibig_no: Option<String>,
+    pub bank_name: Option<String>,
+    pub bank_account_no: Option<String>,
+    pub pay_basis: Option<String>,
+    pub rate_cents: Option<i64>,
+    pub rate_from: Option<String>,
+    pub archived: bool,
+}
+
+/// Every employee matching the list filters, in the list's order, with no paging.
+pub async fn masterlist(
+    conn: &mut SqliteConnection,
+    q: &EmployeeQuery,
+) -> sqlx::Result<Vec<MasterlistRow>> {
+    // The latest rate is the one with no end date (services/compensation.rs keeps one).
+    let latest = |col: &str| {
+        format!(
+            "(SELECT c.{col} FROM compensations c WHERE c.employee_id = e.id \
+             AND c.effective_to IS NULL)"
+        )
+    };
+    let sql = format!(
+        "SELECT e.employee_no, e.last_name, e.first_name, e.middle_name, e.suffix, \
+         d.name AS department_name, p.title AS position_title, e.employment_status, \
+         e.hire_date, e.regularization_date, e.separation_date, e.birth_date, e.sex, \
+         e.civil_status, e.email, e.mobile, e.address, e.tin, e.sss_no, e.philhealth_no, \
+         e.pagibig_no, e.bank_name, e.bank_account_no, \
+         {} AS pay_basis, {} AS rate_cents, {} AS rate_from, \
+         e.archived_at IS NOT NULL AS archived \
+         {FILTERS} ORDER BY {}",
+        latest("pay_basis"),
+        latest("rate_cents"),
+        latest("effective_from"),
+        order_by(q.sort, q.descending)
+    );
+    sqlx::query_as(&sql)
+        .bind(like_pattern(q.search.as_deref()))
+        .bind(q.department_id)
+        .bind(q.position_id)
+        .bind(q.employment_status.as_deref().filter(|s| !s.is_empty()))
+        .bind(archived_filter(q.archived))
+        .fetch_all(conn)
+        .await
 }

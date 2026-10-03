@@ -138,4 +138,31 @@ describe("EmployeesPage", () => {
     fireEvent.click(screen.getByRole("button", { name: "Next page" }));
     expect(await screen.findByText("Showing 26–50 of 60")).toBeTruthy();
   });
+
+  it("exports the filtered masterlist and says where it went", async () => {
+    renderAs();
+    await screen.findByText("Showing 1–25 of 60");
+    fireEvent.change(screen.getByLabelText("Status"), { target: { value: "REGULAR" } });
+    await waitFor(() => expect(lastQuery()).toMatchObject({ employmentStatus: "REGULAR" }));
+    call.mockImplementationOnce(async () => "C:\\Users\\hr\\employee-masterlist.csv");
+    fireEvent.click(screen.getByRole("button", { name: "Export CSV" }));
+
+    expect((await screen.findByRole("status")).textContent).toBe(
+      "Saved the masterlist to C:\\Users\\hr\\employee-masterlist.csv",
+    );
+    expect(call).toHaveBeenCalledWith("report_masterlist_csv", {
+      query: expect.objectContaining({ employmentStatus: "REGULAR" }),
+    });
+  });
+
+  it("says nothing when the Save dialog is cancelled", async () => {
+    renderAs();
+    await screen.findByText("Showing 1–25 of 60");
+    call.mockImplementationOnce(async () => null);
+    fireEvent.click(screen.getByRole("button", { name: "Export CSV" }));
+    await waitFor(() =>
+      expect(call).toHaveBeenCalledWith("report_masterlist_csv", expect.anything()),
+    );
+    expect(screen.queryByRole("status")).toBeNull();
+  });
 });
