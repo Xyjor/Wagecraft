@@ -5,6 +5,7 @@ mod db;
 mod domain;
 mod error;
 mod repositories;
+pub mod seed;
 mod services;
 mod state;
 mod time;
