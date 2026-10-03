@@ -65,7 +65,7 @@ export function checkEmployee(v: Record<string, string>): Result {
       employmentStatus: v.employmentStatus,
       departmentId: id(v.departmentId),
       positionId: id(v.positionId),
-      scheduleId: null,
+      scheduleId: id(v.scheduleId),
       tin: text(v.tin),
       sssNo: text(v.sssNo),
       philhealthNo: text(v.philhealthNo),

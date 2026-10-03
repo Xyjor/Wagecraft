@@ -8,7 +8,7 @@
 use crate::audit::Actor;
 use crate::domain::compensation::{pay_period_start, CompensationInput};
 use crate::domain::employee::EmployeeInput;
-use crate::domain::org::{DepartmentInput, PositionInput};
+use crate::domain::org::{DepartmentInput, PositionInput, WorkScheduleInput};
 use crate::services::{compensation, employees, org};
 use chrono::{Datelike, Days, Months, NaiveDate, Utc};
 use sqlx::SqlitePool;
@@ -23,6 +23,7 @@ const SEED: Actor<'static> = Actor {
 /// What a seed run added.
 #[derive(Debug, Default, PartialEq, Eq)]
 pub struct Summary {
+    pub schedules: usize,
     pub departments: usize,
     pub positions: usize,
     pub employees: usize,
@@ -50,8 +51,27 @@ struct PositionPlan {
 struct DepartmentPlan {
     code: &'static str,
     name: &'static str,
+    /// Index into `SCHEDULES`.
+    schedule: usize,
     positions: &'static [PositionPlan],
 }
+
+/// Work schedules: (name, start, end, work days).
+const SCHEDULES: &[(&str, &str, &str, &str)] = &[
+    ("Office (Mon–Fri)", "08:00", "17:00", "MON,TUE,WED,THU,FRI"),
+    (
+        "Warehouse (Mon–Sat)",
+        "07:00",
+        "16:00",
+        "MON,TUE,WED,THU,FRI,SAT",
+    ),
+    (
+        "Night shift (Mon–Fri)",
+        "22:00",
+        "06:00",
+        "MON,TUE,WED,THU,FRI",
+    ),
+];
 
 const fn monthly(title: &'static str, min: i64, max: i64, weight: u32) -> PositionPlan {
     PositionPlan {
@@ -74,6 +94,7 @@ const fn daily(title: &'static str, rate: i64, weight: u32) -> PositionPlan {
 const COMPANY: &[DepartmentPlan] = &[
     DepartmentPlan {
         code: "OPS",
+        schedule: 1,
         name: "Operations",
         positions: &[
             monthly("Operations Supervisor", 30_000, 42_000, 2),
@@ -84,6 +105,7 @@ const COMPANY: &[DepartmentPlan] = &[
     },
     DepartmentPlan {
         code: "SAL",
+        schedule: 0,
         name: "Sales",
         positions: &[
             monthly("Sales Manager", 45_000, 65_000, 1),
@@ -93,6 +115,7 @@ const COMPANY: &[DepartmentPlan] = &[
     },
     DepartmentPlan {
         code: "FIN",
+        schedule: 0,
         name: "Finance",
         positions: &[
             monthly("Finance Manager", 55_000, 80_000, 1),
@@ -102,6 +125,7 @@ const COMPANY: &[DepartmentPlan] = &[
     },
     DepartmentPlan {
         code: "HR",
+        schedule: 0,
         name: "Human Resources",
         positions: &[
             monthly("HR Manager", 50_000, 70_000, 1),
@@ -110,6 +134,7 @@ const COMPANY: &[DepartmentPlan] = &[
     },
     DepartmentPlan {
         code: "IT",
+        schedule: 0,
         name: "Information Technology",
         positions: &[
             monthly("IT Lead", 60_000, 90_000, 1),
@@ -119,6 +144,7 @@ const COMPANY: &[DepartmentPlan] = &[
     },
     DepartmentPlan {
         code: "CS",
+        schedule: 2,
         name: "Customer Service",
         positions: &[
             monthly("Customer Service Lead", 26_000, 34_000, 1),
@@ -274,8 +300,30 @@ pub(crate) async fn demo_company(
     let mut summary = Summary::default();
     let mut rng = Rng(2026);
 
+    // Work schedules, reusing any that already exist by name.
+    let existing_schedules = org::list_schedules(db).await?;
+    let mut schedule_ids = Vec::new();
+    for (name, start, end, days) in SCHEDULES {
+        let id = match existing_schedules.iter().find(|x| x.name == *name) {
+            Some(x) => x.id,
+            None => {
+                summary.schedules += 1;
+                let input = WorkScheduleInput {
+                    name: (*name).into(),
+                    start_time: (*start).into(),
+                    end_time: (*end).into(),
+                    break_minutes: 60,
+                    grace_minutes: 10,
+                    work_days: (*days).into(),
+                };
+                org::create_schedule(db, SEED, input, now).await?.id
+            }
+        };
+        schedule_ids.push(id);
+    }
+
     // Departments and positions, reusing any that already exist by code or title.
-    let mut slots = Vec::new(); // (department id, position id, plan) repeated by weight
+    let mut slots = Vec::new(); // (department, position, schedule, plan) repeated by weight
     let departments = org::list_departments(db).await?;
     let positions = org::list_positions(db).await?;
     for d in COMPANY {
@@ -309,14 +357,14 @@ pub(crate) async fn demo_company(
                 }
             };
             for _ in 0..p.weight {
-                slots.push((dept_id, pos_id, p));
+                slots.push((dept_id, pos_id, schedule_ids[d.schedule], p));
             }
         }
     }
 
     let mut emails = HashSet::new();
     for i in 1..=count {
-        let (dept_id, pos_id, plan) = *rng.pick(&slots);
+        let (dept_id, pos_id, schedule_id, plan) = *rng.pick(&slots);
         let female = rng.chance(50);
         let first = *rng.pick(if female { FIRST_FEMALE } else { FIRST_MALE });
         let last = *rng.pick(LAST);
@@ -392,7 +440,7 @@ pub(crate) async fn demo_company(
             employment_status: status.into(),
             department_id: Some(dept_id),
             position_id: Some(pos_id),
-            schedule_id: None,
+            schedule_id: Some(schedule_id),
             // Unique by construction: the employee's index is part of every number.
             tin: Some(format!("{:03}{:06}", 100 + rng.below(800), i)),
             sss_no: Some(format!(
@@ -502,6 +550,7 @@ mod tests {
             .await
             .expect("open");
         let summary = demo_company(&db, 200, today()).await.expect("seed");
+        assert_eq!(summary.schedules, 3);
         assert_eq!(summary.departments, 6);
         assert_eq!(summary.positions, 17);
         assert_eq!(summary.employees, 200);

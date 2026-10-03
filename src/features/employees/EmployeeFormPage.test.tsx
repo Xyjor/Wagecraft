@@ -36,6 +36,31 @@ const positions = [
   },
 ];
 
+const schedules = [
+  {
+    id: 1,
+    name: "Office",
+    startTime: "08:00",
+    endTime: "17:00",
+    breakMinutes: 60,
+    graceMinutes: 10,
+    workDays: "MON,TUE,WED,THU,FRI",
+    isActive: true,
+    employeeCount: 3,
+  },
+  {
+    id: 2,
+    name: "Old shift",
+    startTime: "06:00",
+    endTime: "15:00",
+    breakMinutes: 60,
+    graceMinutes: 0,
+    workDays: "MON,TUE,WED,THU,FRI,SAT",
+    isActive: false,
+    employeeCount: 0,
+  },
+];
+
 const juan: Employee = {
   id: 7,
   employeeNo: "EMP-0007",
@@ -94,6 +119,7 @@ describe("EmployeeFormPage", () => {
     call.mockImplementation(async (cmd: string) => {
       if (cmd === "department_list") return departments;
       if (cmd === "position_list") return positions;
+      if (cmd === "schedule_list") return schedules;
       if (cmd === "employee_get") return juan;
       if (cmd === "employee_create") return { ...juan, id: 8 };
       if (cmd === "employee_update") return juan;
@@ -148,6 +174,7 @@ describe("EmployeeFormPage", () => {
     call.mockImplementation(async (cmd: string) => {
       if (cmd === "department_list") return departments;
       if (cmd === "position_list") return positions;
+      if (cmd === "schedule_list") return schedules;
       throw {
         code: "VALIDATION",
         message: "Some fields are invalid",
@@ -198,5 +225,22 @@ describe("EmployeeFormPage", () => {
       departmentId: 1,
       positionId: 10,
     });
+  });
+
+  it("offers active work schedules and sends the one picked", async () => {
+    renderAt("/employees/7/edit");
+    await screen.findByRole("heading", { name: "Edit Juan Dela Cruz" });
+    await waitFor(() =>
+      expect(within(screen.getByLabelText("Work schedule")).getAllByRole("option")).toHaveLength(2),
+    );
+    const labels = within(screen.getByLabelText("Work schedule"))
+      .getAllByRole("option")
+      .map((o) => o.textContent);
+    expect(labels).toEqual(["No schedule", "Office · 08:00–17:00, Mon–Fri"]);
+    type("Work schedule", "1");
+    fireEvent.click(screen.getByRole("button", { name: "Save employee" }));
+
+    expect(await screen.findByText("Profile page")).toBeTruthy();
+    expect(lastInput("employee_update").input).toMatchObject({ scheduleId: 1 });
   });
 });

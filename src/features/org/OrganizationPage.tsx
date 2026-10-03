@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState, type FormEvent } from "react";
 import type { Department } from "@/bindings/Department";
 import type { Position } from "@/bindings/Position";
+import type { WorkSchedule } from "@/bindings/WorkSchedule";
 import { Field, FormAlert, SelectField } from "@/components/form";
 import { ActiveBadge, primaryButton, quietButton } from "@/components/ui";
 import { useSession } from "@/features/auth/session";
@@ -10,14 +11,25 @@ import { formatPesos } from "@/lib/money";
 import {
   createDepartment,
   createPosition,
+  createSchedule,
   listDepartments,
   listPositions,
+  listSchedules,
   setDepartmentActive,
   setPositionActive,
+  setScheduleActive,
   updateDepartment,
   updatePosition,
+  updateSchedule,
 } from "./api";
-import { checkDepartment, checkPosition, POSITION_FIELD } from "./validation";
+import { DAY_NAMES, scheduleHours, workDaysLabel } from "./format";
+import {
+  checkDepartment,
+  checkPosition,
+  checkSchedule,
+  POSITION_FIELD,
+  WEEKDAYS,
+} from "./validation";
 
 /** Which form is open: none, a new record, or editing one. */
 type Editing<T> = null | "new" | T;
@@ -37,21 +49,25 @@ export function OrganizationPage() {
 function Organization() {
   const [departments, setDepartments] = useState<Department[] | null>(null);
   const [positions, setPositions] = useState<Position[] | null>(null);
+  const [schedules, setSchedules] = useState<WorkSchedule[] | null>(null);
   const [alert, setAlert] = useState<string>();
   const [deptForm, setDeptForm] = useState<Editing<Department>>(null);
   const [posForm, setPosForm] = useState<Editing<Position>>(null);
+  const [schedForm, setSchedForm] = useState<Editing<WorkSchedule>>(null);
 
   const reload = useCallback(async () => {
-    const [d, p] = await Promise.all([listDepartments(), listPositions()]);
+    const [d, p, s] = await Promise.all([listDepartments(), listPositions(), listSchedules()]);
     setDepartments(d);
     setPositions(p);
+    setSchedules(s);
   }, []);
 
   useEffect(() => {
-    Promise.all([listDepartments(), listPositions()])
-      .then(([d, p]) => {
+    Promise.all([listDepartments(), listPositions(), listSchedules()])
+      .then(([d, p, s]) => {
         setDepartments(d);
         setPositions(p);
+        setSchedules(s);
       })
       .catch((e: AppError) => setAlert(e.message));
   }, []);
@@ -187,6 +203,68 @@ function Organization() {
                       active={p.isActive}
                       onEdit={() => setPosForm(p)}
                       onToggle={() => toggle(setPositionActive(p.id, !p.isActive))}
+                    />
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </section>
+
+      <section className="space-y-4" aria-labelledby="schedules-heading">
+        <div className="flex items-center justify-between">
+          <h2 id="schedules-heading" className="text-lg font-semibold">
+            Work schedules
+          </h2>
+          {schedForm === null && (
+            <button type="button" className={primaryButton} onClick={() => setSchedForm("new")}>
+              Add schedule
+            </button>
+          )}
+        </div>
+        {schedForm !== null && (
+          <ScheduleForm
+            key={schedForm === "new" ? "new" : schedForm.id}
+            editing={schedForm === "new" ? null : schedForm}
+            onCancel={() => setSchedForm(null)}
+            onSaved={async () => {
+              setSchedForm(null);
+              await reload();
+            }}
+          />
+        )}
+        {schedules && (
+          <table className="w-full text-left text-sm">
+            <thead className="border-b border-zinc-200 text-zinc-500 dark:border-zinc-800">
+              <tr>
+                <th className="py-2 font-medium">Name</th>
+                <th className="py-2 font-medium">Hours</th>
+                <th className="py-2 font-medium">Work days</th>
+                <th className="py-2 font-medium">Employees</th>
+                <th className="py-2 font-medium">Status</th>
+                <th className="py-2 font-medium">
+                  <span className="sr-only">Actions</span>
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {schedules.length === 0 && <EmptyRow colSpan={6}>No work schedules yet.</EmptyRow>}
+              {schedules.map((s) => (
+                <tr key={s.id} className="border-b border-zinc-100 dark:border-zinc-900">
+                  <td className="py-2 font-medium">{s.name}</td>
+                  <td className="py-2 tabular-nums">{scheduleHours(s)}</td>
+                  <td className="py-2">{workDaysLabel(s.workDays)}</td>
+                  <td className="py-2 tabular-nums">{s.employeeCount}</td>
+                  <td className="py-2">
+                    <ActiveBadge active={s.isActive} />
+                  </td>
+                  <td className="py-2">
+                    <RowActions
+                      name={s.name}
+                      active={s.isActive}
+                      onEdit={() => setSchedForm(s)}
+                      onToggle={() => toggle(setScheduleActive(s.id, !s.isActive))}
                     />
                   </td>
                 </tr>
@@ -390,10 +468,10 @@ function FormButtons({
   );
 }
 
-function EmptyRow({ children }: { children: string }) {
+function EmptyRow({ children, colSpan = 5 }: { children: string; colSpan?: number }) {
   return (
     <tr>
-      <td colSpan={5} className="py-3 text-zinc-500">
+      <td colSpan={colSpan} className="py-3 text-zinc-500">
         {children}
       </td>
     </tr>
@@ -405,4 +483,102 @@ function salaryRange(min: number | null, max: number | null): string {
   if (max == null) return `From ${formatPesos(min!)}`;
   if (min == null) return `Up to ${formatPesos(max)}`;
   return `${formatPesos(min)} – ${formatPesos(max)}`;
+}
+
+function ScheduleForm({
+  editing,
+  onSaved,
+  onCancel,
+}: {
+  editing: WorkSchedule | null;
+  onSaved: () => Promise<void>;
+  onCancel: () => void;
+}) {
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [alert, setAlert] = useState<string>();
+  const [busy, setBusy] = useState(false);
+  const picked = (editing?.workDays ?? "MON,TUE,WED,THU,FRI").split(",");
+
+  async function submit(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    const checked = checkSchedule(formValues(e.currentTarget));
+    if (!checked.ok) {
+      setErrors(checked.errors);
+      return;
+    }
+    setBusy(true);
+    try {
+      if (editing) await updateSchedule(editing.id, checked.value);
+      else await createSchedule(checked.value);
+      await onSaved();
+    } catch (err) {
+      const s = serverErrors(err as AppError);
+      setErrors(s.fields);
+      setAlert(s.alert);
+      setBusy(false);
+    }
+  }
+
+  return (
+    <form
+      onSubmit={submit}
+      noValidate
+      aria-label={editing ? `Edit ${editing.name}` : "Add schedule"}
+      className="grid max-w-md gap-4 rounded-lg border border-zinc-200 p-4 dark:border-zinc-800"
+    >
+      <FormAlert message={alert} />
+      <Field name="name" label="Name" autoFocus defaultValue={editing?.name} error={errors.name} />
+      <div className="grid grid-cols-2 gap-4">
+        <Field
+          name="startTime"
+          label="Starts"
+          type="time"
+          defaultValue={editing?.startTime ?? "08:00"}
+          error={errors.startTime}
+        />
+        <Field
+          name="endTime"
+          label="Ends"
+          type="time"
+          defaultValue={editing?.endTime ?? "17:00"}
+          error={errors.endTime}
+        />
+        <Field
+          name="breakMinutes"
+          label="Unpaid break (minutes)"
+          type="number"
+          defaultValue={String(editing?.breakMinutes ?? 60)}
+          error={errors.breakMinutes}
+        />
+        <Field
+          name="graceMinutes"
+          label="Grace period (minutes)"
+          type="number"
+          defaultValue={String(editing?.graceMinutes ?? 0)}
+          error={errors.graceMinutes}
+        />
+      </div>
+      <fieldset aria-describedby={errors.workDays ? "workDays-error" : undefined}>
+        <legend className="text-sm font-medium">Work days</legend>
+        <div className="mt-2 flex flex-wrap gap-3">
+          {WEEKDAYS.map((d) => (
+            <label key={d} className="flex items-center gap-1.5 text-sm">
+              <input type="checkbox" name={`day-${d}`} defaultChecked={picked.includes(d)} />
+              {DAY_NAMES[d]}
+            </label>
+          ))}
+        </div>
+        {errors.workDays && (
+          <p id="workDays-error" className="mt-1 text-sm text-red-600 dark:text-red-400">
+            {errors.workDays}
+          </p>
+        )}
+      </fieldset>
+      <p className="text-sm text-zinc-600 dark:text-zinc-400">
+        An end time earlier than the start means the shift ends the next day. Arriving within the
+        grace period is not counted as late. Changes apply to attendance recorded from now on.
+      </p>
+      <FormButtons busy={busy} save="Save schedule" onCancel={onCancel} />
+    </form>
+  );
 }

@@ -1,7 +1,9 @@
-//! Departments and positions. Lists need `employee.read_all`; changes need `org.manage`.
+//! Departments, positions and work schedules. Lists need `employee.read_all`; changes need `org.manage`.
 
 use crate::auth::permissions::Permission;
-use crate::domain::org::{Department, DepartmentInput, Position, PositionInput};
+use crate::domain::org::{
+    Department, DepartmentInput, Position, PositionInput, WorkSchedule, WorkScheduleInput,
+};
 use crate::error::AppError;
 use crate::services::org;
 use crate::state::AppState;
@@ -76,4 +78,39 @@ pub async fn position_set_active(
 ) -> Result<(), AppError> {
     let session = state.require(Permission::OrgManage).await?;
     org::set_position_active(&state.db, session.actor(), id, active, Utc::now()).await
+}
+
+#[tauri::command]
+pub async fn schedule_list(state: State<'_, AppState>) -> Result<Vec<WorkSchedule>, AppError> {
+    state.require(Permission::EmployeeReadAll).await?;
+    org::list_schedules(&state.db).await
+}
+
+#[tauri::command]
+pub async fn schedule_create(
+    state: State<'_, AppState>,
+    input: WorkScheduleInput,
+) -> Result<WorkSchedule, AppError> {
+    let session = state.require(Permission::OrgManage).await?;
+    org::create_schedule(&state.db, session.actor(), input, Utc::now()).await
+}
+
+#[tauri::command]
+pub async fn schedule_update(
+    state: State<'_, AppState>,
+    id: i64,
+    input: WorkScheduleInput,
+) -> Result<WorkSchedule, AppError> {
+    let session = state.require(Permission::OrgManage).await?;
+    org::update_schedule(&state.db, session.actor(), id, input, Utc::now()).await
+}
+
+#[tauri::command]
+pub async fn schedule_set_active(
+    state: State<'_, AppState>,
+    id: i64,
+    active: bool,
+) -> Result<(), AppError> {
+    let session = state.require(Permission::OrgManage).await?;
+    org::set_schedule_active(&state.db, session.actor(), id, active, Utc::now()).await
 }
