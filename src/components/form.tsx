@@ -6,11 +6,20 @@ type FieldProps = {
   type?: "text" | "password";
   autoComplete?: string;
   autoFocus?: boolean;
+  defaultValue?: string;
   error?: string;
 };
 
 /** A labelled input. Uncontrolled: the parent form reads values through FormData. */
-export function Field({ name, label, type = "text", autoComplete, autoFocus, error }: FieldProps) {
+export function Field({
+  name,
+  label,
+  type = "text",
+  autoComplete,
+  autoFocus,
+  defaultValue,
+  error,
+}: FieldProps) {
   const errorId = `${name}-error`;
   return (
     <div className="flex flex-col gap-1">
@@ -23,6 +32,7 @@ export function Field({ name, label, type = "text", autoComplete, autoFocus, err
         type={type}
         autoComplete={autoComplete}
         autoFocus={autoFocus}
+        defaultValue={defaultValue}
         aria-invalid={error ? true : undefined}
         aria-describedby={error ? errorId : undefined}
         className="rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-sky-500 aria-invalid:border-red-500 dark:border-zinc-700 dark:bg-zinc-900"

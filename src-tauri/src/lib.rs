@@ -2,6 +2,7 @@ mod audit;
 mod auth;
 mod commands;
 mod db;
+mod domain;
 mod error;
 mod repositories;
 mod services;
@@ -46,6 +47,14 @@ pub fn run() {
             commands::users::user_update,
             commands::users::user_set_active,
             commands::users::user_reset_password,
+            commands::org::department_list,
+            commands::org::department_create,
+            commands::org::department_update,
+            commands::org::department_set_active,
+            commands::org::position_list,
+            commands::org::position_create,
+            commands::org::position_update,
+            commands::org::position_set_active,
         ])
         .run(tauri::generate_context!())
         .expect("error while running Wagecraft");
