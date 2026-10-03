@@ -225,6 +225,22 @@ fn failed_entry(user_id: Option<i64>, reason: &str) -> Entry<'static> {
     }
 }
 
+/// Records that the idle timeout signed someone out. The guard has already ended the session.
+pub async fn session_expired(
+    db: &SqlitePool,
+    actor: Actor<'_>,
+    now: DateTime<Utc>,
+) -> Result<(), AppError> {
+    let entry = Entry {
+        action: "auth.session_expired",
+        entity: actor.user_id.map(|id| ("user", id)),
+        ..Default::default()
+    };
+    let mut conn = db.acquire().await?;
+    audit::record(&mut conn, now, actor, entry).await?;
+    Ok(())
+}
+
 /// Records the sign-out. The caller has already cleared the in-memory session.
 pub async fn logout(db: &SqlitePool, actor: Actor<'_>, now: DateTime<Utc>) -> Result<(), AppError> {
     let entry = Entry {
