@@ -9,8 +9,6 @@ pub struct FieldError {
 
 /// The only error type a Tauri command returns. It reaches the UI as
 /// `{ code, message, fields }`, and `message` is always safe to show.
-// Unauthenticated, Forbidden, Validation and NotFound are first used by the sign-in work in Week 2.
-#[allow(dead_code)]
 #[derive(Debug, thiserror::Error)]
 pub enum AppError {
     #[error("Please sign in")]
@@ -23,8 +21,12 @@ pub enum AppError {
     Validation(Vec<FieldError>),
     #[error("{0} not found")]
     NotFound(&'static str),
+    #[error("Wrong username or password")]
+    InvalidCredentials,
     #[error("Something went wrong. Please try again")]
     Database(#[from] sqlx::Error),
+    #[error("Something went wrong. Please try again")]
+    Internal(#[from] anyhow::Error),
 }
 
 impl AppError {
@@ -35,15 +37,20 @@ impl AppError {
             AppError::Forbidden => "FORBIDDEN",
             AppError::Validation(_) => "VALIDATION",
             AppError::NotFound(_) => "NOT_FOUND",
+            AppError::InvalidCredentials => "INVALID_CREDENTIALS",
             AppError::Database(_) => "DATABASE",
+            AppError::Internal(_) => "INTERNAL",
         }
     }
 }
 
 impl Serialize for AppError {
     fn serialize<S: Serializer>(&self, s: S) -> Result<S::Ok, S::Error> {
-        if let AppError::Database(e) = self {
-            log::error!("database error: {e}"); // full detail to the log, never to the UI
+        // Full detail goes to the log, never to the UI.
+        match self {
+            AppError::Database(e) => log::error!("database error: {e}"),
+            AppError::Internal(e) => log::error!("internal error: {e:#}"),
+            _ => {}
         }
         let fields: &[FieldError] = match self {
             AppError::Validation(f) => f,

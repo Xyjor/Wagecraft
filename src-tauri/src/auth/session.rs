@@ -12,6 +12,8 @@ use std::{
 pub struct Session {
     pub user_id: i64,
     /// The employee this user is, if any. "Self" commands read this, never an id from the UI.
+    #[allow(dead_code)]
+    // First read by the self-service commands (attendance, leave, payslips).
     pub employee_id: Option<i64>,
     pub role: Role,
     pub last_activity: Instant,

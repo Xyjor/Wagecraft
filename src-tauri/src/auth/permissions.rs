@@ -1,5 +1,10 @@
-/// Who someone is in Wagecraft. Stored in `users.role`.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+use serde::Serialize;
+use ts_rs::TS;
+
+/// Who someone is in Wagecraft. Stored in `users.role` as ADMIN, HR or STAFF.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, TS)]
+#[serde(rename_all = "UPPERCASE")]
+#[ts(export)]
 pub enum Role {
     Admin,
     Hr,
@@ -8,6 +13,8 @@ pub enum Role {
 
 /// Everything a command can ask for. Every command checks one of these in Rust;
 /// the UI hiding a button is only a convenience.
+// Each variant starts being used when the feature it guards lands.
+#[allow(dead_code)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Permission {
     UserManage,
@@ -33,6 +40,24 @@ pub enum Permission {
 }
 
 impl Role {
+    /// The value stored in `users.role`.
+    pub fn as_db(self) -> &'static str {
+        match self {
+            Role::Admin => "ADMIN",
+            Role::Hr => "HR",
+            Role::Staff => "STAFF",
+        }
+    }
+
+    pub fn from_db(s: &str) -> Option<Role> {
+        match s {
+            "ADMIN" => Some(Role::Admin),
+            "HR" => Some(Role::Hr),
+            "STAFF" => Some(Role::Staff),
+            _ => None,
+        }
+    }
+
     /// The permission matrix from §3.2 of the plan.
     pub fn allows(self, p: Permission) -> bool {
         use Permission::*;
@@ -67,6 +92,15 @@ mod tests {
     fn admin_has_everything() {
         assert!(Role::Admin.allows(UserManage));
         assert!(Role::Admin.allows(PayrollPost)); // decision Q6: Admin can do HR work
+    }
+
+    #[test]
+    fn role_round_trips_through_the_database_value() {
+        for r in [Role::Admin, Role::Hr, Role::Staff] {
+            assert_eq!(Role::from_db(r.as_db()), Some(r));
+        }
+        assert_eq!(Role::from_db("admin"), None);
+        assert_eq!(serde_json::to_value(Role::Hr).expect("json"), "HR");
     }
 
     /// The whole §3.2 matrix, row by row: (permission, admin, hr, staff).
