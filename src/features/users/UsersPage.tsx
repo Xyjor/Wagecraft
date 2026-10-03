@@ -2,6 +2,12 @@ import { useCallback, useEffect, useState, type FormEvent } from "react";
 import type { Role } from "@/bindings/Role";
 import type { UserSummary } from "@/bindings/UserSummary";
 import { Field, FormAlert, SelectField } from "@/components/form";
+import {
+  ActiveBadge,
+  Badge,
+  primaryButton as primary,
+  quietButton as quiet,
+} from "@/components/ui";
 import { fieldErrors } from "@/features/auth/validation";
 import { useSession } from "@/features/auth/session";
 import { formValues, serverErrors } from "@/lib/formData";
@@ -13,11 +19,6 @@ const ROLE_OPTIONS = [
   { value: "ADMIN", label: "Admin" },
   { value: "HR", label: "HR" },
 ];
-
-const button =
-  "rounded-md px-2.5 py-1 text-sm focus-visible:ring-2 focus-visible:ring-sky-500 disabled:opacity-60";
-const primary = `${button} bg-zinc-900 font-medium text-white hover:bg-zinc-700 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-300`;
-const quiet = `${button} text-zinc-700 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-800`;
 
 export function UsersPage() {
   const { me } = useSession();
@@ -168,7 +169,7 @@ function UserRow({ user: u, isMe, resetting, ...on }: RowProps) {
         </td>
         <td className="py-2">
           <div className="flex flex-wrap gap-1">
-            <Badge tone={u.isActive ? "good" : "muted"}>{u.isActive ? "Active" : "Inactive"}</Badge>
+            <ActiveBadge active={u.isActive} />
             {u.locked && <Badge tone="bad">Locked</Badge>}
             {u.mustChangePassword && <Badge tone="muted">Must change password</Badge>}
           </div>
@@ -328,15 +329,6 @@ function ResetPasswordForm({
       </button>
     </form>
   );
-}
-
-function Badge({ tone, children }: { tone: "good" | "bad" | "muted"; children: string }) {
-  const tones = {
-    good: "bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300",
-    bad: "bg-red-50 text-red-700 dark:bg-red-950 dark:text-red-300",
-    muted: "bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300",
-  };
-  return <span className={`rounded px-1.5 py-0.5 text-xs ${tones[tone]}`}>{children}</span>;
 }
 
 function formatWhen(iso: string | null): string {
