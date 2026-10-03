@@ -292,3 +292,107 @@ pub async fn set_status(
     .await?;
     Ok(res.rows_affected() == 1)
 }
+
+/// Someone's approved leave on one date, for the attendance grid.
+#[derive(Debug, FromRow)]
+pub struct LeaveOnDay {
+    pub employee_id: i64,
+    pub leave_type_name: String,
+    pub half_day: bool,
+}
+
+pub async fn approved_on<'e>(
+    db: impl SqliteExecutor<'e>,
+    date: &str,
+) -> sqlx::Result<Vec<LeaveOnDay>> {
+    sqlx::query_as(
+        "SELECT r.employee_id, t.name AS leave_type_name, r.half_day FROM leave_requests r \
+         JOIN leave_types t ON t.id = r.leave_type_id \
+         WHERE r.status = 'APPROVED' AND ?1 BETWEEN r.start_date AND r.end_date",
+    )
+    .bind(date)
+    .fetch_all(db)
+    .await
+}
+
+/// Whether the employee has approved whole-day leave on `date`.
+pub async fn full_day_leave_on(
+    conn: &mut SqliteConnection,
+    employee_id: i64,
+    date: &str,
+) -> sqlx::Result<bool> {
+    sqlx::query_scalar(
+        "SELECT EXISTS (SELECT 1 FROM leave_requests WHERE employee_id = ?1 \
+         AND status = 'APPROVED' AND half_day = 0 AND ?2 BETWEEN start_date AND end_date)",
+    )
+    .bind(employee_id)
+    .bind(date)
+    .fetch_one(conn)
+    .await
+}
+
+/// The first date in `[from, to]` the employee has a time in, if any.
+pub async fn first_worked_day(
+    conn: &mut SqliteConnection,
+    employee_id: i64,
+    from: &str,
+    to: &str,
+) -> sqlx::Result<Option<String>> {
+    sqlx::query_scalar(
+        "SELECT MIN(work_date) FROM attendance_records WHERE employee_id = ? \
+         AND work_date BETWEEN ? AND ? AND time_in IS NOT NULL",
+    )
+    .bind(employee_id)
+    .bind(from)
+    .bind(to)
+    .fetch_one(conn)
+    .await
+}
+
+/// A pending or approved request whose length may change with the holidays.
+#[derive(Debug, FromRow)]
+pub struct Recount {
+    pub id: i64,
+    pub employee_id: i64,
+    pub employee_no: String,
+    pub leave_type_id: i64,
+    pub is_paid: bool,
+    pub start_date: String,
+    pub end_date: String,
+    pub half_day: bool,
+    pub halfdays: i64,
+    pub status: String,
+    pub work_days: Option<String>,
+}
+
+/// Pending and approved requests covering `date`.
+pub async fn live_on(conn: &mut SqliteConnection, date: &str) -> sqlx::Result<Vec<Recount>> {
+    sqlx::query_as(
+        "SELECT r.id, r.employee_id, e.employee_no, r.leave_type_id, t.is_paid, r.start_date, \
+         r.end_date, r.half_day, r.halfdays, r.status, s.work_days \
+         FROM leave_requests r \
+         JOIN employees e ON e.id = r.employee_id \
+         JOIN leave_types t ON t.id = r.leave_type_id \
+         LEFT JOIN work_schedules s ON s.id = e.schedule_id \
+         WHERE r.status IN ('PENDING', 'APPROVED') AND ?1 BETWEEN r.start_date AND r.end_date \
+         ORDER BY r.id",
+    )
+    .bind(date)
+    .fetch_all(conn)
+    .await
+}
+
+pub async fn set_halfdays(
+    conn: &mut SqliteConnection,
+    id: i64,
+    halfdays: i64,
+    now: &str,
+) -> sqlx::Result<()> {
+    sqlx::query("UPDATE leave_requests SET halfdays = ?, updated_at = ? WHERE id = ?")
+        .bind(halfdays)
+        .bind(now)
+        .bind(id)
+        .execute(conn)
+        .await?;
+    Ok(())
+}

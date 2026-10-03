@@ -1,12 +1,14 @@
 //! The holiday calendar (plan §6.3). HR enters each year's holidays from the presidential
 //! proclamation. Holidays can be deleted, since a wrong entry is just a typo, but never on a
-//! date that is in a posted payroll period. Every change is audited.
+//! date that is in a posted payroll period. A change recounts any leave covering the date,
+//! since holidays off don't use leave days. Every change is audited.
 
 use crate::audit::{self, Actor, Entry};
 use crate::domain::org::{Holiday, HolidayInput, HOLIDAY_KINDS};
 use crate::error::{AppError, FieldError};
 use crate::repositories::holidays as repo;
 use crate::services::auth::field;
+use crate::services::leave_requests::recount_on;
 use crate::time;
 use chrono::{DateTime, Datelike, NaiveDate, Utc};
 use serde_json::json;
@@ -97,6 +99,7 @@ pub async fn create(
     let mut tx = db.begin().await?;
     check_date(&mut tx, &h, None).await?;
     let id = repo::insert(&mut tx, &h.date, &h.name, h.kind).await?;
+    recount_on(&mut tx, actor, &h.date, now).await?;
     let created = repo::by_id(&mut *tx, id)
         .await?
         .ok_or(AppError::NotFound("Holiday"))?;
@@ -129,6 +132,10 @@ pub async fn update(
     }
     check_date(&mut tx, &h, Some(id)).await?;
     repo::update(&mut tx, id, &h.date, &h.name, h.kind, &time::to_db(now)).await?;
+    recount_on(&mut tx, actor, &before.date, now).await?;
+    if h.date != before.date {
+        recount_on(&mut tx, actor, &h.date, now).await?;
+    }
     let after = repo::by_id(&mut *tx, id)
         .await?
         .ok_or(AppError::NotFound("Holiday"))?;
@@ -157,6 +164,7 @@ pub async fn delete(
         return Err(AppError::Conflict(LOCKED));
     }
     repo::delete(&mut tx, id).await?;
+    recount_on(&mut tx, actor, &before.date, now).await?;
     let entry = Entry {
         action: "holiday.delete",
         entity: Some(("holiday", id)),

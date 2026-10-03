@@ -15,13 +15,19 @@ use crate::services::leave::grant_in;
 use crate::time;
 use chrono::{DateTime, Datelike, Duration, NaiveDate, Utc};
 use serde_json::json;
-use sqlx::SqlitePool;
+use sqlx::{SqliteConnection, SqlitePool};
 use std::collections::HashSet;
 
 const LOCKED: &str =
     "Some of these days are in a posted payroll period, so this leave can't change.";
 const DECIDED: &str = "This request has already been decided.";
 const CHANGED: &str = "Someone else just changed this request. Refresh to see it.";
+const WORKED: &str =
+    "The employee clocked in on a day in this leave. Correct that day first, or reject the request.";
+const NO_DAYS_LEFT: &str = "This would leave a leave request with no working days in it. \
+    Cancel that leave first, then change the holiday.";
+const LONGER_THAN_BALANCE: &str = "This would make approved leave take more days than the \
+    employee has left. Adjust their balance or cancel that leave first.";
 const NOT_ENOUGH: &str = "There aren't enough days left in this leave balance.";
 /// Longest single request, in calendar days. Longer leave is filed in parts.
 const MAX_SPAN_DAYS: i64 = 60;
@@ -174,6 +180,14 @@ pub async fn file(
     if repo::range_locked(&mut tx, employee.id, &from, &to).await? {
         return Err(AppError::Conflict(LOCKED));
     }
+    if !input.half_day {
+        if let Some(day) = repo::first_worked_day(&mut tx, employee.id, &from, &to).await? {
+            return Err(AppError::Validation(vec![field(
+                "startDate",
+                &format!("There's a time in on {day}, so that day can't be leave. HR can correct it first."),
+            )]));
+        }
+    }
     if repo::overlaps_active(&mut tx, employee.id, &from, &to).await? {
         return Err(AppError::Validation(vec![field(
             "startDate",
@@ -291,6 +305,19 @@ pub async fn decide(
     }
     if before.locked {
         return Err(AppError::Conflict(LOCKED));
+    }
+    if approve
+        && !before.half_day
+        && repo::first_worked_day(
+            &mut tx,
+            before.employee_id,
+            &before.start_date,
+            &before.end_date,
+        )
+        .await?
+        .is_some()
+    {
+        return Err(AppError::Conflict(WORKED));
     }
     let stamp = time::to_db(now);
     let status = if approve { "APPROVED" } else { "REJECTED" };
@@ -427,6 +454,67 @@ pub async fn cancel(
     Ok(after)
 }
 
+/// Works out again how long the pending and approved leave covering `date` is, after a
+/// holiday on that date was added, moved or removed. Approved paid leave gives back or
+/// takes the difference from the balance. Refuses (so the holiday change rolls back) when
+/// a request would have no working days left, or approved leave would outgrow its balance.
+pub(crate) async fn recount_on(
+    conn: &mut SqliteConnection,
+    actor: Actor<'_>,
+    date: &str,
+    now: DateTime<Utc>,
+) -> Result<(), AppError> {
+    let stamp = time::to_db(now);
+    for r in repo::live_on(conn, date).await? {
+        let (Some(start), Some(end), Some(work_days)) = (
+            parse_date(&r.start_date),
+            parse_date(&r.end_date),
+            r.work_days.as_deref(),
+        ) else {
+            continue;
+        };
+        let days_off: HashSet<NaiveDate> = repo::days_off(conn, &r.start_date, &r.end_date)
+            .await?
+            .iter()
+            .filter_map(|d| parse_date(d))
+            .collect();
+        let halfdays = count_halfdays(start, end, r.half_day, work_days, &days_off);
+        if halfdays == r.halfdays {
+            continue;
+        }
+        if halfdays == 0 {
+            return Err(AppError::Conflict(NO_DAYS_LEFT));
+        }
+        if r.status == "APPROVED" && r.is_paid {
+            let year = start.year();
+            let more = halfdays - r.halfdays;
+            if more > 0 {
+                if !repo::use_balance(conn, r.employee_id, r.leave_type_id, year, more, &stamp)
+                    .await?
+                {
+                    return Err(AppError::Conflict(LONGER_THAN_BALANCE));
+                }
+            } else {
+                repo::restore_balance(conn, r.employee_id, r.leave_type_id, year, -more, &stamp)
+                    .await?;
+            }
+        }
+        repo::set_halfdays(conn, r.id, halfdays, &stamp).await?;
+        let entry = Entry {
+            action: "leave.recount",
+            entity: Some(("leave_request", r.id)),
+            before: Some(json!({ "halfdays": r.halfdays })),
+            after: Some(json!({
+                "halfdays": halfdays,
+                "employeeNo": r.employee_no,
+                "holidayDate": date,
+            })),
+        };
+        audit::record(conn, now, actor, entry).await?;
+    }
+    Ok(())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -546,6 +634,35 @@ mod tests {
         .execute(db)
         .await
         .expect("lock");
+    }
+
+    async fn clock_in(db: &SqlitePool, employee_id: i64, date: &str) {
+        sqlx::query(
+            "INSERT INTO attendance_records (employee_id, work_date, time_in, status, source) \
+             VALUES (?, ?, ?, 'PRESENT', 'CLOCK')",
+        )
+        .bind(employee_id)
+        .bind(date)
+        .bind(format!("{date}T08:00:00"))
+        .execute(db)
+        .await
+        .expect("clock in");
+    }
+
+    fn holiday(date: &str) -> crate::domain::org::HolidayInput {
+        crate::domain::org::HolidayInput {
+            date: date.into(),
+            name: "Typhoon day".into(),
+            kind: "SPECIAL_NON_WORKING".into(),
+        }
+    }
+
+    async fn halfdays_of(db: &SqlitePool, id: i64) -> i64 {
+        repo::by_id(db, id)
+            .await
+            .expect("read")
+            .expect("row")
+            .halfdays
     }
 
     #[tokio::test]
@@ -1128,6 +1245,195 @@ mod tests {
         drop(conn);
         let row = repo::by_id(&db, r.id).await.expect("read").expect("row");
         assert_eq!(row.status, "PENDING");
+    }
+
+    #[tokio::test]
+    async fn leave_cant_cover_a_day_the_person_worked() {
+        let (_d, db) = db().await;
+        clock_in(&db, 1, "2026-10-13").await;
+        let err = file(
+            &db,
+            juan(),
+            Some(1),
+            leave(&db, "VL", "2026-10-12", "2026-10-14").await,
+            today(),
+            t0(),
+        )
+        .await
+        .unwrap_err();
+        assert_eq!(
+            message(err),
+            "There's a time in on 2026-10-13, so that day can't be leave. HR can correct it first."
+        );
+        // A half day off is fine on a day they came in.
+        let mut half = leave(&db, "VL", "2026-10-13", "2026-10-13").await;
+        half.half_day = true;
+        file(&db, juan(), Some(1), half, today(), t0())
+            .await
+            .expect("half day");
+    }
+
+    #[tokio::test]
+    async fn approval_is_refused_if_they_clocked_in_after_filing() {
+        let (_d, db) = db().await;
+        let r = file(
+            &db,
+            juan(),
+            Some(1),
+            leave(&db, "VL", "2026-10-12", "2026-10-14").await,
+            today(),
+            t0(),
+        )
+        .await
+        .expect("file");
+        clock_in(&db, 1, "2026-10-14").await;
+        let err = decide(&db, hr(), None, r.id, true, None, t0())
+            .await
+            .unwrap_err();
+        assert!(matches!(err, AppError::Conflict(WORKED)), "{err:?}");
+        assert_eq!(used(&db, 1, "VL").await, 0);
+        // Rejecting it still works.
+        decide(
+            &db,
+            hr(),
+            None,
+            r.id,
+            false,
+            Some("You came in".into()),
+            t0(),
+        )
+        .await
+        .expect("reject");
+    }
+
+    #[tokio::test]
+    async fn a_new_holiday_inside_approved_leave_gives_the_day_back() {
+        let (_d, db) = db().await;
+        let r = file(
+            &db,
+            juan(),
+            Some(1),
+            leave(&db, "VL", "2026-10-19", "2026-10-23").await,
+            today(),
+            t0(),
+        )
+        .await
+        .expect("file");
+        decide(&db, hr(), None, r.id, true, None, t0())
+            .await
+            .expect("approve");
+        assert_eq!(used(&db, 1, "VL").await, 10);
+
+        let h = crate::services::holidays::create(&db, hr(), holiday("2026-10-21"), t0())
+            .await
+            .expect("add holiday");
+        assert_eq!(
+            (halfdays_of(&db, r.id).await, used(&db, 1, "VL").await),
+            (8, 8)
+        );
+        assert_eq!(
+            audit_rows::actions(&db).await.last().map(String::as_str),
+            Some("holiday.create")
+        );
+        assert!(audit_rows::actions(&db)
+            .await
+            .contains(&"leave.recount".to_string()));
+
+        // Moving the holiday out of the leave takes the day again.
+        let moved = crate::domain::org::HolidayInput {
+            date: "2026-10-26".into(),
+            ..holiday("")
+        };
+        crate::services::holidays::update(&db, hr(), h.id, moved, t0())
+            .await
+            .expect("move");
+        assert_eq!(
+            (halfdays_of(&db, r.id).await, used(&db, 1, "VL").await),
+            (10, 10)
+        );
+    }
+
+    #[tokio::test]
+    async fn pending_leave_is_recounted_without_touching_the_balance() {
+        let (_d, db) = db().await;
+        let r = file(
+            &db,
+            juan(),
+            Some(1),
+            leave(&db, "SL", "2026-10-19", "2026-10-23").await,
+            today(),
+            t0(),
+        )
+        .await
+        .expect("file");
+        let h = crate::services::holidays::create(&db, hr(), holiday("2026-10-22"), t0())
+            .await
+            .expect("add holiday");
+        assert_eq!(halfdays_of(&db, r.id).await, 8);
+        crate::services::holidays::delete(&db, hr(), h.id, t0())
+            .await
+            .expect("delete");
+        assert_eq!(halfdays_of(&db, r.id).await, 10);
+        assert_eq!(used(&db, 1, "SL").await, 0);
+    }
+
+    #[tokio::test]
+    async fn a_holiday_change_that_breaks_leave_is_refused() {
+        let (_d, db) = db().await;
+        // One-day leave on Thursday: a holiday that day would leave nothing to take.
+        file(
+            &db,
+            juan(),
+            Some(1),
+            leave(&db, "VL", "2026-10-22", "2026-10-22").await,
+            today(),
+            t0(),
+        )
+        .await
+        .expect("file");
+        let err = crate::services::holidays::create(&db, hr(), holiday("2026-10-22"), t0())
+            .await
+            .unwrap_err();
+        assert!(matches!(err, AppError::Conflict(NO_DAYS_LEFT)), "{err:?}");
+        assert!(crate::services::holidays::list(&db, 2026)
+            .await
+            .expect("list")
+            .iter()
+            .all(|h| h.date != "2026-10-22"));
+
+        // Approved SL with the balance used up: removing a holiday inside it can't add a day.
+        let r = file(
+            &db,
+            juan(),
+            Some(1),
+            leave(&db, "SL", "2026-10-26", "2026-10-30").await,
+            today(),
+            t0(),
+        )
+        .await
+        .expect("file");
+        let h = crate::services::holidays::create(&db, hr(), holiday("2026-10-28"), t0())
+            .await
+            .expect("add holiday");
+        decide(&db, hr(), None, r.id, true, None, t0())
+            .await
+            .expect("approve 4 days");
+        sqlx::query("UPDATE leave_balances SET entitled_halfdays = 8 WHERE employee_id = 1 AND leave_type_id = ?")
+            .bind(type_id(&db, "SL").await)
+            .execute(&db)
+            .await
+            .expect("lower");
+        let err = crate::services::holidays::delete(&db, hr(), h.id, t0())
+            .await
+            .unwrap_err();
+        assert!(
+            matches!(err, AppError::Conflict(LONGER_THAN_BALANCE)),
+            "{err:?}"
+        );
+        assert_eq!(
+            (halfdays_of(&db, r.id).await, used(&db, 1, "SL").await),
+            (8, 8)
+        );
     }
 
     #[test]

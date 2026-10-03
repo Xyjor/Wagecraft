@@ -11,10 +11,14 @@ export type DayRow = { employeeId: number, employeeNo: string,
 employeeName: string, departmentName: string | null, 
 /**
  * The record's status, or what the day works out to without one (ABSENT, REST_DAY,
- * HOLIDAY). `None` when the employee has no work schedule to tell.
+ * HOLIDAY, ON_LEAVE). `None` when the employee has no work schedule to tell.
  */
 status: string | null, 
 /**
  * The holiday on this date, if any.
  */
-holiday: string | null, record: AttendanceRecord | null, };
+holiday: string | null, 
+/**
+ * Approved leave on this date, like "Vacation Leave" or "Sick Leave (half day)".
+ */
+leave: string | null, record: AttendanceRecord | null, };

@@ -7,6 +7,7 @@ use crate::domain::attendance::{KioskPunch, PunchKind};
 use crate::domain::attendance_calc::{self, Shift};
 use crate::error::AppError;
 use crate::repositories::attendance::{self as repo, KioskEmployee, Review};
+use crate::repositories::leave_requests as leave_repo;
 use crate::services::auth::{dummy_hash, field, hash_blocking, verify_blocking};
 use crate::time;
 use chrono::{DateTime, Duration, NaiveDateTime, NaiveTime, Utc};
@@ -132,6 +133,9 @@ async fn clock_in(
         .map(|s| attendance_calc::compute(&s, work_date, clock.local, None).late_minutes)
         .unwrap_or(0);
     let mut notes = clock_check(&mut tx, e.id, clock.local).await?;
+    if leave_repo::full_day_leave_on(&mut tx, e.id, &date).await? {
+        notes.push("This employee is on approved leave today. Cancel the leave if they worked.");
+    }
     if shift.is_none() {
         notes.push("No work schedule was assigned, so lateness was not worked out.");
     }
@@ -669,5 +673,28 @@ mod tests {
             let r = attendance::for_employee(&f.db, 1, &range(from, to)).await;
             assert!(matches!(r, Err(AppError::Validation(_))), "{from}..{to}");
         }
+    }
+
+    #[tokio::test]
+    async fn clocking_in_on_approved_leave_is_saved_but_flagged() {
+        let f = fixture().await;
+        sqlx::query(
+            "INSERT INTO leave_requests (employee_id, leave_type_id, start_date, end_date, \
+             halfdays, reason, status) SELECT 1, id, '2026-10-06', '2026-10-06', 2, 'Trip', \
+             'APPROVED' FROM leave_types WHERE code = 'VL'",
+        )
+        .execute(&f.db)
+        .await
+        .expect("leave");
+        f.punch("EMP-1", PIN, PunchKind::In, at("2026-10-06 08:00"))
+            .await
+            .expect("saved");
+        let r = f.record(1).await;
+        assert!(r.needs_review);
+        assert!(r
+            .review_note
+            .as_deref()
+            .unwrap_or("")
+            .contains("approved leave"));
     }
 }

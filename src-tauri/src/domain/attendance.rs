@@ -78,10 +78,12 @@ pub struct DayRow {
     pub employee_name: String,
     pub department_name: Option<String>,
     /// The record's status, or what the day works out to without one (ABSENT, REST_DAY,
-    /// HOLIDAY). `None` when the employee has no work schedule to tell.
+    /// HOLIDAY, ON_LEAVE). `None` when the employee has no work schedule to tell.
     pub status: Option<String>,
     /// The holiday on this date, if any.
     pub holiday: Option<String>,
+    /// Approved leave on this date, like "Vacation Leave" or "Sick Leave (half day)".
+    pub leave: Option<String>,
     pub record: Option<AttendanceRecord>,
 }
 

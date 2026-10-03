@@ -66,6 +66,7 @@ describe("AttendancePage", () => {
         departmentName: "Operations",
         status: "PRESENT",
         holiday: null,
+        leave: null,
         record: record({}),
       },
       {
@@ -75,6 +76,7 @@ describe("AttendancePage", () => {
         departmentName: "Operations",
         status: "ABSENT",
         holiday: null,
+        leave: null,
         record: null,
       },
       {
@@ -84,6 +86,7 @@ describe("AttendancePage", () => {
         departmentName: null,
         status: null,
         holiday: null,
+        leave: null,
         record: null,
       },
     ];
@@ -114,6 +117,14 @@ describe("AttendancePage", () => {
   afterEach(() => {
     cleanup();
     call.mockReset();
+  });
+
+  it("shows approved leave and its type", async () => {
+    rows[1] = { ...rows[1], status: "ON_LEAVE", leave: "Vacation Leave" };
+    renderAs();
+    const ana = await screen.findByRole("row", { name: /^Reyes, Ana/ });
+    expect(within(ana).getByText("On leave")).toBeTruthy();
+    expect(within(ana).getByText("Vacation Leave")).toBeTruthy();
   });
 
   it("shows everyone's day with their status", async () => {
