@@ -118,9 +118,18 @@ fn strongest_holiday(holidays: &[(String, String)]) -> Option<HolidayKind> {
     .find(|k| kinds.contains(k))
 }
 
-/// Records flagged for HR, oldest first.
-pub async fn review_queue(db: &SqlitePool) -> Result<Vec<ReviewItem>, AppError> {
-    Ok(repo::flagged(db)
+/// A time in with no time out after this long is a forgotten clock-out (the kiosk won't
+/// close it either).
+const FORGOTTEN_OUT_HOURS: i64 = 24;
+
+/// Records flagged for HR, oldest first, including forgotten clock-outs as of `now` (the
+/// office clock). Those have `needs_review` false: only a correction settles them.
+pub async fn review_queue(
+    db: &SqlitePool,
+    now: NaiveDateTime,
+) -> Result<Vec<ReviewItem>, AppError> {
+    let stale_before = time::to_local_db(now - Duration::hours(FORGOTTEN_OUT_HOURS));
+    Ok(repo::flagged(db, &stale_before)
         .await?
         .into_iter()
         .map(|(employee_no, employee_name, record)| ReviewItem {
@@ -330,6 +339,10 @@ mod tests {
         Utc.with_ymd_and_hms(2026, 10, 9, 1, 0, 0).unwrap()
     }
 
+    fn wall(s: &str) -> NaiveDateTime {
+        NaiveDateTime::parse_from_str(s, "%Y-%m-%d %H:%M").expect("time")
+    }
+
     fn today() -> NaiveDate {
         NaiveDate::from_ymd_opt(2026, 10, 9).unwrap()
     }
@@ -496,7 +509,10 @@ mod tests {
             .as_deref()
             .unwrap_or("")
             .contains("\"source\":\"CLOCK\""));
-        assert!(review_queue(&db).await.expect("queue").is_empty());
+        assert!(review_queue(&db, wall("2026-10-05 09:00"))
+            .await
+            .expect("queue")
+            .is_empty());
     }
 
     #[tokio::test]
@@ -601,7 +617,9 @@ mod tests {
     async fn marking_reviewed_clears_the_flag_once_and_is_audited() {
         let (_dir, db) = db().await;
         let id = flag(&db, 2, "2026-10-05").await;
-        let queue = review_queue(&db).await.expect("queue");
+        let queue = review_queue(&db, wall("2026-10-05 09:00"))
+            .await
+            .expect("queue");
         assert_eq!(queue.len(), 1);
         assert_eq!(queue[0].employee_name, "Reyes, Ana");
         assert_eq!(queue[0].record.review_note.as_deref(), Some("PC clock"));
@@ -615,6 +633,52 @@ mod tests {
             .filter(|a| a == "attendance.review")
             .count();
         assert_eq!(reviews, 1);
-        assert!(review_queue(&db).await.expect("queue").is_empty());
+        assert!(review_queue(&db, wall("2026-10-05 09:00"))
+            .await
+            .expect("queue")
+            .is_empty());
+    }
+
+    #[tokio::test]
+    async fn a_forgotten_time_out_joins_the_queue_after_a_day() {
+        let (_dir, db) = db().await;
+        let id = sqlx::query_scalar::<_, i64>(
+            "INSERT INTO attendance_records (employee_id, work_date, time_in, status, source) \
+             VALUES (1, '2026-10-05', '2026-10-05T08:00:00', 'PRESENT', 'CLOCK') RETURNING id",
+        )
+        .fetch_one(&db)
+        .await
+        .expect("open record");
+        // Still at work the same evening: not in the queue.
+        assert!(review_queue(&db, wall("2026-10-05 20:00"))
+            .await
+            .expect("q")
+            .is_empty());
+
+        let queue = review_queue(&db, wall("2026-10-06 09:00"))
+            .await
+            .expect("q");
+        assert_eq!(queue.len(), 1);
+        assert_eq!(queue[0].record.id, id);
+        assert!(!queue[0].record.needs_review);
+        assert_eq!(
+            queue[0].record.review_note.as_deref(),
+            Some("No time out was recorded.")
+        );
+
+        // Adding the time out settles it.
+        save(
+            &db,
+            hr(),
+            input(1, "2026-10-05", "08:00", Some("17:00")),
+            today(),
+            now(),
+        )
+        .await
+        .expect("fixed");
+        assert!(review_queue(&db, wall("2026-10-06 09:00"))
+            .await
+            .expect("q")
+            .is_empty());
     }
 }

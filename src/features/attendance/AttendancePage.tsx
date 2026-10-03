@@ -129,14 +129,17 @@ function Attendance() {
                       >
                         Correct
                       </button>
-                      <button
-                        type="button"
-                        className={quietButton}
-                        aria-label={`Mark ${employeeName} on ${r.workDate} as reviewed`}
-                        onClick={() => looksFine(r.id)}
-                      >
-                        Looks fine
-                      </button>
+                      {/* A forgotten time out isn't flagged; only a correction settles it. */}
+                      {r.needsReview && (
+                        <button
+                          type="button"
+                          className={quietButton}
+                          aria-label={`Mark ${employeeName} on ${r.workDate} as reviewed`}
+                          onClick={() => looksFine(r.id)}
+                        >
+                          Looks fine
+                        </button>
+                      )}
                     </div>
                   </td>
                 </tr>

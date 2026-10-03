@@ -217,9 +217,11 @@ pub async fn holidays_on<'e>(
         .await
 }
 
-/// Every record flagged for HR, oldest first, with the employee's number and name.
+/// Every record flagged for HR, oldest first, with the employee's number and name. A time
+/// in older than `stale_before` with no time out counts too: someone forgot to clock out.
 pub async fn flagged<'e>(
     db: impl SqliteExecutor<'e>,
+    stale_before: &str,
 ) -> sqlx::Result<Vec<(String, String, AttendanceRecord)>> {
     #[derive(FromRow)]
     struct Row {
@@ -232,10 +234,15 @@ pub async fn flagged<'e>(
         "SELECT e.employee_no, e.last_name || ', ' || e.first_name AS employee_name, \
          a.id, a.employee_id, a.work_date, a.time_in, a.time_out, a.status, a.late_minutes, \
          a.undertime_minutes, a.worked_minutes, a.night_minutes, a.source, a.needs_review, \
-         a.review_note, a.locked_by_period_id IS NOT NULL AS locked \
+         CASE WHEN a.needs_review = 1 THEN a.review_note \
+              ELSE 'No time out was recorded.' END AS review_note, \
+         a.locked_by_period_id IS NOT NULL AS locked \
          FROM attendance_records a JOIN employees e ON e.id = a.employee_id \
-         WHERE a.needs_review = 1 ORDER BY a.work_date, e.last_name, e.first_name",
+         WHERE a.needs_review = 1 \
+            OR (a.time_out IS NULL AND a.time_in IS NOT NULL AND a.time_in < ?) \
+         ORDER BY a.work_date, e.last_name, e.first_name",
     )
+    .bind(stale_before)
     .fetch_all(db)
     .await?;
     Ok(rows

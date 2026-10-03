@@ -77,7 +77,7 @@ pub async fn attendance_review_queue(
     state: State<'_, AppState>,
 ) -> Result<Vec<ReviewItem>, AppError> {
     state.require(Permission::AttendanceReadAll).await?;
-    attendance::review_queue(&state.db).await
+    attendance::review_queue(&state.db, crate::time::local_now()).await
 }
 
 /// Any employee's records over a range, for their profile.

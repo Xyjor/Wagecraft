@@ -193,4 +193,23 @@ describe("AttendancePage", () => {
     expect(screen.getByText("Only Admin and HR can see this.")).toBeTruthy();
     expect(call).not.toHaveBeenCalled();
   });
+
+  it("offers only a correction for a forgotten time out", async () => {
+    queue = [
+      {
+        employeeNo: "EMP-2",
+        employeeName: "Reyes, Ana",
+        record: record({
+          id: 13,
+          employeeId: 2,
+          timeOut: null,
+          reviewNote: "No time out was recorded.",
+        }),
+      },
+    ];
+    renderAs();
+    expect(await screen.findByText("No time out was recorded.")).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Correct Reyes, Ana on 2026-10-05" })).toBeTruthy();
+    expect(screen.queryByRole("button", { name: /as reviewed/ })).toBeNull();
+  });
 });
