@@ -50,6 +50,20 @@ pub struct Allowance {
     pub taxable: bool,
 }
 
+/// A loan amortization or other deduction scheduled for this cutoff (plan §7.6).
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Deduction {
+    pub kind: DeductionKind,
+    pub label: String,
+    pub amount_cents: i64,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum DeductionKind {
+    Loan,
+    Other,
+}
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct PayslipInput {
     pub basis: PayBasis,
@@ -65,6 +79,11 @@ pub struct PayslipInput {
     pub cutoff: Cutoff,
     /// Minimum wage earners have no tax withheld (plan §7.5).
     pub minimum_wage_earner: bool,
+    /// Taken after contributions and tax, in this order: the service puts unpaid
+    /// carryovers first, then loans oldest first, then other deductions.
+    pub deductions: Vec<Deduction>,
+    /// Deductions are cut so net pay never drops below this (plan §7.6, default ₱0).
+    pub minimum_net_cents: i64,
 }
 
 /// One payslip line. Deductions are negative.

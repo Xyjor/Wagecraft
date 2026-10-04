@@ -46,6 +46,8 @@ pub fn second_cutoff(basis: PayBasis, rate_cents: i64) -> PayslipInput {
         allowances: vec![],
         cutoff: Cutoff::Second,
         minimum_wage_earner: false,
+        deductions: vec![],
+        minimum_net_cents: 0,
     }
 }
 

@@ -1,12 +1,19 @@
 //! The whole pipeline (plan §7.2): earnings, then statutory contributions and withholding
-//! tax, down to net pay. Loans and other deductions come in a later step.
+//! tax, then loans and other deductions, down to net pay.
 
 use super::contributions;
-use super::engine::{compute_earnings, Line, PayslipInput};
+use super::engine::{compute_earnings, DeductionKind, Line, PayslipInput};
 use super::rates::{PayBasis, Rates};
 use super::rules::RulePack;
 use super::tax;
 use rust_decimal::Decimal;
+
+/// What was left of `input.deductions[index]` after net pay reached its minimum.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct Unpaid {
+    pub index: usize,
+    pub amount: Decimal,
+}
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct PayslipResult {
@@ -20,7 +27,11 @@ pub struct PayslipResult {
     pub statutory_ee: Decimal,
     pub taxable: Decimal,
     pub withholding_tax: Decimal,
+    /// Loans and other deductions actually taken.
+    pub deductions: Decimal,
     pub net: Decimal,
+    /// The part of each deduction that didn't fit, to carry over to the next period.
+    pub unpaid: Vec<Unpaid>,
     /// Notes for HR on the review screen and the payslip.
     pub warnings: Vec<String>,
 }
@@ -80,15 +91,48 @@ pub fn compute_payslip(input: &PayslipInput, rules: &RulePack) -> PayslipResult 
         lines.push(line("TAX", "Withholding tax", -withholding_tax));
     }
 
+    // Step 7 (plan §7.6): take each deduction in order while net pay stays at or above
+    // the minimum; whatever doesn't fit is carried over to the next period.
+    let minimum = Decimal::new(input.minimum_net_cents, 2);
+    let mut net = earnings.gross - statutory_ee - withholding_tax;
+    let mut unpaid = Vec::new();
+    for (index, d) in input.deductions.iter().enumerate() {
+        let amount = Decimal::new(d.amount_cents, 2);
+        let taken = amount.min(net - minimum).max(Decimal::ZERO);
+        if !taken.is_zero() {
+            let code = match d.kind {
+                DeductionKind::Loan => "LOAN",
+                DeductionKind::Other => "DEDUCTION",
+            };
+            lines.push(line(code, &d.label, -taken));
+            net -= taken;
+        }
+        if taken < amount {
+            unpaid.push(Unpaid {
+                index,
+                amount: amount - taken,
+            });
+            warnings.push(format!(
+                "{}: ₱{} of ₱{} carried over to the next period so net pay stays at ₱{}.",
+                d.label,
+                amount - taken,
+                amount,
+                minimum
+            ));
+        }
+    }
+
     PayslipResult {
         rates: r,
-        net: earnings.gross - statutory_ee - withholding_tax,
+        net,
         lines,
         employer,
         gross: earnings.gross,
         statutory_ee,
         taxable,
         withholding_tax,
+        deductions: earnings.gross - statutory_ee - withholding_tax - net,
+        unpaid,
         warnings,
     }
 }
@@ -97,7 +141,7 @@ pub fn compute_payslip(input: &PayslipInput, rules: &RulePack) -> PayslipResult 
 mod tests {
     use super::*;
     use crate::domain::payroll::contributions::Cutoff;
-    use crate::domain::payroll::engine::{Allowance, OvertimeBlock};
+    use crate::domain::payroll::engine::{Allowance, Deduction, DeductionKind, OvertimeBlock};
     use crate::domain::payroll::fixtures::{absent, day, second_cutoff};
     use crate::domain::payroll::rules::DayType;
     use rust_decimal_macros::dec;
@@ -201,5 +245,104 @@ mod tests {
         first_input.cutoff = Cutoff::First;
         let first = compute_payslip(&first_input, &ph());
         assert_eq!(statutory(&first)[1], ("PHILHEALTH", dec!(-165.84)));
+    }
+
+    fn deduction(kind: DeductionKind, label: &str, amount_cents: i64) -> Deduction {
+        Deduction {
+            kind,
+            label: label.into(),
+            amount_cents,
+        }
+    }
+
+    /// The worked example nets 10,725.57 before deductions.
+    #[test]
+    fn a_loan_within_net_pay_is_taken_in_full() {
+        let mut input = worked_example();
+        input
+            .deductions
+            .push(deduction(DeductionKind::Loan, "SSS salary loan", 200_000));
+        let slip = compute_payslip(&input, &ph());
+        assert_eq!(
+            slip.lines.last().map(|l| (l.code, l.amount)),
+            Some(("LOAN", dec!(-2000.00)))
+        );
+        assert_eq!(slip.deductions, dec!(2000.00));
+        assert_eq!(slip.net, dec!(8725.57));
+        assert!(slip.unpaid.is_empty());
+        assert!(slip.warnings.is_empty());
+    }
+
+    /// 10,725.57 − 6,000 leaves 4,725.57 for the 7,000 advance; 2,274.43 is carried over.
+    /// The 500 after it gets nothing and is carried over whole.
+    #[test]
+    fn a_deduction_that_would_go_below_zero_is_cut_and_the_rest_carried_over() {
+        let mut input = worked_example();
+        input.deductions = vec![
+            deduction(DeductionKind::Loan, "Company loan", 600_000),
+            deduction(DeductionKind::Other, "Cash advance", 700_000),
+            deduction(DeductionKind::Other, "Uniform", 50_000),
+        ];
+        let slip = compute_payslip(&input, &ph());
+        assert_eq!(
+            amounts(&slip.lines)[8..],
+            [("LOAN", dec!(-6000.00)), ("DEDUCTION", dec!(-4725.57))]
+        );
+        assert_eq!(slip.net, dec!(0));
+        assert_eq!(slip.deductions, dec!(10725.57));
+        assert_eq!(
+            slip.unpaid,
+            [
+                Unpaid {
+                    index: 1,
+                    amount: dec!(2274.43)
+                },
+                Unpaid {
+                    index: 2,
+                    amount: dec!(500.00)
+                },
+            ]
+        );
+        assert_eq!(slip.warnings.len(), 2, "{:?}", slip.warnings);
+        let sum: Decimal = slip.lines.iter().map(|l| l.amount).sum();
+        assert_eq!(sum, slip.net, "the payslip adds up line by line");
+    }
+
+    #[test]
+    fn deductions_stop_at_the_configured_minimum_net_pay() {
+        let mut input = worked_example();
+        input.minimum_net_cents = 100_000;
+        input.deductions = vec![deduction(DeductionKind::Other, "Cash advance", 1_000_000)];
+        let slip = compute_payslip(&input, &ph());
+        assert_eq!(slip.net, dec!(1000.00));
+        assert_eq!(
+            slip.unpaid,
+            [Unpaid {
+                index: 0,
+                amount: dec!(274.43)
+            }]
+        );
+    }
+
+    /// Three absences on ₱12,000 a month: gross 4,344.83 less 550 in contributions,
+    /// under the 4,000 minimum.
+    #[test]
+    fn nothing_is_deducted_when_net_pay_is_already_at_the_minimum() {
+        let mut input = second_cutoff(PayBasis::Monthly, 1_200_000);
+        input.minimum_net_cents = 400_000;
+        absent(&mut input, "2026-10-20");
+        absent(&mut input, "2026-10-21");
+        absent(&mut input, "2026-10-22");
+        input.deductions = vec![deduction(DeductionKind::Loan, "Company loan", 50_000)];
+        let slip = compute_payslip(&input, &ph());
+        assert_eq!(slip.net, dec!(3794.83));
+        assert!(!slip.lines.iter().any(|l| l.code == "LOAN"));
+        assert_eq!(
+            slip.unpaid,
+            [Unpaid {
+                index: 0,
+                amount: dec!(500.00)
+            }]
+        );
     }
 }
