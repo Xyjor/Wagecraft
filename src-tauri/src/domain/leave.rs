@@ -2,6 +2,7 @@
 //! days is 10 and a half-day leave stays a whole number.
 
 use super::attendance_calc::is_work_day;
+use crate::domain::schedule::ScheduleHistory;
 use chrono::{Months, NaiveDate};
 use serde::{Deserialize, Serialize};
 use sqlx::FromRow;
@@ -138,30 +139,45 @@ pub struct LeaveRequestInput {
 }
 
 /// The working time a leave from `start` to `end` takes, in half days: 2 for each
-/// scheduled work day that isn't a holiday off. A half-day leave is one day and counts 1.
-/// Zero means the range has no working day in it.
-pub fn count_halfdays(
+/// scheduled work day that isn't a holiday off, where each day counts by the schedule it
+/// had. A half-day leave is one day and counts 1. Zero means the range has no working
+/// day in it; `None` means a day in it has no schedule.
+pub fn count_halfdays_by_history(
     start: NaiveDate,
     end: NaiveDate,
     half_day: bool,
-    work_days: &str,
+    history: &ScheduleHistory<String>,
     days_off: &HashSet<NaiveDate>,
-) -> i64 {
-    let working = start
-        .iter_days()
-        .take_while(|d| *d <= end)
-        .filter(|d| is_work_day(work_days, *d) && !days_off.contains(d))
-        .count() as i64;
-    if half_day {
+) -> Option<i64> {
+    let mut working = 0;
+    for day in start.iter_days().take_while(|d| *d <= end) {
+        let work_days = history.on(day)?;
+        if is_work_day(work_days, day) && !days_off.contains(&day) {
+            working += 1;
+        }
+    }
+    Some(if half_day {
         working.min(1)
     } else {
         working * 2
-    }
+    })
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// One schedule the whole time.
+    fn count_halfdays(
+        start: NaiveDate,
+        end: NaiveDate,
+        half_day: bool,
+        work_days: &str,
+        days_off: &HashSet<NaiveDate>,
+    ) -> i64 {
+        let history = ScheduleHistory::new(vec![(NaiveDate::MIN, Some(work_days.to_string()))]);
+        count_halfdays_by_history(start, end, half_day, &history, days_off).expect("scheduled")
+    }
 
     fn d(s: &str) -> NaiveDate {
         NaiveDate::parse_from_str(s, "%Y-%m-%d").unwrap()
@@ -226,6 +242,30 @@ mod tests {
         assert_eq!(
             count_halfdays(d("2026-10-10"), d("2026-10-10"), true, WEEKDAYS, &none),
             0
+        );
+    }
+
+    #[test]
+    fn leave_across_a_schedule_change_counts_each_day_by_its_own_schedule() {
+        // Mon–Sat from Mon Oct 12; Mon–Fri before. Fri Oct 16 is a holiday off.
+        let history = ScheduleHistory::new(vec![
+            (d("2020-03-02"), Some("MON,TUE,WED,THU,FRI".to_string())),
+            (d("2026-10-12"), Some("MON,TUE,WED,THU,FRI,SAT".to_string())),
+        ]);
+        let off = HashSet::from([d("2026-10-16")]);
+        // Sat 10 (old: rest) + Mon–Thu 12–15 + Sat 17 (new: work) = 5 days.
+        assert_eq!(
+            count_halfdays_by_history(d("2026-10-10"), d("2026-10-17"), false, &history, &off),
+            Some(10)
+        );
+        assert_eq!(
+            count_halfdays_by_history(d("2026-10-17"), d("2026-10-17"), true, &history, &off),
+            Some(1)
+        );
+        assert_eq!(
+            count_halfdays_by_history(d("2020-02-28"), d("2020-03-03"), false, &history, &off),
+            None,
+            "days before any schedule can't be counted"
         );
     }
 }

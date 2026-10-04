@@ -77,11 +77,10 @@ pub struct LeaveEmployee {
     pub archived_at: Option<String>,
     pub hire_date: String,
     pub separation_date: Option<String>,
-    pub work_days: Option<String>,
 }
 
-const EMPLOYEE: &str = "SELECT e.id, e.archived_at, e.hire_date, e.separation_date, s.work_days \
-    FROM employees e LEFT JOIN work_schedules s ON s.id = e.schedule_id";
+const EMPLOYEE: &str =
+    "SELECT e.id, e.archived_at, e.hire_date, e.separation_date FROM employees e";
 
 pub async fn employee_by_id(
     conn: &mut SqliteConnection,
@@ -384,18 +383,16 @@ pub struct Recount {
     pub half_day: bool,
     pub halfdays: i64,
     pub status: String,
-    pub work_days: Option<String>,
 }
 
 /// Pending and approved requests covering `date`.
 pub async fn live_on(conn: &mut SqliteConnection, date: &str) -> sqlx::Result<Vec<Recount>> {
     sqlx::query_as(
         "SELECT r.id, r.employee_id, e.employee_no, r.leave_type_id, t.is_paid, r.start_date, \
-         r.end_date, r.half_day, r.halfdays, r.status, s.work_days \
+         r.end_date, r.half_day, r.halfdays, r.status \
          FROM leave_requests r \
          JOIN employees e ON e.id = r.employee_id \
          JOIN leave_types t ON t.id = r.leave_type_id \
-         LEFT JOIN work_schedules s ON s.id = e.schedule_id \
          WHERE r.status IN ('PENDING', 'APPROVED') AND ?1 BETWEEN r.start_date AND r.end_date \
          ORDER BY r.id",
     )

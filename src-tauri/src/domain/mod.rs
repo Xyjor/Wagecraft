@@ -7,4 +7,5 @@ pub mod employee;
 pub mod leave;
 pub mod org;
 pub mod overtime;
+pub mod schedule;
 pub mod validation;

@@ -189,7 +189,7 @@ pub async fn save(
     }
 
     let mut tx = db.begin().await?;
-    let employee = repo::employee_shift(&mut tx, input.employee_id)
+    let employee = repo::employee_shift(&mut tx, input.employee_id, &work_date.to_string())
         .await?
         .ok_or(AppError::NotFound("Employee"))?;
     if employee.archived_at.is_some() {
@@ -469,6 +469,66 @@ mod tests {
         let rows = day(&db, "2026-11-30").await.expect("grid");
         assert_eq!(rows[0].status.as_deref(), Some("HOLIDAY"));
         assert_eq!(rows[0].holiday.as_deref(), Some("Bonifacio Day"));
+    }
+
+    /// From Thu Oct 1 Juan works 07:00–16:00, Monday to Saturday, with no grace period.
+    async fn move_juan_to_early_shift(db: &SqlitePool) {
+        sqlx::query(
+            "INSERT INTO work_schedules (id, name, start_time, end_time, break_minutes, \
+             grace_minutes, work_days) VALUES \
+             (3, 'Early', '07:00', '16:00', 60, 0, 'MON,TUE,WED,THU,FRI,SAT'); \
+             INSERT INTO schedule_assignments (employee_id, schedule_id, effective_from) \
+             VALUES (1, 3, '2026-10-01')",
+        )
+        .execute(db)
+        .await
+        .expect("move");
+    }
+
+    #[tokio::test]
+    async fn the_grid_uses_the_schedule_each_day_had() {
+        let (_dir, db) = db().await;
+        move_juan_to_early_shift(&db).await;
+        let juan_on = |rows: Vec<DayRow>| {
+            rows.into_iter()
+                .find(|r| r.employee_no == "EMP-1")
+                .and_then(|r| r.status)
+        };
+        let before = juan_on(day(&db, "2026-09-26").await.expect("grid"));
+        let after = juan_on(day(&db, "2026-10-03").await.expect("grid"));
+        assert_eq!(
+            before.as_deref(),
+            Some("REST_DAY"),
+            "Saturday on the old schedule"
+        );
+        assert_eq!(after.as_deref(), Some("ABSENT"), "Saturday on the new one");
+    }
+
+    #[tokio::test]
+    async fn a_correction_on_an_old_day_uses_the_old_hours() {
+        let (_dir, db) = db().await;
+        move_juan_to_early_shift(&db).await;
+        let old = save(
+            &db,
+            hr(),
+            input(1, "2026-09-28", "08:25", Some("17:00")),
+            today(),
+            now(),
+        )
+        .await
+        .expect("old day");
+        // 08:00 start with 10 minutes' grace, as in hr_adds_a_missing_day_with_a_reason.
+        assert_eq!(old.late_minutes, 15);
+        let new = save(
+            &db,
+            hr(),
+            input(1, "2026-10-05", "07:25", Some("16:00")),
+            today(),
+            now(),
+        )
+        .await
+        .expect("new day");
+        assert_eq!(new.late_minutes, 25, "07:00 start, no grace");
     }
 
     #[tokio::test]

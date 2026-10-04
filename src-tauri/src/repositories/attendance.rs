@@ -1,6 +1,7 @@
 //! SQL for attendance records and the kiosk's employee lookup. The kiosk and attendance
 //! services decide the rules.
 
+use super::schedules;
 use crate::domain::attendance::AttendanceRecord;
 use crate::domain::attendance_calc::Computed;
 use sqlx::{FromRow, SqliteConnection, SqliteExecutor};
@@ -25,17 +26,19 @@ pub struct KioskEmployee {
     pub grace_minutes: Option<i64>,
 }
 
-/// The employee with this number (case-insensitive) and their work schedule, if any.
+/// The employee with this number (case-insensitive) and their work schedule on `date`.
 pub async fn kiosk_employee(
     conn: &mut SqliteConnection,
     employee_no: &str,
+    date: &str,
 ) -> sqlx::Result<Option<KioskEmployee>> {
-    sqlx::query_as(
+    sqlx::query_as(&format!(
         "SELECT e.id, e.employee_no, e.first_name, e.kiosk_pin_hash, e.employment_status, \
          e.archived_at, s.start_time, s.end_time, s.break_minutes, s.grace_minutes \
-         FROM employees e LEFT JOIN work_schedules s ON s.id = e.schedule_id \
-         WHERE e.employee_no = ?",
-    )
+         FROM employees e {} WHERE e.employee_no = ?",
+        schedules::join_on("?")
+    ))
+    .bind(date)
     .bind(employee_no)
     .fetch_optional(conn)
     .await
@@ -181,16 +184,17 @@ pub async fn grid_employees<'e>(
     db: impl SqliteExecutor<'e>,
     date: &str,
 ) -> sqlx::Result<Vec<GridEmployee>> {
-    sqlx::query_as(
+    sqlx::query_as(&format!(
         "SELECT e.id, e.employee_no, e.last_name || ', ' || e.first_name AS name, \
          d.name AS department_name, s.work_days \
          FROM employees e \
          LEFT JOIN departments d ON d.id = e.department_id \
-         LEFT JOIN work_schedules s ON s.id = e.schedule_id \
+         {} \
          WHERE e.archived_at IS NULL AND e.hire_date <= ?1 \
          AND (e.separation_date IS NULL OR e.separation_date >= ?1) \
          ORDER BY e.last_name, e.first_name, e.employee_no",
-    )
+        schedules::join_on("?1")
+    ))
     .bind(date)
     .fetch_all(db)
     .await
@@ -265,12 +269,14 @@ pub struct EmployeeShift {
 pub async fn employee_shift(
     conn: &mut SqliteConnection,
     employee_id: i64,
+    date: &str,
 ) -> sqlx::Result<Option<EmployeeShift>> {
-    sqlx::query_as(
+    sqlx::query_as(&format!(
         "SELECT e.employee_no, e.archived_at, s.start_time, s.end_time, s.break_minutes, \
-         s.grace_minutes FROM employees e LEFT JOIN work_schedules s ON s.id = e.schedule_id \
-         WHERE e.id = ?",
-    )
+         s.grace_minutes FROM employees e {} WHERE e.id = ?",
+        schedules::join_on("?")
+    ))
+    .bind(date)
     .bind(employee_id)
     .fetch_optional(conn)
     .await
