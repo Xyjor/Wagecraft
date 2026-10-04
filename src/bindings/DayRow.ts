@@ -21,4 +21,8 @@ holiday: string | null,
 /**
  * Approved leave on this date, like "Vacation Leave" or "Sick Leave (half day)".
  */
-leave: string | null, record: AttendanceRecord | null, };
+leave: string | null, 
+/**
+ * Approved leave covers the whole day, so there is no time to record.
+ */
+fullDayLeave: boolean, record: AttendanceRecord | null, };

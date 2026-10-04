@@ -76,6 +76,12 @@ describe("MyLeavePage", () => {
     as({ ...hr, role: "STAFF" }, <MyLeavePage year={2026} />);
     expect(await screen.findByText("You haven't filed leave for 2026.")).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: "File leave" }));
+    const form = screen.getByRole("form", { name: "File leave" });
+    // No type is picked for the employee, so unpaid leave is never filed by accident.
+    fireEvent.click(within(form).getByRole("button", { name: "File leave" }));
+    expect(await within(form).findByText("Pick a leave type")).toBeTruthy();
+    expect(call).not.toHaveBeenCalledWith("leave_request_create", expect.anything());
+    fireEvent.change(screen.getByLabelText("Leave type"), { target: { value: "2" } });
     type("First day", "2026-10-12");
     type("Last day", "2026-10-16");
     type("What it's for", "Family trip");

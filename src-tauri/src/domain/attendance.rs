@@ -84,6 +84,8 @@ pub struct DayRow {
     pub holiday: Option<String>,
     /// Approved leave on this date, like "Vacation Leave" or "Sick Leave (half day)".
     pub leave: Option<String>,
+    /// Approved leave covers the whole day, so there is no time to record.
+    pub full_day_leave: bool,
     pub record: Option<AttendanceRecord>,
 }
 

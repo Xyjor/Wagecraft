@@ -249,23 +249,25 @@ function Attendance() {
                     <td className="py-2 tabular-nums">{formatMinutes(r?.undertimeMinutes ?? 0)}</td>
                     <td className="py-2 tabular-nums">{formatMinutes(r?.workedMinutes ?? 0)}</td>
                     <td className="py-2 text-right">
-                      <button
-                        type="button"
-                        className={quietButton}
-                        disabled={r?.locked}
-                        aria-label={`${r ? "Correct" : "Add"} ${row.employeeName}`}
-                        onClick={() =>
-                          setEditing({
-                            employeeId: row.employeeId,
-                            employeeName: row.employeeName,
-                            workDate: date,
-                            timeIn: r?.timeIn ?? null,
-                            timeOut: r?.timeOut ?? null,
-                          })
-                        }
-                      >
-                        {r ? "Correct" : "Add"}
-                      </button>
+                      {(r || !row.fullDayLeave) && (
+                        <button
+                          type="button"
+                          className={quietButton}
+                          disabled={r?.locked}
+                          aria-label={`${r ? "Correct" : "Add"} ${row.employeeName}`}
+                          onClick={() =>
+                            setEditing({
+                              employeeId: row.employeeId,
+                              employeeName: row.employeeName,
+                              workDate: date,
+                              timeIn: r?.timeIn ?? null,
+                              timeOut: r?.timeOut ?? null,
+                            })
+                          }
+                        >
+                          {r ? "Correct" : "Add"}
+                        </button>
+                      )}
                     </td>
                   </tr>
                 );
