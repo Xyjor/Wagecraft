@@ -1,6 +1,7 @@
 //! Steps 1 to 4 of the pipeline (plan §7.2): rates, basic pay, premiums and allowances,
 //! adding up to gross pay. Pure: the payroll service gathers one [`DayRecord`] per day.
 
+use super::contributions::Cutoff;
 use super::rates::{rates, round_line, PayBasis, Rates};
 use super::rules::{DayType, RulePack};
 use chrono::NaiveDate;
@@ -61,6 +62,9 @@ pub struct PayslipInput {
     pub status_before_period: Option<DayStatus>,
     pub overtime: Vec<OvertimeBlock>,
     pub allowances: Vec<Allowance>,
+    pub cutoff: Cutoff,
+    /// Minimum wage earners have no tax withheld (plan §7.5).
+    pub minimum_wage_earner: bool,
 }
 
 /// One payslip line. Deductions are negative.
@@ -270,69 +274,8 @@ impl Lines {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::domain::payroll::fixtures::{absent, day, second_cutoff, work_on};
     use rust_decimal_macros::dec;
-
-    fn d(s: &str) -> NaiveDate {
-        NaiveDate::parse_from_str(s, "%Y-%m-%d").unwrap()
-    }
-
-    /// Oct 16–31, 2026 on a Mon–Fri schedule, every work day worked in full.
-    fn second_cutoff(basis: PayBasis, rate_cents: i64) -> PayslipInput {
-        let days = (16..=31)
-            .map(|day| {
-                let date = d(&format!("2026-10-{day:02}"));
-                let weekend = matches!(date.format("%a").to_string().as_str(), "Sat" | "Sun");
-                DayRecord {
-                    date,
-                    day_type: if weekend {
-                        DayType::RestDay
-                    } else {
-                        DayType::Ordinary
-                    },
-                    scheduled: !weekend,
-                    status: if weekend {
-                        DayStatus::Off
-                    } else {
-                        DayStatus::Worked
-                    },
-                    late_minutes: 0,
-                    undertime_minutes: 0,
-                    worked_minutes: if weekend { 0 } else { 480 },
-                    night_minutes: 0,
-                }
-            })
-            .collect();
-        PayslipInput {
-            basis,
-            rate_cents,
-            days_per_week: 5,
-            days,
-            status_before_period: Some(DayStatus::Worked),
-            overtime: vec![],
-            allowances: vec![],
-        }
-    }
-
-    fn day<'a>(input: &'a mut PayslipInput, date: &str) -> &'a mut DayRecord {
-        input
-            .days
-            .iter_mut()
-            .find(|r| r.date == d(date))
-            .expect("day in period")
-    }
-
-    fn absent(input: &mut PayslipInput, date: &str) {
-        let r = day(input, date);
-        r.status = DayStatus::Absent;
-        r.worked_minutes = 0;
-    }
-
-    fn work_on(input: &mut PayslipInput, date: &str, day_type: DayType, minutes: i64) {
-        let r = day(input, date);
-        r.day_type = day_type;
-        r.status = DayStatus::Worked;
-        r.worked_minutes = minutes;
-    }
 
     fn amounts(e: &Earnings) -> Vec<(&str, Decimal)> {
         e.lines.iter().map(|l| (l.code, l.amount)).collect()
