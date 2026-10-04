@@ -33,6 +33,8 @@ argon2 = { version = "0.5", features = ["std"] }
 chrono = "0.4"
 csv = "1"
 tauri-plugin-dialog = "2"
+rust_decimal = "1"
+rust_decimal_macros = "1"
 
 
 # Read the optimization guideline for more details: https://tauri.app/concept/size/#cargo-configuration
