@@ -1,0 +1,60 @@
+{
+  "name": "Monthly-paid works a rest day",
+  "about": "₱20,000 a month. Works Saturday Oct 24 plus 1 hour of overtime. Rest-day work is paid in full at 130%; overtime at 169%.",
+  "employee": {
+    "basis": "monthly",
+    "rate": "20000.00",
+    "daysPerWeek": 5,
+    "minimumWageEarner": false
+  },
+  "period": {
+    "from": "2026-10-16",
+    "to": "2026-10-31",
+    "cutoff": 2
+  },
+  "days": {
+    "2026-10-24": {
+      "status": "worked"
+    }
+  },
+  "overtime": [
+    {
+      "dayType": "restDay",
+      "minutes": 60
+    }
+  ],
+  "expected": {
+    "lines": [
+      ["BASIC", "10000.00"],
+      ["REST_DAY", "1195.40"],
+      ["OT", "194.25"],
+      ["SSS", "-500.00"],
+      ["PHILHEALTH", "-250.00"],
+      ["PAGIBIG", "-100.00"],
+      ["TAX", "-18.40"]
+    ],
+    "employer": [
+      ["SSS_ER", "1000.00"],
+      ["SSS_EC", "15.00"],
+      ["PHILHEALTH_ER", "250.00"],
+      ["PAGIBIG_ER", "100.00"]
+    ],
+    "gross": "11389.65",
+    "statutoryEe": "850.00",
+    "taxable": "10539.65",
+    "withholdingTax": "18.40",
+    "net": "10521.25",
+    "warnings": 0
+  },
+  "workings": [
+    "Daily rate: 20,000.00 × 12 ÷ 261 = 919.540230; hourly 114.942529; per minute 1.915709",
+    "BASIC 10,000.00: 20,000 ÷ 2",
+    "REST_DAY 1,195.40: 8 h × hourly × 130%",
+    "OT 194.25: 1 h × hourly × 169%",
+    "SSS -500.00: MSC 20,000.00 × 5% = 1,000.00 a month; the rest after the first cutoff's half",
+    "PHILHEALTH -250.00: premium 5% × 20,000.00 = 1,000.00; employee half 500.00; the rest after the first cutoff's half",
+    "PAGIBIG -100.00: 2% × 10,000.00 = 200.00 a month; the rest after the first cutoff's half",
+    "TAX -18.40: 0.00 + (10,539.65 − 10,417.00) × 15% = 18.40",
+    "Taxable income: taxable earnings − 850.00 contributions = 10,539.65"
+  ]
+}

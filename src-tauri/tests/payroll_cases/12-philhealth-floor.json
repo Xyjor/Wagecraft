@@ -1,0 +1,43 @@
+{
+  "name": "PhilHealth floor",
+  "about": "₱8,000 a month, first cutoff. PhilHealth is figured on the ₱10,000 floor (₱500 premium); SSS MSC ₱8,000 with ₱10 EC; Pag-IBIG 2% of 8,000.",
+  "employee": {
+    "basis": "monthly",
+    "rate": "8000.00",
+    "daysPerWeek": 5,
+    "minimumWageEarner": false
+  },
+  "period": {
+    "from": "2026-10-01",
+    "to": "2026-10-15",
+    "cutoff": 1
+  },
+  "expected": {
+    "lines": [
+      ["BASIC", "4000.00"],
+      ["SSS", "-200.00"],
+      ["PHILHEALTH", "-125.00"],
+      ["PAGIBIG", "-80.00"]
+    ],
+    "employer": [
+      ["SSS_ER", "400.00"],
+      ["SSS_EC", "5.00"],
+      ["PHILHEALTH_ER", "125.00"],
+      ["PAGIBIG_ER", "80.00"]
+    ],
+    "gross": "4000.00",
+    "statutoryEe": "405.00",
+    "taxable": "3595.00",
+    "withholdingTax": "0.00",
+    "net": "3595.00",
+    "warnings": 0
+  },
+  "workings": [
+    "Daily rate: 8,000.00 × 12 ÷ 261 = 367.816092; hourly 45.977011; per minute 0.766284",
+    "BASIC 4,000.00: 8,000 ÷ 2",
+    "SSS -200.00: MSC 8,000.00 × 5% = 400.00 a month; first half, rounded down",
+    "PHILHEALTH -125.00: premium 5% × 10,000.00 = 500.00; employee half 250.00; first half, rounded down",
+    "PAGIBIG -80.00: 2% × 8,000.00 = 160.00 a month; first half, rounded down",
+    "Taxable income: taxable earnings − 405.00 contributions = 3,595.00"
+  ]
+}

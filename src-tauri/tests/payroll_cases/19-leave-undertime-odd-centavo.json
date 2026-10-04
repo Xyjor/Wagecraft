@@ -1,0 +1,60 @@
+{
+  "name": "Leave, undertime and an odd PhilHealth centavo",
+  "about": "₱30,010.10 a month, first cutoff. Unpaid leave on Oct 7 is deducted like an absence; paid leave on Oct 8 is not. 45 minutes undertime on Oct 14. PhilHealth's 1,500.51 premium leaves the employer the odd centavo.",
+  "employee": {
+    "basis": "monthly",
+    "rate": "30010.10",
+    "daysPerWeek": 5,
+    "minimumWageEarner": false
+  },
+  "period": {
+    "from": "2026-10-01",
+    "to": "2026-10-15",
+    "cutoff": 1
+  },
+  "days": {
+    "2026-10-07": {
+      "status": "unpaidLeave"
+    },
+    "2026-10-08": {
+      "status": "paidLeave"
+    },
+    "2026-10-14": {
+      "undertime": 45
+    }
+  },
+  "expected": {
+    "lines": [
+      ["BASIC", "15005.05"],
+      ["ABSENT", "-1379.77"],
+      ["UNDERTIME", "-129.35"],
+      ["SSS", "-750.00"],
+      ["PHILHEALTH", "-375.12"],
+      ["PAGIBIG", "-100.00"],
+      ["TAX", "-278.07"]
+    ],
+    "employer": [
+      ["SSS_ER", "1500.00"],
+      ["SSS_EC", "15.00"],
+      ["PHILHEALTH_ER", "375.13"],
+      ["PAGIBIG_ER", "100.00"]
+    ],
+    "gross": "13495.93",
+    "statutoryEe": "1225.12",
+    "taxable": "12270.81",
+    "withholdingTax": "278.07",
+    "net": "11992.74",
+    "warnings": 0
+  },
+  "workings": [
+    "Daily rate: 30,010.10 × 12 ÷ 261 = 1379.774713; hourly 172.471839; per minute 2.874531",
+    "BASIC 15,005.05: 30,010.10 ÷ 2",
+    "ABSENT -1,379.77: 1 unpaid leave day × daily",
+    "UNDERTIME -129.35: 45 min × per minute",
+    "SSS -750.00: MSC 30,000.00 × 5% = 1,500.00 a month; first half, rounded down",
+    "PHILHEALTH -375.12: premium 5% × 30,010.10 = 1,500.51; employee half 750.25; first half, rounded down",
+    "PAGIBIG -100.00: 2% × 10,000.00 = 200.00 a month; first half, rounded down",
+    "TAX -278.07: 0.00 + (12,270.81 − 10,417.00) × 15% = 278.07",
+    "Taxable income: taxable earnings − 1,225.12 contributions = 12,270.81"
+  ]
+}

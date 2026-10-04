@@ -1,0 +1,44 @@
+{
+  "name": "Daily-paid minimum wage earner, 6-day week",
+  "about": "₱695 a day, Mon–Sat, first cutoff, every day worked. Factor 313 for the contribution base; no tax withheld, with a warning.",
+  "employee": {
+    "basis": "daily",
+    "rate": "695.00",
+    "daysPerWeek": 6,
+    "minimumWageEarner": true
+  },
+  "period": {
+    "from": "2026-10-01",
+    "to": "2026-10-15",
+    "cutoff": 1
+  },
+  "expected": {
+    "lines": [
+      ["BASIC", "9035.00"],
+      ["SSS", "-450.00"],
+      ["PHILHEALTH", "-226.60"],
+      ["PAGIBIG", "-100.00"]
+    ],
+    "employer": [
+      ["SSS_ER", "900.00"],
+      ["SSS_EC", "15.00"],
+      ["PHILHEALTH_ER", "226.60"],
+      ["PAGIBIG_ER", "100.00"]
+    ],
+    "gross": "9035.00",
+    "statutoryEe": "776.60",
+    "taxable": "8258.40",
+    "withholdingTax": "0",
+    "net": "8258.40",
+    "warnings": 1
+  },
+  "workings": [
+    "Daily rate: as given = 695.000000; hourly 86.875000; per minute 1.447917",
+    "Contribution base: 695.00 × 313 ÷ 12 = 18127.9167",
+    "BASIC 9,035.00: 13 days (11 weekdays + 2 Saturdays) × 695",
+    "SSS -450.00: MSC 18,000.00 × 5% = 900.00 a month; first half, rounded down",
+    "PHILHEALTH -226.60: premium 5% × 18,127.92 = 906.40; employee half 453.20; first half, rounded down",
+    "PAGIBIG -100.00: 2% × 10,000.00 = 200.00 a month; first half, rounded down",
+    "Taxable income: taxable earnings − 776.60 contributions = 8,258.40"
+  ]
+}

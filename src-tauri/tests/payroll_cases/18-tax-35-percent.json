@@ -1,0 +1,45 @@
+{
+  "name": "35% tax bracket",
+  "about": "₱800,000 a month, second cutoff.",
+  "employee": {
+    "basis": "monthly",
+    "rate": "800000.00",
+    "daysPerWeek": 5,
+    "minimumWageEarner": false
+  },
+  "period": {
+    "from": "2026-10-16",
+    "to": "2026-10-31",
+    "cutoff": 2
+  },
+  "expected": {
+    "lines": [
+      ["BASIC", "400000.00"],
+      ["SSS", "-875.00"],
+      ["PHILHEALTH", "-1250.00"],
+      ["PAGIBIG", "-100.00"],
+      ["TAX", "-114325.40"]
+    ],
+    "employer": [
+      ["SSS_ER", "1750.00"],
+      ["SSS_EC", "15.00"],
+      ["PHILHEALTH_ER", "1250.00"],
+      ["PAGIBIG_ER", "100.00"]
+    ],
+    "gross": "400000.00",
+    "statutoryEe": "2225.00",
+    "taxable": "397775.00",
+    "withholdingTax": "114325.40",
+    "net": "283449.60",
+    "warnings": 0
+  },
+  "workings": [
+    "Daily rate: 800,000.00 × 12 ÷ 261 = 36781.609195; hourly 4597.701149; per minute 76.628352",
+    "BASIC 400,000.00: 800,000 ÷ 2",
+    "SSS -875.00: MSC 35,000.00 × 5% = 1,750.00 a month; the rest after the first cutoff's half",
+    "PHILHEALTH -1,250.00: premium 5% × 100,000.00 = 5,000.00; employee half 2,500.00; the rest after the first cutoff's half",
+    "PAGIBIG -100.00: 2% × 10,000.00 = 200.00 a month; the rest after the first cutoff's half",
+    "TAX -114,325.40: 91,770.70 + (397,775.00 − 333,333.00) × 35% = 114,325.40",
+    "Taxable income: taxable earnings − 2,225.00 contributions = 397,775.00"
+  ]
+}

@@ -1,0 +1,43 @@
+{
+  "name": "Lowest SSS bracket",
+  "about": "₱4,000 a month (part-time). SSS uses the lowest ₱5,000 MSC; PhilHealth the floor.",
+  "employee": {
+    "basis": "monthly",
+    "rate": "4000.00",
+    "daysPerWeek": 5,
+    "minimumWageEarner": false
+  },
+  "period": {
+    "from": "2026-10-16",
+    "to": "2026-10-31",
+    "cutoff": 2
+  },
+  "expected": {
+    "lines": [
+      ["BASIC", "2000.00"],
+      ["SSS", "-125.00"],
+      ["PHILHEALTH", "-125.00"],
+      ["PAGIBIG", "-40.00"]
+    ],
+    "employer": [
+      ["SSS_ER", "250.00"],
+      ["SSS_EC", "5.00"],
+      ["PHILHEALTH_ER", "125.00"],
+      ["PAGIBIG_ER", "40.00"]
+    ],
+    "gross": "2000.00",
+    "statutoryEe": "290.00",
+    "taxable": "1710.00",
+    "withholdingTax": "0.00",
+    "net": "1710.00",
+    "warnings": 0
+  },
+  "workings": [
+    "Daily rate: 4,000.00 × 12 ÷ 261 = 183.908046; hourly 22.988506; per minute 0.383142",
+    "BASIC 2,000.00: 4,000 ÷ 2",
+    "SSS -125.00: MSC 5,000.00 × 5% = 250.00 a month; the rest after the first cutoff's half",
+    "PHILHEALTH -125.00: premium 5% × 10,000.00 = 500.00; employee half 250.00; the rest after the first cutoff's half",
+    "PAGIBIG -40.00: 2% × 4,000.00 = 80.00 a month; the rest after the first cutoff's half",
+    "Taxable income: taxable earnings − 290.00 contributions = 1,710.00"
+  ]
+}

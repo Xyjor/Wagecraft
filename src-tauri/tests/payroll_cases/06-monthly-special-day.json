@@ -1,0 +1,54 @@
+{
+  "name": "Monthly-paid works a special day",
+  "about": "₱18,000 a month, Aug 16–31. Works Ninoy Aquino Day (Aug 21, special): only the extra 30% is added. National Heroes Day (Aug 31, regular) is off and costs nothing.",
+  "employee": {
+    "basis": "monthly",
+    "rate": "18000.00",
+    "daysPerWeek": 5,
+    "minimumWageEarner": false
+  },
+  "period": {
+    "from": "2026-08-16",
+    "to": "2026-08-31",
+    "cutoff": 2
+  },
+  "days": {
+    "2026-08-21": {
+      "dayType": "special"
+    },
+    "2026-08-31": {
+      "dayType": "regular",
+      "status": "off"
+    }
+  },
+  "expected": {
+    "lines": [
+      ["BASIC", "9000.00"],
+      ["HOLIDAY", "248.28"],
+      ["SSS", "-450.00"],
+      ["PHILHEALTH", "-225.00"],
+      ["PAGIBIG", "-100.00"]
+    ],
+    "employer": [
+      ["SSS_ER", "900.00"],
+      ["SSS_EC", "15.00"],
+      ["PHILHEALTH_ER", "225.00"],
+      ["PAGIBIG_ER", "100.00"]
+    ],
+    "gross": "9248.28",
+    "statutoryEe": "775.00",
+    "taxable": "8473.28",
+    "withholdingTax": "0.00",
+    "net": "8473.28",
+    "warnings": 0
+  },
+  "workings": [
+    "Daily rate: 18,000.00 × 12 ÷ 261 = 827.586207; hourly 103.448276; per minute 1.724138",
+    "BASIC 9,000.00: 18,000 ÷ 2",
+    "HOLIDAY 248.28: 8 h × hourly × (130% − 100%)",
+    "SSS -450.00: MSC 18,000.00 × 5% = 900.00 a month; the rest after the first cutoff's half",
+    "PHILHEALTH -225.00: premium 5% × 18,000.00 = 900.00; employee half 450.00; the rest after the first cutoff's half",
+    "PAGIBIG -100.00: 2% × 10,000.00 = 200.00 a month; the rest after the first cutoff's half",
+    "Taxable income: taxable earnings − 775.00 contributions = 8,473.28"
+  ]
+}

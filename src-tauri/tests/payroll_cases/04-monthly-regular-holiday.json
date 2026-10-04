@@ -1,0 +1,60 @@
+{
+  "name": "Monthly-paid works a regular holiday",
+  "about": "₱30,000 a month. Works Bonifacio Day (Nov 30) plus 2 hours of overtime. The salary already pays the holiday, so only the extra 100% is added; overtime is 260%.",
+  "employee": {
+    "basis": "monthly",
+    "rate": "30000.00",
+    "daysPerWeek": 5,
+    "minimumWageEarner": false
+  },
+  "period": {
+    "from": "2026-11-16",
+    "to": "2026-11-30",
+    "cutoff": 2
+  },
+  "days": {
+    "2026-11-30": {
+      "dayType": "regular"
+    }
+  },
+  "overtime": [
+    {
+      "dayType": "regular",
+      "minutes": 120
+    }
+  ],
+  "expected": {
+    "lines": [
+      ["BASIC", "15000.00"],
+      ["HOLIDAY", "1379.31"],
+      ["OT", "896.55"],
+      ["SSS", "-750.00"],
+      ["PHILHEALTH", "-375.00"],
+      ["PAGIBIG", "-100.00"],
+      ["TAX", "-845.08"]
+    ],
+    "employer": [
+      ["SSS_ER", "1500.00"],
+      ["SSS_EC", "15.00"],
+      ["PHILHEALTH_ER", "375.00"],
+      ["PAGIBIG_ER", "100.00"]
+    ],
+    "gross": "17275.86",
+    "statutoryEe": "1225.00",
+    "taxable": "16050.86",
+    "withholdingTax": "845.08",
+    "net": "15205.78",
+    "warnings": 0
+  },
+  "workings": [
+    "Daily rate: 30,000.00 × 12 ÷ 261 = 1379.310345; hourly 172.413793; per minute 2.873563",
+    "BASIC 15,000.00: 30,000 ÷ 2",
+    "HOLIDAY 1,379.31: 8 h × hourly × (200% − 100%)",
+    "OT 896.55: 2 h × hourly × 260%",
+    "SSS -750.00: MSC 30,000.00 × 5% = 1,500.00 a month; the rest after the first cutoff's half",
+    "PHILHEALTH -375.00: premium 5% × 30,000.00 = 1,500.00; employee half 750.00; the rest after the first cutoff's half",
+    "PAGIBIG -100.00: 2% × 10,000.00 = 200.00 a month; the rest after the first cutoff's half",
+    "TAX -845.08: 0.00 + (16,050.86 − 10,417.00) × 15% = 845.08",
+    "Taxable income: taxable earnings − 1,225.00 contributions = 16,050.86"
+  ]
+}
