@@ -77,7 +77,7 @@ pub struct WorkSchedule {
     /// Comma-separated weekday codes in calendar order, like `MON,TUE,WED,THU,FRI`.
     pub work_days: String,
     pub is_active: bool,
-    /// How many employees (archived ones included) follow this schedule.
+    /// How many employees (archived ones included) are on this schedule today.
     #[ts(type = "number")]
     pub employee_count: i64,
 }

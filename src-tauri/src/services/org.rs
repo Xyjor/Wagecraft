@@ -428,6 +428,11 @@ fn schedule_fields<'a>(s: &'a CleanSchedule, input: &WorkScheduleInput) -> Sched
     }
 }
 
+/// Past days were worked out with a schedule's hours, so they stay as they are.
+const SCHEDULE_IN_USE: &str = "People have followed this schedule, so its hours and work \
+    days can't change. Add a new schedule with the new hours, then move people to it from a \
+    date on their Schedule tab.";
+
 fn schedule_name_taken() -> AppError {
     AppError::Validation(vec![field(
         "name",
@@ -475,6 +480,22 @@ pub async fn update_schedule(
         .ok_or(AppError::NotFound("Work schedule"))?;
     if repo::schedule_name_taken(&mut tx, &s.name, Some(id)).await? {
         return Err(schedule_name_taken());
+    }
+    let hours_changed = (
+        s.start_time.as_str(),
+        s.end_time.as_str(),
+        input.break_minutes,
+        input.grace_minutes,
+        s.work_days.as_str(),
+    ) != (
+        before.start_time.as_str(),
+        before.end_time.as_str(),
+        before.break_minutes,
+        before.grace_minutes,
+        before.work_days.as_str(),
+    );
+    if hours_changed && repo::schedule_ever_used(&mut tx, id).await? {
+        return Err(AppError::Conflict(SCHEDULE_IN_USE));
     }
     repo::update_schedule(&mut tx, id, &schedule_fields(&s, &input), &time::to_db(now)).await?;
     let after = repo::schedule(&mut *tx, id)
@@ -863,6 +884,66 @@ mod tests {
         )
         .await
         .expect("keeps its own name");
+    }
+
+    /// Past days were worked out with these hours, so changing them would rewrite late
+    /// minutes and pay after the fact. A new schedule plus a dated move does it instead.
+    #[tokio::test]
+    async fn a_schedule_people_have_followed_keeps_its_hours() {
+        let (_dir, db) = db().await;
+        let day = create_schedule(&db, hr(), sched("Day", "08:00", "17:00", "MON"), t0())
+            .await
+            .expect("create");
+        update_schedule(
+            &db,
+            hr(),
+            day.id,
+            sched("Day", "07:00", "16:00", "MON"),
+            t0(),
+        )
+        .await
+        .expect("nobody on it yet, so the hours may change");
+        sqlx::query(
+            "INSERT INTO employees (employee_no, first_name, last_name, hire_date, \
+             employment_status, schedule_id) VALUES ('EMP-1', 'Juan', 'Cruz', '2025-01-06', \
+             'REGULAR', ?)",
+        )
+        .bind(day.id)
+        .execute(&db)
+        .await
+        .expect("employee");
+
+        for changed in [
+            sched("Day", "08:00", "16:00", "MON"),
+            sched("Day", "07:00", "17:00", "MON"),
+            sched("Day", "07:00", "16:00", "MON,TUE"),
+            WorkScheduleInput {
+                break_minutes: 30,
+                ..sched("Day", "07:00", "16:00", "MON")
+            },
+            WorkScheduleInput {
+                grace_minutes: 0,
+                ..sched("Day", "07:00", "16:00", "MON")
+            },
+        ] {
+            let err = update_schedule(&db, hr(), day.id, changed.clone(), t0())
+                .await
+                .unwrap_err();
+            assert!(matches!(err, AppError::Conflict(_)), "{changed:?}: {err:?}");
+        }
+        let renamed = update_schedule(
+            &db,
+            hr(),
+            day.id,
+            sched("Early", "07:00", "16:00", "MON"),
+            t0(),
+        )
+        .await
+        .expect("a new name is fine");
+        assert_eq!(
+            (renamed.name.as_str(), renamed.start_time.as_str()),
+            ("Early", "07:00")
+        );
     }
 
     #[tokio::test]
