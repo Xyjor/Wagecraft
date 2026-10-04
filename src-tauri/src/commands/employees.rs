@@ -5,9 +5,10 @@ use crate::auth::kiosk_lock::KioskLock;
 use crate::auth::permissions::Permission;
 use crate::domain::compensation::{Compensation, CompensationInput};
 use crate::domain::employee::{Employee, EmployeeInput, EmployeePage, EmployeeQuery};
+use crate::domain::schedule::{ScheduleAssignment, ScheduleChangeInput};
 use crate::error::AppError;
 use crate::services::accounts::{self, AccountSummary, NewStaffAccount};
-use crate::services::{compensation, employees, kiosk};
+use crate::services::{compensation, employees, kiosk, schedules};
 use crate::state::AppState;
 use chrono::{Local, Utc};
 use tauri::State;
@@ -88,6 +89,25 @@ pub async fn employee_add_compensation(
 ) -> Result<Compensation, AppError> {
     let session = state.require(Permission::EmployeeWrite).await?;
     compensation::add(&state.db, session.actor(), id, input, Utc::now()).await
+}
+
+#[tauri::command]
+pub async fn employee_schedule_history(
+    state: State<'_, AppState>,
+    id: i64,
+) -> Result<Vec<ScheduleAssignment>, AppError> {
+    state.require(Permission::EmployeeReadAll).await?;
+    schedules::history(&state.db, id).await
+}
+
+#[tauri::command]
+pub async fn employee_change_schedule(
+    state: State<'_, AppState>,
+    id: i64,
+    input: ScheduleChangeInput,
+) -> Result<Vec<ScheduleAssignment>, AppError> {
+    let session = state.require(Permission::EmployeeWrite).await?;
+    schedules::change(&state.db, session.actor(), id, input, Utc::now()).await
 }
 
 /// The sign-in account linked to this employee, if any.

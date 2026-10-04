@@ -227,9 +227,9 @@ describe("EmployeeFormPage", () => {
     });
   });
 
-  it("offers active work schedules and sends the one picked", async () => {
-    renderAt("/employees/7/edit");
-    await screen.findByRole("heading", { name: "Edit Juan Dela Cruz" });
+  it("offers active work schedules for a new employee", async () => {
+    renderAt("/employees/new");
+    await screen.findByRole("heading", { name: "Add employee" });
     await waitFor(() =>
       expect(within(screen.getByLabelText("Work schedule")).getAllByRole("option")).toHaveLength(2),
     );
@@ -237,7 +237,31 @@ describe("EmployeeFormPage", () => {
       .getAllByRole("option")
       .map((o) => o.textContent);
     expect(labels).toEqual(["No schedule", "Office · 08:00–17:00, Mon–Fri"]);
+    type("Employee no.", "EMP-0008");
+    type("First name", "Maria");
+    type("Last name", "Santos");
+    type("Hire date", "2025-01-06");
     type("Work schedule", "1");
+    fireEvent.click(screen.getByRole("button", { name: "Save employee" }));
+
+    expect(await screen.findByText("Profile page")).toBeTruthy();
+    expect(lastInput("employee_create").input).toMatchObject({ scheduleId: 1 });
+  });
+
+  it("shows the schedule but leaves moving it to the Schedule tab when editing", async () => {
+    call.mockImplementation(async (cmd: string) => {
+      if (cmd === "department_list") return departments;
+      if (cmd === "position_list") return positions;
+      if (cmd === "schedule_list") return schedules;
+      if (cmd === "employee_get") return { ...juan, scheduleId: 1 };
+      if (cmd === "employee_update") return juan;
+      return null;
+    });
+    renderAt("/employees/7/edit");
+    await screen.findByRole("heading", { name: "Edit Juan Dela Cruz" });
+    expect(await screen.findByText("Office · 08:00–17:00, Mon–Fri")).toBeTruthy();
+    expect(screen.getByText(/Schedule tab/)).toBeTruthy();
+    expect(screen.queryByRole("combobox", { name: "Work schedule" })).toBeNull();
     fireEvent.click(screen.getByRole("button", { name: "Save employee" }));
 
     expect(await screen.findByText("Profile page")).toBeTruthy();

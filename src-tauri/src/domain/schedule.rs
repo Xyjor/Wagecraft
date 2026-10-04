@@ -2,6 +2,37 @@
 //! from a date, so a past day must be worked out with the schedule it had then.
 
 use chrono::NaiveDate;
+use serde::{Deserialize, Serialize};
+use sqlx::FromRow;
+use ts_rs::TS;
+
+/// One row of an employee's schedule history.
+#[derive(Debug, Clone, Serialize, FromRow, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export)]
+pub struct ScheduleAssignment {
+    #[ts(type = "number")]
+    pub id: i64,
+    #[ts(type = "number | null")]
+    pub schedule_id: Option<i64>,
+    pub schedule_name: Option<String>,
+    /// The schedule applies from this date until the next row's.
+    pub effective_from: String,
+    pub reason: Option<String>,
+    /// Who made the change, or empty for the starting schedule.
+    pub created_by_name: Option<String>,
+}
+
+/// HR moving an employee to another schedule from a date.
+#[derive(Debug, Clone, Deserialize, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export)]
+pub struct ScheduleChangeInput {
+    #[ts(type = "number")]
+    pub schedule_id: i64,
+    pub effective_from: String,
+    pub reason: Option<String>,
+}
 
 /// The schedules an employee has followed. Each applies from its date until the next one;
 /// `None` means no schedule from that date.

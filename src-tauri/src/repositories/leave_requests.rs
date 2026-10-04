@@ -401,6 +401,27 @@ pub async fn live_on(conn: &mut SqliteConnection, date: &str) -> sqlx::Result<Ve
     .await
 }
 
+/// The employee's pending and approved requests that run on or past `date`.
+pub async fn live_through(
+    conn: &mut SqliteConnection,
+    employee_id: i64,
+    date: &str,
+) -> sqlx::Result<Vec<Recount>> {
+    sqlx::query_as(
+        "SELECT r.id, r.employee_id, e.employee_no, r.leave_type_id, t.is_paid, r.start_date, \
+         r.end_date, r.half_day, r.halfdays, r.status \
+         FROM leave_requests r \
+         JOIN employees e ON e.id = r.employee_id \
+         JOIN leave_types t ON t.id = r.leave_type_id \
+         WHERE r.status IN ('PENDING', 'APPROVED') AND r.employee_id = ? AND r.end_date >= ? \
+         ORDER BY r.id",
+    )
+    .bind(employee_id)
+    .bind(date)
+    .fetch_all(conn)
+    .await
+}
+
 pub async fn set_halfdays(
     conn: &mut SqliteConnection,
     id: i64,

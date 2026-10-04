@@ -390,6 +390,41 @@ pub(crate) async fn recheck_on(conn: &mut SqliteConnection, date: &str) -> Resul
     Ok(())
 }
 
+/// The first day on or after `from` where the employee's live overtime falls inside the
+/// schedule they now have for that day. Used before a schedule move is saved.
+pub(crate) async fn first_clash_from(
+    conn: &mut SqliteConnection,
+    employee_id: i64,
+    from: NaiveDate,
+) -> Result<Option<NaiveDate>, AppError> {
+    let day_before = (from - Duration::days(1)).to_string();
+    for r in repo::live_after(conn, employee_id, &day_before).await? {
+        let Ok(work_date) = NaiveDate::parse_from_str(&r.work_date, "%Y-%m-%d") else {
+            continue;
+        };
+        let holidays = attendance_repo::holidays_on(&mut *conn, &r.work_date).await?;
+        let day_off = matches!(
+            strongest_holiday(&holidays),
+            Some(HolidayKind::Regular | HolidayKind::SpecialNonWorking)
+        );
+        let Some(employee) = repo::employee_by_id(conn, employee_id, &r.work_date).await? else {
+            continue;
+        };
+        let (Some((shift, work_days)), Some(start), Some(end)) = (
+            shift_of(&employee),
+            time::from_local_db(&r.start_at),
+            time::from_local_db(&r.end_at),
+        ) else {
+            continue;
+        };
+        let ot = Interval::new(start, end);
+        if rules::clashes_with_shift(&ot, work_date, &shift, work_days, day_off) {
+            return Ok(Some(work_date));
+        }
+    }
+    Ok(None)
+}
+
 /// Cancels an employee's pending and approved overtime after their last day of work.
 pub(crate) async fn cancel_after_separation(
     conn: &mut SqliteConnection,

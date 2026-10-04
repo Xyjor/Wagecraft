@@ -6,6 +6,8 @@ import type { Employee } from "@/bindings/Employee";
 import type { EmployeeInput } from "@/bindings/EmployeeInput";
 import type { EmployeePage } from "@/bindings/EmployeePage";
 import type { EmployeeQuery } from "@/bindings/EmployeeQuery";
+import type { ScheduleAssignment } from "@/bindings/ScheduleAssignment";
+import type { ScheduleChangeInput } from "@/bindings/ScheduleChangeInput";
 import { call } from "@/lib/ipc";
 
 export const listEmployees = (query: EmployeeQuery) =>
@@ -21,6 +23,10 @@ export const compensationHistory = (id: number) =>
   call<Compensation[]>("employee_compensation_history", { id });
 export const addCompensation = (id: number, input: CompensationInput) =>
   call<Compensation>("employee_add_compensation", { id, input });
+export const scheduleHistory = (id: number) =>
+  call<ScheduleAssignment[]>("employee_schedule_history", { id });
+export const changeSchedule = (id: number, input: ScheduleChangeInput) =>
+  call<ScheduleAssignment[]>("employee_change_schedule", { id, input });
 export const getAccount = (id: number) => call<AccountSummary | null>("employee_account", { id });
 export const linkableAccounts = () => call<AccountSummary[]>("employee_linkable_accounts");
 export const createAccount = (id: number, input: NewStaffAccount) =>

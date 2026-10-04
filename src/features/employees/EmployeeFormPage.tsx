@@ -64,7 +64,7 @@ function EmployeeForm({ departments, positions, schedules, employee }: Loaded) {
   const positionOptions = positions.filter(
     (p) => String(p.departmentId) === departmentId && (p.isActive || p.id === employee?.positionId),
   );
-  const scheduleOptions = schedules.filter((s) => s.isActive || s.id === employee?.scheduleId);
+  const scheduleOptions = schedules.filter((s) => s.isActive);
   const keepsPosition = departmentId === String(employee?.departmentId ?? "");
 
   async function submit(e: FormEvent<HTMLFormElement>) {
@@ -227,19 +227,26 @@ function EmployeeForm({ departments, positions, schedules, employee }: Loaded) {
           defaultValue={keepsPosition ? String(e?.positionId ?? "") : ""}
           error={errors.positionId}
         />
-        <SelectField
-          name="scheduleId"
-          label="Work schedule"
-          options={[
-            { value: "", label: "No schedule" },
-            ...scheduleOptions.map((s) => ({
-              value: String(s.id),
-              label: `${s.name} · ${scheduleHours(s)}, ${workDaysLabel(s.workDays)}`,
-            })),
-          ]}
-          defaultValue={String(e?.scheduleId ?? "")}
-          error={errors.scheduleId}
-        />
+        {e ? (
+          <CurrentSchedule
+            id={e.scheduleId}
+            schedule={schedules.find((s) => s.id === e.scheduleId)}
+          />
+        ) : (
+          <SelectField
+            name="scheduleId"
+            label="Work schedule"
+            options={[
+              { value: "", label: "No schedule" },
+              ...scheduleOptions.map((s) => ({
+                value: String(s.id),
+                label: `${s.name} · ${scheduleHours(s)}, ${workDaysLabel(s.workDays)}`,
+              })),
+            ]}
+            defaultValue=""
+            error={errors.scheduleId}
+          />
+        )}
       </Section>
 
       <Section title="Government IDs and bank">
@@ -299,5 +306,23 @@ function Section({ title, children }: { title: string; children: ReactNode }) {
       <legend className="text-lg font-semibold">{title}</legend>
       <div className="grid gap-4 sm:grid-cols-2">{children}</div>
     </fieldset>
+  );
+}
+
+/** The schedule is only shown here; a move needs a start date, so it's on the Schedule tab. */
+function CurrentSchedule({ id, schedule }: { id: number | null; schedule?: WorkSchedule }) {
+  return (
+    <div className="flex flex-col gap-1">
+      <span className="text-sm font-medium">Work schedule</span>
+      <span className="text-sm">
+        {schedule
+          ? `${schedule.name} · ${scheduleHours(schedule)}, ${workDaysLabel(schedule.workDays)}`
+          : "No schedule"}
+      </span>
+      <span className="text-xs text-zinc-500">
+        To change it from a date, use the Schedule tab on the profile.
+      </span>
+      <input type="hidden" name="scheduleId" value={id === null ? "" : String(id)} />
+    </div>
   );
 }

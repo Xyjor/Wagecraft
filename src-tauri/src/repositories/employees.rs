@@ -6,7 +6,11 @@ use sqlx::{FromRow, SqliteConnection, SqliteExecutor};
 const PROFILE: &str = "SELECT e.id, e.employee_no, e.first_name, e.middle_name, e.last_name, \
     e.suffix, e.birth_date, e.sex, e.civil_status, e.email, e.mobile, e.address, e.hire_date, \
     e.regularization_date, e.separation_date, e.employment_status, e.department_id, \
-    d.name AS department_name, e.position_id, p.title AS position_title, e.schedule_id, e.tin, \
+    d.name AS department_name, e.position_id, p.title AS position_title, \
+    COALESCE((SELECT a.schedule_id FROM schedule_assignments a WHERE a.employee_id = e.id \
+        AND a.effective_from <= date('now', 'localtime') ORDER BY a.effective_from DESC LIMIT 1), \
+        (SELECT a.schedule_id FROM schedule_assignments a WHERE a.employee_id = e.id \
+        ORDER BY a.effective_from LIMIT 1)) AS schedule_id, e.tin, \
     e.sss_no, e.philhealth_no, e.pagibig_no, e.bank_name, e.bank_account_no, \
     e.kiosk_pin_hash IS NOT NULL AS has_kiosk_pin, e.archived_at \
     FROM employees e \
@@ -248,7 +252,15 @@ pub async fn update(
     f: &EmployeeFields,
     now: &str,
 ) -> sqlx::Result<()> {
-    let sets: Vec<String> = COLUMNS.iter().map(|c| format!("{c} = ?")).collect();
+    // `schedule_id` is only the schedule someone started with; later moves are dated rows
+    // in `schedule_assignments`, so an edit never overwrites it.
+    let sets: Vec<String> = COLUMNS
+        .iter()
+        .map(|c| match *c {
+            "schedule_id" => "schedule_id = IFNULL(schedule_id, ?)".to_string(),
+            c => format!("{c} = ?"),
+        })
+        .collect();
     let sql = format!(
         "UPDATE employees SET {}, updated_at = ? WHERE id = ?",
         sets.join(", ")

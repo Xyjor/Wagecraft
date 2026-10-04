@@ -10,6 +10,7 @@ use crate::domain::validation as rules;
 use crate::error::{AppError, FieldError};
 use crate::repositories::employees::{self as repo, EmployeeFields, Unique};
 use crate::repositories::org;
+use crate::repositories::schedules;
 use crate::services::auth::field;
 use crate::services::{accounts, leave_requests, overtime};
 use crate::time;
@@ -87,6 +88,9 @@ pub async fn update(
         ));
     }
     let fields = validate(&mut tx, &input, Some(&before), today).await?;
+    if fields.hire_date != before.hire_date {
+        first_schedule_from_hire(&mut tx, id, &fields.hire_date).await?;
+    }
     repo::update(&mut tx, id, &fields, &time::to_db(now)).await?;
     let after = repo::get(&mut *tx, id)
         .await?
@@ -109,6 +113,30 @@ pub async fn update(
     audit::record(&mut tx, now, actor, entry).await?;
     tx.commit().await?;
     Ok(after)
+}
+
+/// The first schedule runs from the hire date, so it moves with it. A later move must stay
+/// after the hire date.
+async fn first_schedule_from_hire(
+    conn: &mut SqliteConnection,
+    id: i64,
+    hire_date: &str,
+) -> Result<(), AppError> {
+    let starts = schedules::starts(conn, id).await?;
+    let Some(first) = starts.first() else {
+        return Ok(());
+    };
+    if let Some(next) = starts.get(1).filter(|next| next.as_str() <= hire_date) {
+        let shown = NaiveDate::parse_from_str(next, "%Y-%m-%d")
+            .map(|d| d.format("%b %-d, %Y").to_string())
+            .unwrap_or_else(|_| next.clone());
+        return Err(AppError::Validation(vec![field(
+            "hireDate",
+            &format!("This employee moved to another schedule on {shown}. The hire date has to be before that."),
+        )]));
+    }
+    schedules::move_start(conn, id, first, hire_date).await?;
+    Ok(())
 }
 
 /// Archives a separated employee, or brings one back. Archived people leave the default
@@ -338,7 +366,12 @@ async fn validate(
         }
     }
     f.schedule_id = input.schedule_id;
-    if let Some(id) = f.schedule_id {
+    if before.is_some_and(|b| b.schedule_id != f.schedule_id) {
+        errors.push(field(
+            "scheduleId",
+            "Use the Schedule tab to move this employee to another schedule from a date",
+        ));
+    } else if let Some(id) = f.schedule_id {
         let unchanged = before.is_some_and(|b| b.schedule_id == Some(id));
         if !repo::schedule_active(conn, id)
             .await?
@@ -971,5 +1004,107 @@ mod tests {
         .await
         .expect("statuses");
         assert_eq!(statuses, ["CANCELLED", "CANCELLED"]);
+    }
+
+    async fn two_schedules(db: &SqlitePool) {
+        sqlx::query(
+            "INSERT INTO work_schedules (id, name, start_time, end_time, break_minutes, \
+             grace_minutes, work_days, is_active) VALUES \
+             (1, 'Office', '08:00', '17:00', 60, 10, 'MON,TUE,WED,THU,FRI', 1), \
+             (2, 'Six days', '09:00', '18:00', 60, 10, 'MON,TUE,WED,THU,FRI,SAT', 1)",
+        )
+        .execute(db)
+        .await
+        .expect("schedules");
+    }
+
+    fn on_schedule(mut input: EmployeeInput, id: i64) -> EmployeeInput {
+        input.schedule_id = Some(id);
+        input
+    }
+
+    async fn move_to(db: &SqlitePool, employee_id: i64, schedule_id: i64, from: &str) {
+        crate::services::schedules::change(
+            db,
+            hr(),
+            employee_id,
+            crate::domain::schedule::ScheduleChangeInput {
+                schedule_id,
+                effective_from: from.into(),
+                reason: None,
+            },
+            now(),
+        )
+        .await
+        .expect("moved");
+    }
+
+    async fn starts(db: &SqlitePool, employee_id: i64) -> Vec<String> {
+        crate::services::schedules::history(db, employee_id)
+            .await
+            .expect("history")
+            .into_iter()
+            .map(|a| a.effective_from)
+            .collect()
+    }
+
+    /// A schedule change has to say from when, so it goes through the Schedule tab. The
+    /// edit form changing it would rewrite every past day.
+    #[tokio::test]
+    async fn the_edit_form_leaves_the_schedule_alone() {
+        let (_d, db) = db().await;
+        two_schedules(&db).await;
+        let e = create(&db, hr(), on_schedule(juan(), 1), today(), now())
+            .await
+            .expect("created");
+        let err = update(&db, hr(), e.id, on_schedule(juan(), 2), today(), now())
+            .await
+            .unwrap_err();
+        assert_eq!(fields(err), ["scheduleId"]);
+        let mut edit = on_schedule(juan(), 1);
+        edit.mobile = Some("+639181234567".into());
+        update(&db, hr(), e.id, edit, today(), now())
+            .await
+            .expect("other fields still save");
+        assert_eq!(starts(&db, e.id).await, ["2024-06-03"]);
+    }
+
+    #[tokio::test]
+    async fn the_profile_shows_the_schedule_in_effect_today() {
+        let (_d, db) = db().await;
+        two_schedules(&db).await;
+        let e = create(&db, hr(), on_schedule(juan(), 1), today(), now())
+            .await
+            .expect("created");
+        move_to(&db, e.id, 2, "2024-07-01").await;
+        move_to(&db, e.id, 1, "2099-01-05").await;
+        assert_eq!(get(&db, e.id).await.expect("get").schedule_id, Some(2));
+        // The edit form sends back what it was shown.
+        update(&db, hr(), e.id, on_schedule(juan(), 2), today(), now())
+            .await
+            .expect("unchanged schedule saves");
+    }
+
+    #[tokio::test]
+    async fn a_new_hire_date_moves_the_first_schedule() {
+        let (_d, db) = db().await;
+        two_schedules(&db).await;
+        let e = create(&db, hr(), on_schedule(juan(), 1), today(), now())
+            .await
+            .expect("created");
+        let mut earlier = on_schedule(juan(), 1);
+        earlier.hire_date = "2024-05-02".into();
+        update(&db, hr(), e.id, earlier, today(), now())
+            .await
+            .expect("earlier hire date");
+        assert_eq!(starts(&db, e.id).await, ["2024-05-02"]);
+
+        move_to(&db, e.id, 2, "2024-07-01").await;
+        let mut past_the_move = on_schedule(juan(), 2);
+        past_the_move.hire_date = "2024-07-01".into();
+        let err = update(&db, hr(), e.id, past_the_move, today(), now())
+            .await
+            .unwrap_err();
+        assert_eq!(fields(err), ["hireDate"]);
     }
 }

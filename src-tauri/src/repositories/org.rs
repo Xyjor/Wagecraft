@@ -182,7 +182,11 @@ pub async fn set_position_active(
 
 const SCHEDULE: &str = "SELECT s.id, s.name, s.start_time, s.end_time, s.break_minutes, \
     s.grace_minutes, s.work_days, s.is_active, \
-    (SELECT COUNT(*) FROM employees e WHERE e.schedule_id = s.id) AS employee_count \
+    (SELECT COUNT(*) FROM employees e WHERE s.id = COALESCE( \
+        (SELECT a.schedule_id FROM schedule_assignments a WHERE a.employee_id = e.id \
+        AND a.effective_from <= date('now', 'localtime') ORDER BY a.effective_from DESC LIMIT 1), \
+        (SELECT a.schedule_id FROM schedule_assignments a WHERE a.employee_id = e.id \
+        ORDER BY a.effective_from LIMIT 1))) AS employee_count \
     FROM work_schedules s";
 
 pub async fn schedules<'e>(db: impl SqliteExecutor<'e>) -> sqlx::Result<Vec<WorkSchedule>> {
