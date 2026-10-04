@@ -1,5 +1,6 @@
 //! SQL for overtime requests. No rules here: the overtime service decides.
 
+use super::schedules;
 use crate::domain::overtime::OvertimeRequest;
 use sqlx::{FromRow, SqliteConnection, SqliteExecutor};
 
@@ -84,16 +85,22 @@ pub struct OvertimeEmployee {
     pub work_days: Option<String>,
 }
 
-const EMPLOYEE: &str =
-    "SELECT e.id, e.archived_at, e.hire_date, e.separation_date, s.start_time, s.end_time, \
-    s.break_minutes, s.grace_minutes, s.work_days \
-    FROM employees e LEFT JOIN work_schedules s ON s.id = e.schedule_id";
+/// The employee with their work schedule on the date bound first.
+fn employee_query(filter: &str) -> String {
+    format!(
+        "SELECT e.id, e.archived_at, e.hire_date, e.separation_date, s.start_time, s.end_time, \
+         s.break_minutes, s.grace_minutes, s.work_days FROM employees e {} WHERE {filter}",
+        schedules::join_on("?")
+    )
+}
 
 pub async fn employee_by_id(
     conn: &mut SqliteConnection,
     id: i64,
+    work_date: &str,
 ) -> sqlx::Result<Option<OvertimeEmployee>> {
-    sqlx::query_as(&format!("{EMPLOYEE} WHERE e.id = ?"))
+    sqlx::query_as(&employee_query("e.id = ?"))
+        .bind(work_date)
         .bind(id)
         .fetch_optional(conn)
         .await
@@ -102,8 +109,10 @@ pub async fn employee_by_id(
 pub async fn employee_by_no(
     conn: &mut SqliteConnection,
     employee_no: &str,
+    work_date: &str,
 ) -> sqlx::Result<Option<OvertimeEmployee>> {
-    sqlx::query_as(&format!("{EMPLOYEE} WHERE e.employee_no = ?"))
+    sqlx::query_as(&employee_query("e.employee_no = ?"))
+        .bind(work_date)
         .bind(employee_no)
         .fetch_optional(conn)
         .await

@@ -11,6 +11,7 @@ import type { AppError } from "@/lib/ipc";
 import { archiveEmployee, getEmployee } from "./api";
 import { AccountTab } from "./AccountTab";
 import { CompensationTab } from "./CompensationTab";
+import { ScheduleTab } from "./ScheduleTab";
 import { isSeparated } from "./format";
 import { KioskPinTab } from "./KioskPinTab";
 import { ProfileView } from "./ProfileView";
@@ -69,6 +70,7 @@ export function EmployeeProfilePage() {
       }
       extraTabs={[
         { name: "Compensation", content: <CompensationTab employee={e} /> },
+        { name: "Schedule", content: <ScheduleTab employee={e} /> },
         { name: "Attendance", content: <AttendanceMonth load={loadAttendance} /> },
         { name: "Leave", content: <LeaveTab employee={e} /> },
         { name: "Sign-in account", content: <AccountTab employee={e} /> },

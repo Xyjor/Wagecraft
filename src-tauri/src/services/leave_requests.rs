@@ -6,11 +6,12 @@
 use crate::audit::{self, Actor, Entry};
 use crate::domain::attendance::DateRange;
 use crate::domain::employee::employment_covers;
-use crate::domain::leave::{count_halfdays, LeaveRequest, LeaveRequestInput};
+use crate::domain::leave::{count_halfdays_by_history, LeaveRequest, LeaveRequestInput};
 use crate::error::AppError;
 use crate::repositories::leave as leave_repo;
 use crate::repositories::leave_requests::{self as repo, NewRequest};
 use crate::repositories::overtime as overtime_repo;
+use crate::repositories::schedules;
 use crate::services::attendance::check_range;
 use crate::services::auth::field;
 use crate::services::leave::grant_in;
@@ -20,6 +21,8 @@ use serde_json::json;
 use sqlx::{SqliteConnection, SqlitePool};
 use std::collections::HashSet;
 
+const NO_SCHEDULE: &str =
+    "This employee has no work schedule for these dates. HR needs to set one first.";
 const LOCKED: &str =
     "Some of these days are in a posted payroll period, so this leave can't change.";
 const DECIDED: &str = "This request has already been decided.";
@@ -160,11 +163,6 @@ pub async fn file(
             "This employee is archived, so leave can't be filed for them.",
         ));
     }
-    let Some(work_days) = employee.work_days.as_deref() else {
-        return Err(AppError::Conflict(
-            "This employee has no work schedule yet. HR needs to set one first.",
-        ));
-    };
     let leave_type = leave_repo::type_by_id(&mut *tx, input.leave_type_id)
         .await?
         .filter(|t| t.is_active)
@@ -185,7 +183,9 @@ pub async fn file(
         .iter()
         .filter_map(|d| parse_date(d))
         .collect();
-    let halfdays = count_halfdays(start, end, input.half_day, work_days, &days_off);
+    let history = schedules::work_days_history(&mut tx, employee.id).await?;
+    let halfdays = count_halfdays_by_history(start, end, input.half_day, &history, &days_off)
+        .ok_or(AppError::Conflict(NO_SCHEDULE))?;
     if halfdays == 0 {
         return Err(AppError::Validation(vec![field(
             "startDate",
@@ -500,13 +500,22 @@ pub(crate) async fn recount_on(
     date: &str,
     now: DateTime<Utc>,
 ) -> Result<(), AppError> {
+    let requests = repo::live_on(conn, date).await?;
+    recount(conn, actor, requests, ("holidayDate", date), now).await
+}
+
+/// Counts each request's days again and fixes the request and its balance where the
+/// count changed. `cause` names what changed in the audit log, like `("holidayDate", date)`.
+pub(crate) async fn recount(
+    conn: &mut SqliteConnection,
+    actor: Actor<'_>,
+    requests: Vec<repo::Recount>,
+    cause: (&str, &str),
+    now: DateTime<Utc>,
+) -> Result<(), AppError> {
     let stamp = time::to_db(now);
-    for r in repo::live_on(conn, date).await? {
-        let (Some(start), Some(end), Some(work_days)) = (
-            parse_date(&r.start_date),
-            parse_date(&r.end_date),
-            r.work_days.as_deref(),
-        ) else {
+    for r in requests {
+        let (Some(start), Some(end)) = (parse_date(&r.start_date), parse_date(&r.end_date)) else {
             continue;
         };
         let days_off: HashSet<NaiveDate> = repo::days_off(conn, &r.start_date, &r.end_date)
@@ -514,7 +523,11 @@ pub(crate) async fn recount_on(
             .iter()
             .filter_map(|d| parse_date(d))
             .collect();
-        let halfdays = count_halfdays(start, end, r.half_day, work_days, &days_off);
+        let history = schedules::work_days_history(conn, r.employee_id).await?;
+        let Some(halfdays) = count_halfdays_by_history(start, end, r.half_day, &history, &days_off)
+        else {
+            return Err(AppError::Conflict(NO_SCHEDULE));
+        };
         if halfdays == r.halfdays {
             continue;
         }
@@ -543,7 +556,7 @@ pub(crate) async fn recount_on(
             after: Some(json!({
                 "halfdays": halfdays,
                 "employeeNo": r.employee_no,
-                "holidayDate": date,
+                cause.0: cause.1,
             })),
         };
         audit::record(conn, now, actor, entry).await?;
@@ -862,6 +875,34 @@ mod tests {
             .await
             .unwrap_err();
         assert_eq!(message(err), "File at most 60 days at a time");
+    }
+
+    #[tokio::test]
+    async fn leave_across_a_schedule_change_counts_each_day_by_its_schedule() {
+        let (_d, db) = db().await;
+        // From Mon Oct 12 Juan also works Saturdays. Fri Oct 16 is a holiday.
+        sqlx::query(
+            "INSERT INTO work_schedules (id, name, start_time, end_time, break_minutes, \
+             grace_minutes, work_days) VALUES \
+             (2, 'Six days', '08:00', '17:00', 60, 10, 'MON,TUE,WED,THU,FRI,SAT'); \
+             INSERT INTO schedule_assignments (employee_id, schedule_id, effective_from) \
+             VALUES (1, 2, '2026-10-12')",
+        )
+        .execute(&db)
+        .await
+        .expect("move");
+        let r = file(
+            &db,
+            juan(),
+            Some(1),
+            leave(&db, "VL", "2026-10-10", "2026-10-17").await,
+            today(),
+            t0(),
+        )
+        .await
+        .expect("file");
+        // Sat 10 was a rest day; Mon–Thu 12–15 and Sat 17 are work days.
+        assert_eq!(r.halfdays, 10);
     }
 
     #[tokio::test]

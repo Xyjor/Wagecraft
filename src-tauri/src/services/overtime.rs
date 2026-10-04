@@ -114,15 +114,18 @@ pub async fn file(
     }
 
     let mut tx = db.begin().await?;
+    let on = work_date.to_string();
     let employee = match input.employee_no.as_deref().map(str::trim) {
-        Some(no) => repo::employee_by_no(&mut tx, no).await?.ok_or_else(|| {
-            AppError::Validation(vec![field("employeeNo", "No employee has this number")])
-        })?,
+        Some(no) => repo::employee_by_no(&mut tx, no, &on)
+            .await?
+            .ok_or_else(|| {
+                AppError::Validation(vec![field("employeeNo", "No employee has this number")])
+            })?,
         None => {
             let id = own_employee.ok_or(AppError::Conflict(
                 "Your account isn't linked to an employee record, so it can't file overtime.",
             ))?;
-            repo::employee_by_id(&mut tx, id)
+            repo::employee_by_id(&mut tx, id, &on)
                 .await?
                 .ok_or(AppError::NotFound("Employee"))?
         }
@@ -132,11 +135,6 @@ pub async fn file(
             "This employee is archived, so overtime can't be filed for them.",
         ));
     }
-    let Some((shift, work_days)) = shift_of(&employee) else {
-        return Err(AppError::Conflict(
-            "This employee has no work schedule yet. HR needs to set one first.",
-        ));
-    };
     let date = work_date.to_string();
     if let Err(message) = employment_covers(
         &employee.hire_date,
@@ -145,6 +143,11 @@ pub async fn file(
     ) {
         return Err(AppError::Validation(vec![field("workDate", &message)]));
     }
+    let Some((shift, work_days)) = shift_of(&employee) else {
+        return Err(AppError::Conflict(
+            "This employee has no work schedule on this date. HR needs to set one first.",
+        ));
+    };
     if repo::day_locked(&mut tx, employee.id, &date).await? {
         return Err(AppError::Conflict(LOCKED));
     }
@@ -369,7 +372,7 @@ pub(crate) async fn recheck_on(conn: &mut SqliteConnection, date: &str) -> Resul
         Some(HolidayKind::Regular | HolidayKind::SpecialNonWorking)
     );
     for r in requests {
-        let Some(employee) = repo::employee_by_id(conn, r.employee_id).await? else {
+        let Some(employee) = repo::employee_by_id(conn, r.employee_id, date).await? else {
             continue;
         };
         let (Some((shift, work_days)), Some(start), Some(end)) = (
@@ -385,6 +388,41 @@ pub(crate) async fn recheck_on(conn: &mut SqliteConnection, date: &str) -> Resul
         }
     }
     Ok(())
+}
+
+/// The first day on or after `from` where the employee's live overtime falls inside the
+/// schedule they now have for that day. Used before a schedule move is saved.
+pub(crate) async fn first_clash_from(
+    conn: &mut SqliteConnection,
+    employee_id: i64,
+    from: NaiveDate,
+) -> Result<Option<NaiveDate>, AppError> {
+    let day_before = (from - Duration::days(1)).to_string();
+    for r in repo::live_after(conn, employee_id, &day_before).await? {
+        let Ok(work_date) = NaiveDate::parse_from_str(&r.work_date, "%Y-%m-%d") else {
+            continue;
+        };
+        let holidays = attendance_repo::holidays_on(&mut *conn, &r.work_date).await?;
+        let day_off = matches!(
+            strongest_holiday(&holidays),
+            Some(HolidayKind::Regular | HolidayKind::SpecialNonWorking)
+        );
+        let Some(employee) = repo::employee_by_id(conn, employee_id, &r.work_date).await? else {
+            continue;
+        };
+        let (Some((shift, work_days)), Some(start), Some(end)) = (
+            shift_of(&employee),
+            time::from_local_db(&r.start_at),
+            time::from_local_db(&r.end_at),
+        ) else {
+            continue;
+        };
+        let ot = Interval::new(start, end);
+        if rules::clashes_with_shift(&ot, work_date, &shift, work_days, day_off) {
+            return Ok(Some(work_date));
+        }
+    }
+    Ok(None)
 }
 
 /// Cancels an employee's pending and approved overtime after their last day of work.
@@ -545,6 +583,46 @@ mod tests {
         assert_eq!(r.end_at, "2026-10-07T20:00:00");
         assert_eq!(r.minutes, 180);
         assert_eq!(r.filed_by_username.as_deref(), Some("juan"));
+    }
+
+    #[tokio::test]
+    async fn overtime_is_checked_against_the_schedule_that_day_had() {
+        let (_d, db) = db().await;
+        // From Thu Oct 8 Juan works 09:00–18:00.
+        sqlx::query(
+            "INSERT INTO work_schedules (id, name, start_time, end_time, break_minutes, \
+             grace_minutes, work_days) VALUES \
+             (3, 'Late', '09:00', '18:00', 60, 0, 'MON,TUE,WED,THU,FRI'); \
+             INSERT INTO schedule_assignments (employee_id, schedule_id, effective_from) \
+             VALUES (1, 3, '2026-10-08')",
+        )
+        .execute(&db)
+        .await
+        .expect("move");
+        file(
+            &db,
+            juan(),
+            Some(1),
+            ot("2026-10-07", "17:00", "19:00"),
+            today(),
+            t0(),
+        )
+        .await
+        .expect("after the old 17:00 end");
+        let err = file(
+            &db,
+            juan(),
+            Some(1),
+            ot("2026-10-08", "17:00", "19:00"),
+            today(),
+            t0(),
+        )
+        .await
+        .unwrap_err();
+        assert!(
+            matches!(&err, AppError::Validation(f) if f.iter().any(|e| e.message.contains("outside the work schedule"))),
+            "{err:?}"
+        );
     }
 
     #[tokio::test]

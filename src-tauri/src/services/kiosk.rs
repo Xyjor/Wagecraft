@@ -73,7 +73,8 @@ pub async fn punch(
     }
 
     let mut conn = db.acquire().await?;
-    let employee = repo::kiosk_employee(&mut conn, typed).await?;
+    let today = clock.local.date().to_string();
+    let employee = repo::kiosk_employee(&mut conn, typed, &today).await?;
     drop(conn);
     let checked = employee
         .as_ref()
