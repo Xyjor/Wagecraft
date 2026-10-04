@@ -3,7 +3,9 @@
 //! without writing Rust. A case is never edited to make a failing run pass (plan §11.2).
 
 use super::contributions::Cutoff;
-use super::engine::{Allowance, DayRecord, DayStatus, OvertimeBlock, PayslipInput};
+use super::engine::{
+    Allowance, DayRecord, DayStatus, Deduction, DeductionKind, OvertimeBlock, PayslipInput,
+};
 use super::fixtures::d;
 use super::payslip::{compute_payslip, PayslipResult};
 use super::rates::PayBasis;
@@ -36,6 +38,12 @@ struct Case {
     overtime: Vec<Overtime>,
     #[serde(default)]
     allowances: Vec<CaseAllowance>,
+    /// Loans and other deductions, in the order they are taken.
+    #[serde(default)]
+    deductions: Vec<CaseDeduction>,
+    /// The lowest net pay deductions may leave; ₱0 when not given.
+    #[serde(default)]
+    minimum_net: Option<String>,
     expected: Expected,
     #[allow(dead_code)]
     workings: Vec<String>,
@@ -117,6 +125,22 @@ struct CaseAllowance {
 }
 
 #[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct CaseDeduction {
+    kind: DeductionType,
+    label: String,
+    amount: String,
+}
+
+/// The kind of a step 7 deduction.
+#[derive(Deserialize, Clone, Copy)]
+#[serde(rename_all = "camelCase")]
+enum DeductionType {
+    Loan,
+    Other,
+}
+
+#[derive(Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 struct Expected {
     lines: Vec<(String, String)>,
@@ -125,7 +149,13 @@ struct Expected {
     statutory_ee: String,
     taxable: String,
     withholding_tax: String,
+    /// Loans and other deductions taken; ₱0 when not given.
+    #[serde(default)]
+    deductions: Option<String>,
     net: String,
+    /// What each deduction left unpaid, by label, to carry over.
+    #[serde(default)]
+    unpaid: Vec<(String, String)>,
     warnings: usize,
 }
 
@@ -267,6 +297,19 @@ impl Case {
                 n => panic!("cutoff {n} is not 1 or 2"),
             },
             minimum_wage_earner: e.minimum_wage_earner,
+            deductions: self
+                .deductions
+                .iter()
+                .map(|d| Deduction {
+                    kind: match d.kind {
+                        DeductionType::Loan => DeductionKind::Loan,
+                        DeductionType::Other => DeductionKind::Other,
+                    },
+                    label: d.label.clone(),
+                    amount_cents: cents(&d.amount),
+                })
+                .collect(),
+            minimum_net_cents: self.minimum_net.as_deref().map_or(0, cents),
         }
     }
 
@@ -283,6 +326,11 @@ impl Case {
         check("statutoryEe", &x.statutory_ee, slip.statutory_ee);
         check("taxable", &x.taxable, slip.taxable);
         check("withholdingTax", &x.withholding_tax, slip.withholding_tax);
+        check(
+            "deductions",
+            x.deductions.as_deref().unwrap_or("0"),
+            slip.deductions,
+        );
         check("net", &x.net, slip.net);
         let lines = |lines: &[(String, String)]| -> Vec<(String, Decimal)> {
             lines.iter().map(|(c, a)| (c.clone(), pesos(a))).collect()
@@ -305,6 +353,17 @@ impl Case {
                 "employer: expected {:?}, got {:?}",
                 lines(&x.employer),
                 got(&slip.employer)
+            ));
+        }
+        let unpaid: Vec<(String, Decimal)> = slip
+            .unpaid
+            .iter()
+            .map(|u| (self.deductions[u.index].label.clone(), u.amount))
+            .collect();
+        if lines(&x.unpaid) != unpaid {
+            out.push(format!(
+                "unpaid: expected {:?}, got {unpaid:?}",
+                lines(&x.unpaid)
             ));
         }
         if x.warnings != slip.warnings.len() {
@@ -357,8 +416,8 @@ fn every_golden_case_matches_its_hand_worked_payslip() {
     );
 }
 
-/// The plan's release gate is 20 cases (§2); the 20th comes with loans and carryover.
+/// The plan's release gate is 20 cases (§2).
 #[test]
-fn there_are_at_least_19_golden_cases() {
-    assert!(case_files().len() >= 19, "found {}", case_files().len());
+fn there_are_at_least_20_golden_cases() {
+    assert!(case_files().len() >= 20, "found {}", case_files().len());
 }

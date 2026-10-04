@@ -20,10 +20,14 @@ PH-2026 rule pack and lists every difference.
    - `everyWorkDay`: one change for all work days, such as a night shift.
    - `overtime`: approved blocks with `dayType`, `minutes` and `night` minutes.
    - `allowances`: `label`, `amount` and `taxable`.
+   - `deductions`: loans and other deductions in the order they are taken, each with
+     `kind` (`loan` or `other`), `label` and `amount`. `minimumNet` is the lowest net
+     pay they may leave (₱0 if left out).
 4. Work out every line with a calculator from the plan's §7 rules and Appendix A tables.
    Write the steps in `workings` so someone else can redo them.
 5. Put the results in `expected`. Lines are listed in payslip order. Deductions are negative,
-   and lines that come to zero are left out.
+   and lines that come to zero are left out. With deductions, also give `deductions` (the
+   total taken) and `unpaid` (each label with the amount carried over).
 
 Never change an expected value to make a failing case pass. If the expected value was
 wrong, fix it in its own commit that explains why.

@@ -1,0 +1,68 @@
+{
+  "name": "Loan bigger than net pay",
+  "about": "₱12,000 a month, second cutoff, absent 3 days. The ₱5,000 company loan amortization is more than the ₱3,794.83 left after contributions, so only that much is taken, net pay stops at ₱0, and ₱1,205.17 is carried over to the next period with a warning.",
+  "employee": {
+    "basis": "monthly",
+    "rate": "12000.00",
+    "daysPerWeek": 5,
+    "minimumWageEarner": false
+  },
+  "period": {
+    "from": "2026-10-16",
+    "to": "2026-10-31",
+    "cutoff": 2
+  },
+  "days": {
+    "2026-10-20": {
+      "status": "absent"
+    },
+    "2026-10-21": {
+      "status": "absent"
+    },
+    "2026-10-22": {
+      "status": "absent"
+    }
+  },
+  "deductions": [
+    {
+      "kind": "loan",
+      "label": "Company loan",
+      "amount": "5000.00"
+    }
+  ],
+  "expected": {
+    "lines": [
+      ["BASIC", "6000.00"],
+      ["ABSENT", "-1655.17"],
+      ["SSS", "-300.00"],
+      ["PHILHEALTH", "-150.00"],
+      ["PAGIBIG", "-100.00"],
+      ["LOAN", "-3794.83"]
+    ],
+    "employer": [
+      ["SSS_ER", "600.00"],
+      ["SSS_EC", "5.00"],
+      ["PHILHEALTH_ER", "150.00"],
+      ["PAGIBIG_ER", "100.00"]
+    ],
+    "gross": "4344.83",
+    "statutoryEe": "550.00",
+    "taxable": "3794.83",
+    "withholdingTax": "0",
+    "deductions": "3794.83",
+    "net": "0.00",
+    "unpaid": [["Company loan", "1205.17"]],
+    "warnings": 1
+  },
+  "workings": [
+    "Daily rate: 12,000.00 × 12 ÷ 261 = 551.724138",
+    "BASIC 6,000.00: 12,000 ÷ 2",
+    "ABSENT -1655.17: 3 days × daily",
+    "SSS -300.00: MSC 12,000.00 × 5% = 600.00 a month; the rest after the first cutoff's half",
+    "PHILHEALTH -150.00: premium 5% × 12,000.00 = 600.00; employee half 300.00; the rest after the first cutoff's half",
+    "PAGIBIG -100.00: 2% × 10,000.00 = 200.00 a month; the rest after the first cutoff's half",
+    "Taxable income: 4344.83 − 550.00 = 3794.83, in the 0% bracket",
+    "Net before deductions: 3794.83. The loan takes all of it (minimum net ₱0).",
+    "LOAN -3794.83; carried over: 5,000.00 − 3794.83 = 1205.17"
+  ]
+}
