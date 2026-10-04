@@ -1,0 +1,45 @@
+{
+  "name": "Contribution ceilings, 25% tax bracket",
+  "about": "₱150,000 a month. SSS stops at the top ₱35,000 MSC, PhilHealth at the ₱100,000 ceiling, Pag-IBIG at ₱10,000.",
+  "employee": {
+    "basis": "monthly",
+    "rate": "150000.00",
+    "daysPerWeek": 5,
+    "minimumWageEarner": false
+  },
+  "period": {
+    "from": "2026-10-16",
+    "to": "2026-10-31",
+    "cutoff": 2
+  },
+  "expected": {
+    "lines": [
+      ["BASIC", "75000.00"],
+      ["SSS", "-875.00"],
+      ["PHILHEALTH", "-1250.00"],
+      ["PAGIBIG", "-100.00"],
+      ["TAX", "-14131.20"]
+    ],
+    "employer": [
+      ["SSS_ER", "1750.00"],
+      ["SSS_EC", "15.00"],
+      ["PHILHEALTH_ER", "1250.00"],
+      ["PAGIBIG_ER", "100.00"]
+    ],
+    "gross": "75000.00",
+    "statutoryEe": "2225.00",
+    "taxable": "72775.00",
+    "withholdingTax": "14131.20",
+    "net": "58643.80",
+    "warnings": 0
+  },
+  "workings": [
+    "Daily rate: 150,000.00 × 12 ÷ 261 = 6896.551724; hourly 862.068966; per minute 14.367816",
+    "BASIC 75,000.00: 150,000 ÷ 2",
+    "SSS -875.00: MSC 35,000.00 × 5% = 1,750.00 a month; the rest after the first cutoff's half",
+    "PHILHEALTH -1,250.00: premium 5% × 100,000.00 = 5,000.00; employee half 2,500.00; the rest after the first cutoff's half",
+    "PAGIBIG -100.00: 2% × 10,000.00 = 200.00 a month; the rest after the first cutoff's half",
+    "TAX -14,131.20: 4,270.70 + (72,775.00 − 33,333.00) × 25% = 14,131.20",
+    "Taxable income: taxable earnings − 2,225.00 contributions = 72,775.00"
+  ]
+}

@@ -1,0 +1,73 @@
+{
+  "name": "Regular holiday falling on a rest day",
+  "about": "₱25,000 a month, Dec 16–31, 2027, when Christmas is a Saturday. Works it at 260% plus 1 hour of overtime at 338%. Dec 24 and 31 (special) and Dec 30 (regular) are off.",
+  "employee": {
+    "basis": "monthly",
+    "rate": "25000.00",
+    "daysPerWeek": 5,
+    "minimumWageEarner": false
+  },
+  "period": {
+    "from": "2027-12-16",
+    "to": "2027-12-31",
+    "cutoff": 2
+  },
+  "days": {
+    "2027-12-24": {
+      "dayType": "special",
+      "status": "off"
+    },
+    "2027-12-25": {
+      "dayType": "regularRestDay",
+      "status": "worked"
+    },
+    "2027-12-30": {
+      "dayType": "regular",
+      "status": "off"
+    },
+    "2027-12-31": {
+      "dayType": "special",
+      "status": "off"
+    }
+  },
+  "overtime": [
+    {
+      "dayType": "regularRestDay",
+      "minutes": 60
+    }
+  ],
+  "expected": {
+    "lines": [
+      ["BASIC", "12500.00"],
+      ["REST_DAY", "2988.51"],
+      ["OT", "485.63"],
+      ["SSS", "-625.00"],
+      ["PHILHEALTH", "-312.50"],
+      ["PAGIBIG", "-100.00"],
+      ["TAX", "-677.95"]
+    ],
+    "employer": [
+      ["SSS_ER", "1250.00"],
+      ["SSS_EC", "15.00"],
+      ["PHILHEALTH_ER", "312.50"],
+      ["PAGIBIG_ER", "100.00"]
+    ],
+    "gross": "15974.14",
+    "statutoryEe": "1037.50",
+    "taxable": "14936.64",
+    "withholdingTax": "677.95",
+    "net": "14258.69",
+    "warnings": 0
+  },
+  "workings": [
+    "Daily rate: 25,000.00 × 12 ÷ 261 = 1149.425287; hourly 143.678161; per minute 2.394636",
+    "BASIC 12,500.00: 25,000 ÷ 2",
+    "REST_DAY 2,988.51: 8 h × hourly × 260%",
+    "OT 485.63: 1 h × hourly × 338%",
+    "SSS -625.00: MSC 25,000.00 × 5% = 1,250.00 a month; the rest after the first cutoff's half",
+    "PHILHEALTH -312.50: premium 5% × 25,000.00 = 1,250.00; employee half 625.00; the rest after the first cutoff's half",
+    "PAGIBIG -100.00: 2% × 10,000.00 = 200.00 a month; the rest after the first cutoff's half",
+    "TAX -677.95: 0.00 + (14,936.64 − 10,417.00) × 15% = 677.95",
+    "Taxable income: taxable earnings − 1,037.50 contributions = 14,936.64"
+  ]
+}

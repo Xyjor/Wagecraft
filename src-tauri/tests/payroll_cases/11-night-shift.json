@@ -1,0 +1,59 @@
+{
+  "name": "Night shift with night overtime",
+  "about": "₱22,000 a month on a 10 PM–6 AM shift: every work day has 8 night hours (+10%). 2 hours of overtime, 1 of them before 6 AM, gets 10% of the 125% overtime rate.",
+  "employee": {
+    "basis": "monthly",
+    "rate": "22000.00",
+    "daysPerWeek": 5,
+    "minimumWageEarner": false
+  },
+  "period": {
+    "from": "2026-10-16",
+    "to": "2026-10-31",
+    "cutoff": 2
+  },
+  "everyWorkDay": {
+    "night": 480
+  },
+  "overtime": [
+    {
+      "dayType": "ordinary",
+      "minutes": 120,
+      "night": 60
+    }
+  ],
+  "expected": {
+    "lines": [
+      ["BASIC", "11000.00"],
+      ["OT", "316.09"],
+      ["NIGHT_DIFF", "1128.45"],
+      ["SSS", "-550.00"],
+      ["PHILHEALTH", "-275.00"],
+      ["PAGIBIG", "-100.00"],
+      ["TAX", "-165.38"]
+    ],
+    "employer": [
+      ["SSS_ER", "1100.00"],
+      ["SSS_EC", "15.00"],
+      ["PHILHEALTH_ER", "275.00"],
+      ["PAGIBIG_ER", "100.00"]
+    ],
+    "gross": "12444.54",
+    "statutoryEe": "925.00",
+    "taxable": "11519.54",
+    "withholdingTax": "165.38",
+    "net": "11354.16",
+    "warnings": 0
+  },
+  "workings": [
+    "Daily rate: 22,000.00 × 12 ÷ 261 = 1011.494253; hourly 126.436782; per minute 2.107280",
+    "BASIC 11,000.00: 22,000 ÷ 2",
+    "OT 316.09: 2 h × hourly × 125%",
+    "NIGHT_DIFF 1,128.45: 88 h × hourly × 10% + 1 h × hourly × 125% × 10%",
+    "SSS -550.00: MSC 22,000.00 × 5% = 1,100.00 a month; the rest after the first cutoff's half",
+    "PHILHEALTH -275.00: premium 5% × 22,000.00 = 1,100.00; employee half 550.00; the rest after the first cutoff's half",
+    "PAGIBIG -100.00: 2% × 10,000.00 = 200.00 a month; the rest after the first cutoff's half",
+    "TAX -165.38: 0.00 + (11,519.54 − 10,417.00) × 15% = 165.38",
+    "Taxable income: taxable earnings − 925.00 contributions = 11,519.54"
+  ]
+}

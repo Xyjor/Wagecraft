@@ -1,0 +1,54 @@
+{
+  "name": "Double holiday on a rest day, daily-paid",
+  "about": "₱750 a day. Saturday Oct 10 is treated as a double holiday on a rest day (there is no real one in 2026) and is worked at 390%. Odd centavos: PhilHealth's 815.63 premium splits 407.81 / 407.82, and the employee's 407.81 splits 203.90 on this first cutoff.",
+  "employee": {
+    "basis": "daily",
+    "rate": "750.00",
+    "daysPerWeek": 5,
+    "minimumWageEarner": false
+  },
+  "period": {
+    "from": "2026-10-01",
+    "to": "2026-10-15",
+    "cutoff": 1
+  },
+  "days": {
+    "2026-10-10": {
+      "dayType": "doubleRegularRestDay",
+      "status": "worked"
+    }
+  },
+  "expected": {
+    "lines": [
+      ["BASIC", "8250.00"],
+      ["REST_DAY", "2925.00"],
+      ["SSS", "-412.50"],
+      ["PHILHEALTH", "-203.90"],
+      ["PAGIBIG", "-100.00"],
+      ["TAX", "-6.24"]
+    ],
+    "employer": [
+      ["SSS_ER", "825.00"],
+      ["SSS_EC", "15.00"],
+      ["PHILHEALTH_ER", "203.91"],
+      ["PAGIBIG_ER", "100.00"]
+    ],
+    "gross": "11175.00",
+    "statutoryEe": "716.40",
+    "taxable": "10458.60",
+    "withholdingTax": "6.24",
+    "net": "10452.36",
+    "warnings": 0
+  },
+  "workings": [
+    "Daily rate: as given = 750.000000; hourly 93.750000; per minute 1.562500",
+    "Contribution base: 750.00 × 261 ÷ 12 = 16312.5000",
+    "BASIC 8,250.00: 11 weekdays × 750",
+    "REST_DAY 2,925.00: 8 h × hourly × 390%",
+    "SSS -412.50: MSC 16,500.00 × 5% = 825.00 a month; first half, rounded down",
+    "PHILHEALTH -203.90: premium 5% × 16,312.50 = 815.63; employee half 407.81; first half, rounded down",
+    "PAGIBIG -100.00: 2% × 10,000.00 = 200.00 a month; first half, rounded down",
+    "TAX -6.24: 0.00 + (10,458.60 − 10,417.00) × 15% = 6.24",
+    "Taxable income: taxable earnings − 716.40 contributions = 10,458.60"
+  ]
+}

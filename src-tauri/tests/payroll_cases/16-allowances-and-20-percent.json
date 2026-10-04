@@ -1,0 +1,61 @@
+{
+  "name": "Allowances, 20% tax bracket",
+  "about": "₱40,000 a month, first cutoff, with a ₱1,000 rice allowance (not taxed) and a ₱1,500 transport allowance (taxed).",
+  "employee": {
+    "basis": "monthly",
+    "rate": "40000.00",
+    "daysPerWeek": 5,
+    "minimumWageEarner": false
+  },
+  "period": {
+    "from": "2026-10-01",
+    "to": "2026-10-15",
+    "cutoff": 1
+  },
+  "allowances": [
+    {
+      "label": "Rice",
+      "amount": "1000.00",
+      "taxable": false
+    },
+    {
+      "label": "Transport",
+      "amount": "1500.00",
+      "taxable": true
+    }
+  ],
+  "expected": {
+    "lines": [
+      ["BASIC", "20000.00"],
+      ["ALLOWANCE", "1000.00"],
+      ["ALLOWANCE", "1500.00"],
+      ["SSS", "-875.00"],
+      ["PHILHEALTH", "-500.00"],
+      ["PAGIBIG", "-100.00"],
+      ["TAX", "-1609.10"]
+    ],
+    "employer": [
+      ["SSS_ER", "1750.00"],
+      ["SSS_EC", "15.00"],
+      ["PHILHEALTH_ER", "500.00"],
+      ["PAGIBIG_ER", "100.00"]
+    ],
+    "gross": "22500.00",
+    "statutoryEe": "1475.00",
+    "taxable": "20025.00",
+    "withholdingTax": "1609.10",
+    "net": "19415.90",
+    "warnings": 0
+  },
+  "workings": [
+    "Daily rate: 40,000.00 × 12 ÷ 261 = 1839.080460; hourly 229.885057; per minute 3.831418",
+    "BASIC 20,000.00: 40,000 ÷ 2",
+    "ALLOWANCE 1,000.00: Rice, not taxed",
+    "ALLOWANCE 1,500.00: Transport, taxed",
+    "SSS -875.00: MSC 35,000.00 × 5% = 1,750.00 a month; first half, rounded down",
+    "PHILHEALTH -500.00: premium 5% × 40,000.00 = 2,000.00; employee half 1,000.00; first half, rounded down",
+    "PAGIBIG -100.00: 2% × 10,000.00 = 200.00 a month; first half, rounded down",
+    "TAX -1,609.10: 937.50 + (20,025.00 − 16,667.00) × 20% = 1,609.10",
+    "Taxable income: taxable earnings − 1,475.00 contributions = 20,025.00"
+  ]
+}

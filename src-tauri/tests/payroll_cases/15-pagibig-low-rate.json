@@ -1,0 +1,43 @@
+{
+  "name": "Pag-IBIG 1% rate",
+  "about": "₱1,500 a month. At or below ₱1,500 the employee pays 1% to Pag-IBIG; the employer still pays 2%.",
+  "employee": {
+    "basis": "monthly",
+    "rate": "1500.00",
+    "daysPerWeek": 5,
+    "minimumWageEarner": false
+  },
+  "period": {
+    "from": "2026-10-01",
+    "to": "2026-10-15",
+    "cutoff": 1
+  },
+  "expected": {
+    "lines": [
+      ["BASIC", "750.00"],
+      ["SSS", "-125.00"],
+      ["PHILHEALTH", "-125.00"],
+      ["PAGIBIG", "-7.50"]
+    ],
+    "employer": [
+      ["SSS_ER", "250.00"],
+      ["SSS_EC", "5.00"],
+      ["PHILHEALTH_ER", "125.00"],
+      ["PAGIBIG_ER", "15.00"]
+    ],
+    "gross": "750.00",
+    "statutoryEe": "257.50",
+    "taxable": "492.50",
+    "withholdingTax": "0.00",
+    "net": "492.50",
+    "warnings": 0
+  },
+  "workings": [
+    "Daily rate: 1,500.00 × 12 ÷ 261 = 68.965517; hourly 8.620690; per minute 0.143678",
+    "BASIC 750.00: 1,500 ÷ 2",
+    "SSS -125.00: MSC 5,000.00 × 5% = 250.00 a month; first half, rounded down",
+    "PHILHEALTH -125.00: premium 5% × 10,000.00 = 500.00; employee half 250.00; first half, rounded down",
+    "PAGIBIG -7.50: 1% × 1,500.00 = 15.00 a month; first half, rounded down",
+    "Taxable income: taxable earnings − 257.50 contributions = 492.50"
+  ]
+}

@@ -1,0 +1,56 @@
+{
+  "name": "Double regular holiday",
+  "about": "₱25,000 a month, first cutoff of April 2020, when Araw ng Kagitingan fell on Maundy Thursday (Apr 9). Works it: the extra 200% is added. Good Friday (Apr 10) is off.",
+  "employee": {
+    "basis": "monthly",
+    "rate": "25000.00",
+    "daysPerWeek": 5,
+    "minimumWageEarner": false
+  },
+  "period": {
+    "from": "2020-04-01",
+    "to": "2020-04-15",
+    "cutoff": 1
+  },
+  "days": {
+    "2020-04-09": {
+      "dayType": "doubleRegular"
+    },
+    "2020-04-10": {
+      "dayType": "regular",
+      "status": "off"
+    }
+  },
+  "expected": {
+    "lines": [
+      ["BASIC", "12500.00"],
+      ["HOLIDAY", "2298.85"],
+      ["SSS", "-625.00"],
+      ["PHILHEALTH", "-312.50"],
+      ["PAGIBIG", "-100.00"],
+      ["TAX", "-501.65"]
+    ],
+    "employer": [
+      ["SSS_ER", "1250.00"],
+      ["SSS_EC", "15.00"],
+      ["PHILHEALTH_ER", "312.50"],
+      ["PAGIBIG_ER", "100.00"]
+    ],
+    "gross": "14798.85",
+    "statutoryEe": "1037.50",
+    "taxable": "13761.35",
+    "withholdingTax": "501.65",
+    "net": "13259.70",
+    "warnings": 0
+  },
+  "workings": [
+    "Daily rate: 25,000.00 × 12 ÷ 261 = 1149.425287; hourly 143.678161; per minute 2.394636",
+    "BASIC 12,500.00: 25,000 ÷ 2",
+    "HOLIDAY 2,298.85: 8 h × hourly × (300% − 100%)",
+    "SSS -625.00: MSC 25,000.00 × 5% = 1,250.00 a month; first half, rounded down",
+    "PHILHEALTH -312.50: premium 5% × 25,000.00 = 1,250.00; employee half 625.00; first half, rounded down",
+    "PAGIBIG -100.00: 2% × 10,000.00 = 200.00 a month; first half, rounded down",
+    "TAX -501.65: 0.00 + (13,761.35 − 10,417.00) × 15% = 501.65",
+    "Taxable income: taxable earnings − 1,037.50 contributions = 13,761.35"
+  ]
+}

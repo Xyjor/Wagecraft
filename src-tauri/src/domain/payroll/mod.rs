@@ -5,6 +5,8 @@ pub mod contributions;
 pub mod engine;
 #[cfg(test)]
 pub mod fixtures;
+#[cfg(test)]
+mod golden;
 pub mod payslip;
 pub mod rates;
 pub mod rules;

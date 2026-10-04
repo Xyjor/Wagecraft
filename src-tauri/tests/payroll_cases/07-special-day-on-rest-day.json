@@ -1,0 +1,53 @@
+{
+  "name": "Special day falling on a rest day",
+  "about": "₱25,000 a month. Works Saturday Oct 31, treated here as a special day, at 150%.",
+  "employee": {
+    "basis": "monthly",
+    "rate": "25000.00",
+    "daysPerWeek": 5,
+    "minimumWageEarner": false
+  },
+  "period": {
+    "from": "2026-10-16",
+    "to": "2026-10-31",
+    "cutoff": 2
+  },
+  "days": {
+    "2026-10-31": {
+      "dayType": "specialRestDay",
+      "status": "worked"
+    }
+  },
+  "expected": {
+    "lines": [
+      ["BASIC", "12500.00"],
+      ["REST_DAY", "1724.14"],
+      ["SSS", "-625.00"],
+      ["PHILHEALTH", "-312.50"],
+      ["PAGIBIG", "-100.00"],
+      ["TAX", "-415.45"]
+    ],
+    "employer": [
+      ["SSS_ER", "1250.00"],
+      ["SSS_EC", "15.00"],
+      ["PHILHEALTH_ER", "312.50"],
+      ["PAGIBIG_ER", "100.00"]
+    ],
+    "gross": "14224.14",
+    "statutoryEe": "1037.50",
+    "taxable": "13186.64",
+    "withholdingTax": "415.45",
+    "net": "12771.19",
+    "warnings": 0
+  },
+  "workings": [
+    "Daily rate: 25,000.00 × 12 ÷ 261 = 1149.425287; hourly 143.678161; per minute 2.394636",
+    "BASIC 12,500.00: 25,000 ÷ 2",
+    "REST_DAY 1,724.14: 8 h × hourly × 150%",
+    "SSS -625.00: MSC 25,000.00 × 5% = 1,250.00 a month; the rest after the first cutoff's half",
+    "PHILHEALTH -312.50: premium 5% × 25,000.00 = 1,250.00; employee half 625.00; the rest after the first cutoff's half",
+    "PAGIBIG -100.00: 2% × 10,000.00 = 200.00 a month; the rest after the first cutoff's half",
+    "TAX -415.45: 0.00 + (13,186.64 − 10,417.00) × 15% = 415.45",
+    "Taxable income: taxable earnings − 1,037.50 contributions = 13,186.64"
+  ]
+}
