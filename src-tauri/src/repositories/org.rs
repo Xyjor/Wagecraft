@@ -205,6 +205,14 @@ pub async fn schedule<'e>(
         .await
 }
 
+/// Whether any employee has ever been assigned this schedule.
+pub async fn schedule_ever_used(conn: &mut SqliteConnection, id: i64) -> sqlx::Result<bool> {
+    sqlx::query_scalar("SELECT EXISTS (SELECT 1 FROM schedule_assignments WHERE schedule_id = ?)")
+        .bind(id)
+        .fetch_one(conn)
+        .await
+}
+
 /// Another schedule already using `name` (case-insensitive), if any.
 pub async fn schedule_name_taken(
     conn: &mut SqliteConnection,

@@ -10,6 +10,6 @@ export type WorkSchedule = { id: number, name: string, startTime: string, endTim
  */
 workDays: string, isActive: boolean, 
 /**
- * How many employees (archived ones included) follow this schedule.
+ * How many employees (archived ones included) are on this schedule today.
  */
 employeeCount: number, };
