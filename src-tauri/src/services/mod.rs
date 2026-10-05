@@ -9,6 +9,7 @@ pub mod leave;
 pub mod leave_requests;
 pub mod org;
 pub mod overtime;
+pub mod payroll;
 pub mod reports;
 pub mod schedules;
 pub mod users;

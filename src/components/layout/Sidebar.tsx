@@ -14,6 +14,7 @@ const ITEMS: { to: string; label: string; roles?: Role[] }[] = [
   { to: "/overtime", label: "Overtime", roles: ["ADMIN", "HR"] },
   { to: "/leave", label: "Leave", roles: ["ADMIN", "HR"] },
   { to: "/leave-calendar", label: "Leave calendar", roles: ["ADMIN", "HR"] },
+  { to: "/payroll", label: "Payroll", roles: ["ADMIN", "HR"] },
   { to: "/organization", label: "Organization", roles: ["ADMIN", "HR"] },
   { to: "/holidays", label: "Holidays", roles: ["ADMIN", "HR"] },
   { to: "/users", label: "Users", roles: ["ADMIN"] },

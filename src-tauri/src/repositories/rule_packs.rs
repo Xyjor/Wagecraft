@@ -4,9 +4,31 @@
 use crate::domain::payroll::rules::{
     DayType, PagIbigRule, PhilHealthRule, PremiumRate, RulePack, SssBracket, TaxBracket,
 };
+use crate::domain::payroll_period::RulePackSummary;
 use rust_decimal::Decimal;
 use serde::Deserialize;
-use sqlx::SqliteConnection;
+use sqlx::{SqliteConnection, SqliteExecutor};
+
+const SUMMARY: &str =
+    "SELECT id, code, name, effective_from, effective_to FROM rule_packs WHERE is_active = 1";
+
+/// The packs HR can pick, newest first.
+pub async fn active<'e>(db: impl SqliteExecutor<'e>) -> sqlx::Result<Vec<RulePackSummary>> {
+    sqlx::query_as(&format!("{SUMMARY} ORDER BY effective_from DESC"))
+        .fetch_all(db)
+        .await
+}
+
+/// The pack with this id, if it is active.
+pub async fn active_by_id<'e>(
+    db: impl SqliteExecutor<'e>,
+    id: i64,
+) -> sqlx::Result<Option<RulePackSummary>> {
+    sqlx::query_as(&format!("{SUMMARY} AND id = ?"))
+        .bind(id)
+        .fetch_optional(db)
+        .await
+}
 
 /// `rule_packs.settings_json`.
 #[derive(Deserialize)]
@@ -59,6 +81,8 @@ const DAY_TYPES: [(&str, DayType); 8] = [
 ];
 
 /// The rule pack with this code, such as `PH-2026`.
+// The payroll compute step that loads rule packs arrives in a later PR.
+#[allow(dead_code)]
 pub async fn by_code(conn: &mut SqliteConnection, code: &str) -> anyhow::Result<Option<RulePack>> {
     let Some((id, settings)): Option<(i64, String)> =
         sqlx::query_as("SELECT id, settings_json FROM rule_packs WHERE code = ?")
