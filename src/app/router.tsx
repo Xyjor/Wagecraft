@@ -13,6 +13,7 @@ import { MyLeavePage } from "@/features/leave/MyLeavePage";
 import { HolidaysPage } from "@/features/org/HolidaysPage";
 import { OrganizationPage } from "@/features/org/OrganizationPage";
 import { OvertimePage } from "@/features/overtime/OvertimePage";
+import { PayrollPage } from "@/features/payroll/PayrollPage";
 import { UsersPage } from "@/features/users/UsersPage";
 
 export const router = createBrowserRouter([
@@ -31,6 +32,7 @@ export const router = createBrowserRouter([
       { path: "employees/new", element: <EmployeeFormPage /> },
       { path: "employees/:id", element: <EmployeeProfilePage /> },
       { path: "employees/:id/edit", element: <EmployeeFormPage /> },
+      { path: "payroll", element: <PayrollPage /> },
       { path: "organization", element: <OrganizationPage /> },
       { path: "holidays", element: <HolidaysPage /> },
       { path: "users", element: <UsersPage /> },

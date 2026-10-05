@@ -10,5 +10,6 @@ pub mod overtime;
 // The payroll service that calls the engine arrives in a later PR.
 #[allow(dead_code)]
 pub mod payroll;
+pub mod payroll_period;
 pub mod schedule;
 pub mod validation;

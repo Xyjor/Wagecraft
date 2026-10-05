@@ -4,6 +4,7 @@ pub mod employees;
 pub mod leave;
 pub mod org;
 pub mod overtime;
+pub mod payroll;
 pub mod reports;
 pub mod system;
 pub mod users;
