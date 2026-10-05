@@ -53,7 +53,8 @@ pub struct RulePack {
     pub factor_six_day: u32,
     /// Extra share of the applicable hourly rate for each night hour (10 PM to 6 AM).
     pub night_differential: Decimal,
-    premiums: [(DayType, PremiumRate); 8],
+    /// Work and overtime pay for each day type, in [`DayType`] order.
+    pub premiums: [(DayType, PremiumRate); 8],
     /// SSS Monthly Salary Credit brackets, lowest first.
     pub sss_brackets: Vec<SssBracket>,
     pub sss_employee_rate: Decimal,
