@@ -1,4 +1,5 @@
 import type { PayrollPeriod } from "@/bindings/PayrollPeriod";
+import type { PayslipLine } from "@/bindings/PayslipLine";
 
 // Semi-monthly cutoffs (plan §6.5): the 1st to the 15th, and the 16th to the month's end.
 // Dates are `YYYY-MM-DD` text built from parts, so no time zone can shift them.
@@ -42,3 +43,18 @@ export const STATUS_TONES = {
   APPROVED: "good",
   POSTED: "good",
 } as const;
+
+/** "3", "DAYS" → "3 days". Lines with no unit, such as monthly basic pay, show nothing. */
+export function quantityText(quantity: string, unit: PayslipLine["unit"]): string {
+  const one = quantity === "1";
+  switch (unit) {
+    case "DAYS":
+      return `${quantity} ${one ? "day" : "days"}`;
+    case "HOURS":
+      return `${quantity} ${one ? "hour" : "hours"}`;
+    case "MINUTES":
+      return `${quantity} min`;
+    default:
+      return "";
+  }
+}

@@ -71,6 +71,96 @@ pub struct PendingItem {
     pub date: String,
 }
 
+/// A computed period: one row per payslip, plus anyone left out and why.
+#[derive(Debug, Clone, Serialize, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export)]
+pub struct PayrollRegister {
+    pub period: PayrollPeriod,
+    pub rows: Vec<RegisterRow>,
+    pub skipped: Vec<SkippedEmployee>,
+}
+
+#[derive(Debug, Clone, Serialize, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export)]
+pub struct RegisterRow {
+    #[ts(type = "number")]
+    pub payslip_id: i64,
+    pub employee_no: String,
+    pub employee_name: String,
+    #[ts(type = "number")]
+    pub gross_cents: i64,
+    #[ts(type = "number")]
+    pub statutory_ee_cents: i64,
+    #[ts(type = "number")]
+    pub tax_cents: i64,
+    #[ts(type = "number")]
+    pub other_deductions_cents: i64,
+    #[ts(type = "number")]
+    pub net_cents: i64,
+    pub warnings: Vec<String>,
+}
+
+/// Someone employed during the period who has no payslip.
+#[derive(Debug, Clone, Serialize, FromRow, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export)]
+pub struct SkippedEmployee {
+    pub employee_no: String,
+    pub employee_name: String,
+    pub reason: String,
+}
+
+/// One payslip, line by line.
+#[derive(Debug, Clone, Serialize, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export)]
+pub struct PayslipDetail {
+    #[ts(type = "number")]
+    pub id: i64,
+    pub period_start: String,
+    pub period_end: String,
+    pub employee_no: String,
+    pub employee_name: String,
+    #[ts(type = "\"MONTHLY\" | \"DAILY\"")]
+    pub pay_basis: String,
+    #[ts(type = "number")]
+    pub rate_cents: i64,
+    pub lines: Vec<PayslipLine>,
+    #[ts(type = "number")]
+    pub gross_cents: i64,
+    #[ts(type = "number")]
+    pub taxable_cents: i64,
+    #[ts(type = "number")]
+    pub statutory_ee_cents: i64,
+    #[ts(type = "number")]
+    pub tax_cents: i64,
+    #[ts(type = "number")]
+    pub other_deductions_cents: i64,
+    #[ts(type = "number")]
+    pub net_cents: i64,
+    pub warnings: Vec<String>,
+}
+
+#[derive(Debug, Clone, Serialize, FromRow, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export)]
+pub struct PayslipLine {
+    #[ts(type = "\"EARNING\" | \"DEDUCTION\" | \"EMPLOYER_SHARE\"")]
+    pub kind: String,
+    pub code: String,
+    pub label: String,
+    /// Decimal text, such as "1.5".
+    pub quantity: String,
+    #[ts(type = "\"DAYS\" | \"HOURS\" | \"MINUTES\" | null")]
+    pub unit: Option<String>,
+    /// Deductions are negative.
+    #[ts(type = "number")]
+    pub amount_cents: i64,
+    pub taxable: bool,
+}
+
 /// The cutoff number and last day of the semi-monthly period starting on `start`, or `None`
 /// when `start` isn't the 1st or the 16th.
 pub fn cutoff(start: NaiveDate) -> Option<(i64, NaiveDate)> {

@@ -7,6 +7,7 @@ pub mod engine;
 pub mod fixtures;
 #[cfg(test)]
 mod golden;
+pub mod inputs;
 pub mod payslip;
 pub mod rates;
 pub mod rules;

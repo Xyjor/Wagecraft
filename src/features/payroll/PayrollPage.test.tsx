@@ -1,4 +1,5 @@
 import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { MemoryRouter } from "react-router";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { Me } from "@/bindings/Me";
 import type { PayrollPeriod } from "@/bindings/PayrollPeriod";
@@ -45,7 +46,9 @@ let checks: Record<string, PeriodChecks>;
 function renderAs(who: Me = hr) {
   render(
     <SessionContext.Provider value={{ me: who, signOut: async () => {} }}>
-      <PayrollPage today="2026-10-20" />
+      <MemoryRouter>
+        <PayrollPage today="2026-10-20" />
+      </MemoryRouter>
     </SessionContext.Provider>,
   );
 }
@@ -105,6 +108,9 @@ describe("PayrollPage", () => {
     const posted = screen.getByText("Oct 1 – 15, 2026").closest("tr")!;
     expect(within(posted).getByText("Posted")).toBeTruthy();
     expect(within(posted).queryByRole("button", { name: /Delete/ })).toBeNull();
+    expect(
+      within(posted).getByRole("link", { name: "Oct 1 – 15, 2026" }).getAttribute("href"),
+    ).toBe("/payroll/1");
   });
 
   it("creates a period, suggesting the cutoff's last day as the pay date", async () => {

@@ -2,6 +2,7 @@
 //! values come from a migration; tests build one with [`RulePack::ph_2026`].
 
 use rust_decimal::Decimal;
+#[cfg(test)]
 use rust_decimal_macros::dec;
 
 /// What kind of day a day of work was, for premium pay (plan §7.3).
@@ -25,13 +26,6 @@ impl DayType {
                 | Self::SpecialRestDay
                 | Self::RegularRestDay
                 | Self::DoubleRegularRestDay
-        )
-    }
-
-    pub fn is_regular_holiday(self) -> bool {
-        matches!(
-            self,
-            Self::Regular | Self::RegularRestDay | Self::DoubleRegular | Self::DoubleRegularRestDay
         )
     }
 }
@@ -100,7 +94,9 @@ pub struct TaxBracket {
 }
 
 impl RulePack {
-    /// The PH-2026 values in plan Appendix A.
+    /// The PH-2026 values in plan Appendix A. Tests check the engine and the seeded
+    /// rule pack against it; the app itself loads packs from the database.
+    #[cfg(test)]
     pub fn ph_2026() -> Self {
         let p = |work, overtime| PremiumRate { work, overtime };
         Self {
@@ -170,6 +166,7 @@ impl RulePack {
 
 /// Plan Appendix A.2: MSC ₱5,000 to ₱35,000 in ₱500 steps. Each MSC covers compensation
 /// from ₱250 below it (the lowest from zero); EC is ₱10 below an MSC of ₱15,000.
+#[cfg(test)]
 fn ph_2026_sss_brackets() -> Vec<SssBracket> {
     (0..=60)
         .map(|step| {

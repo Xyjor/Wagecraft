@@ -84,6 +84,15 @@ impl Interval {
         Interval::new(self.start.max(other.start), self.end.min(other.end))
     }
 
+    /// Whole minutes between 10:00 PM and 6:00 AM, as used for night differential.
+    pub fn night_minutes(&self) -> i64 {
+        night_windows(self)
+            .iter()
+            .map(|n| self.overlap_seconds(n))
+            .sum::<i64>()
+            / 60
+    }
+
     /// Whole minutes of `self` that fall inside `other`, rounded down.
     fn overlap_seconds(&self, other: &Interval) -> i64 {
         let o = self.overlap(other);
@@ -297,6 +306,28 @@ mod tests {
     }
     fn d(s: &str) -> NaiveDate {
         NaiveDate::parse_from_str(s, "%Y-%m-%d").unwrap()
+    }
+
+    #[test]
+    fn night_minutes_count_only_10_pm_to_6_am() {
+        let at = |day: &str, time: &str| d(day).and_time(t(time));
+        let block = |a, b| Interval::new(a, b).night_minutes();
+        assert_eq!(
+            block(at("2026-10-19", "17:00"), at("2026-10-19", "20:00")),
+            0
+        );
+        assert_eq!(
+            block(at("2026-10-19", "20:00"), at("2026-10-19", "23:30")),
+            90
+        );
+        assert_eq!(
+            block(at("2026-10-19", "23:00"), at("2026-10-20", "07:00")),
+            420
+        );
+        assert_eq!(
+            block(at("2026-10-20", "05:00"), at("2026-10-20", "08:00")),
+            60
+        );
     }
     fn at(s: &str) -> NaiveDateTime {
         NaiveDateTime::parse_from_str(s, "%Y-%m-%d %H:%M:%S")

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState, type FormEvent } from "react";
+import { Link } from "react-router";
 import type { PayrollPeriod } from "@/bindings/PayrollPeriod";
 import type { PendingItem } from "@/bindings/PendingItem";
 import type { PeriodChecks } from "@/bindings/PeriodChecks";
@@ -109,7 +110,11 @@ function Payroll({ today }: { today: string }) {
               const label = periodLabel(p.periodStart, p.periodEnd);
               return (
                 <tr key={p.id} className="border-b border-zinc-100 dark:border-zinc-900">
-                  <td className="py-2 font-medium tabular-nums">{label}</td>
+                  <td className="py-2 font-medium tabular-nums">
+                    <Link to={`/payroll/${p.id}`} className="underline-offset-2 hover:underline">
+                      {label}
+                    </Link>
+                  </td>
                   <td className="py-2 tabular-nums">{formatDate(p.payDate)}</td>
                   <td className="py-2">{p.rulePackCode}</td>
                   <td className="py-2">
