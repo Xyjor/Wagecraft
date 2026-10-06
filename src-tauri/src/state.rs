@@ -5,6 +5,7 @@ use crate::error::AppError;
 use crate::services;
 use chrono::Utc;
 use std::path::PathBuf;
+use std::sync::Mutex;
 use std::time::Instant;
 
 /// Everything the commands share. Tauri hands it to each command as `State<AppState>`.
@@ -15,6 +16,11 @@ pub struct AppState {
     pub kiosk: KioskLock,
     /// Where automatic backups go: `backups` in the app data folder (plan §6.7).
     pub backup_dir: PathBuf,
+    /// The app data folder, which holds the database and the restore marker.
+    pub data_dir: PathBuf,
+    /// The backup Admin picked to restore, checked and waiting for them to type RESTORE.
+    /// Kept here so the restore uses the file Rust's own dialog returned.
+    pub pending_restore: Mutex<Option<PathBuf>>,
 }
 
 impl AppState {
@@ -60,6 +66,8 @@ mod tests {
             auth: Auth::new(Duration::from_secs(60)),
             kiosk: KioskLock::default(),
             backup_dir: dir.path().join("backups"),
+            data_dir: dir.path().to_path_buf(),
+            pending_restore: Mutex::default(),
         };
         state.auth.sign_in(Session {
             user_id: id,

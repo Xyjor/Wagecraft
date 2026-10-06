@@ -64,6 +64,13 @@ describe("BackupsPage", () => {
 
     expect(screen.getByText("Only Admins can manage backups.")).toBeTruthy();
     expect(call).not.toHaveBeenCalled();
+    expect(screen.queryByRole("button", { name: "Restore a backup…" })).toBeNull();
+  });
+
+  it("offers a restore", async () => {
+    renderAs();
+
+    expect(await screen.findByRole("button", { name: "Restore a backup…" })).toBeTruthy();
   });
 
   it("lists each backup with its kind, size, who made it and where it is", async () => {

@@ -30,7 +30,12 @@ pub fn run() {
         .setup(|app| {
             let dir = app.path().app_data_dir()?;
             std::fs::create_dir_all(&dir)?;
-            let pool = tauri::async_runtime::block_on(db::open(&dir.join("wagecraft.db")))?;
+            let pool = tauri::async_runtime::block_on(db::open(&dir.join(db::DB_FILE)))?;
+            // After a restore, record it in the restored database before anyone signs in.
+            let finished = services::restore::finish(&pool, &dir, chrono::Utc::now());
+            if let Err(e) = tauri::async_runtime::block_on(finished) {
+                log::error!("couldn't record the restore: {e}");
+            }
             let backup_dir = dir.join("backups");
             let (db, daily_dir) = (pool.clone(), backup_dir.clone());
             tauri::async_runtime::spawn(async move {
@@ -48,6 +53,8 @@ pub fn run() {
                 auth: auth::session::Auth::new(IDLE_TIMEOUT),
                 kiosk: auth::kiosk_lock::KioskLock::default(),
                 backup_dir,
+                data_dir: dir,
+                pending_restore: std::sync::Mutex::default(),
             });
             Ok(())
         })
@@ -148,6 +155,8 @@ pub fn run() {
             commands::reports::report_payroll_register_csv,
             commands::backups::backup_list,
             commands::backups::backup_create,
+            commands::backups::backup_restore_choose,
+            commands::backups::backup_restore,
         ])
         .run(tauri::generate_context!())
         .expect("error while running Wagecraft");

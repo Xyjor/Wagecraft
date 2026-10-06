@@ -1,5 +1,5 @@
 //! Asks where to save a file with the system's Save dialog, then writes it. Also asks for
-//! a folder, for backups.
+//! a folder or a file, for backups.
 
 use crate::error::AppError;
 use std::path::PathBuf;
@@ -43,6 +43,28 @@ pub async fn pick_folder(app: &AppHandle, title: &str) -> Result<Option<PathBuf>
         .map(|p| {
             p.into_path()
                 .map_err(|e| AppError::Internal(anyhow::anyhow!("unusable folder: {e}")))
+        })
+        .transpose()
+}
+
+/// Shows the system's Open dialog. Returns the file, or `None` if the user cancelled.
+pub async fn pick_file(
+    app: &AppHandle,
+    title: &str,
+    filter: (&str, &[&str]),
+) -> Result<Option<PathBuf>, AppError> {
+    let dialog = app
+        .dialog()
+        .file()
+        .set_title(title)
+        .add_filter(filter.0, filter.1);
+    let picked = tauri::async_runtime::spawn_blocking(move || dialog.blocking_pick_file())
+        .await
+        .map_err(|e| AppError::Internal(e.into()))?;
+    picked
+        .map(|p| {
+            p.into_path()
+                .map_err(|e| AppError::Internal(anyhow::anyhow!("unusable file: {e}")))
         })
         .transpose()
 }

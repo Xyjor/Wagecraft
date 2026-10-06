@@ -17,5 +17,6 @@ pub(crate) mod payroll_fixtures;
 pub mod payslips;
 pub mod recurring_items;
 pub mod reports;
+pub mod restore;
 pub mod schedules;
 pub mod users;
