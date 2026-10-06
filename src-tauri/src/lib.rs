@@ -116,6 +116,7 @@ pub fn run() {
             commands::payroll::payslip_get,
             commands::payroll::payslip_my_list,
             commands::payroll::payslip_my_get,
+            commands::reports::export_save_pdf,
             commands::leave::leave_types_list,
             commands::leave::leave_type_create,
             commands::leave::leave_type_update,
