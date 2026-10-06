@@ -113,6 +113,7 @@ pub async fn add(
             rate_cents: input.rate_cents,
             effective_from: &from_text,
             reason,
+            minimum_wage_earner: input.minimum_wage_earner,
             created_by: actor.user_id,
             created_at: &at,
         },
@@ -232,6 +233,7 @@ mod tests {
             rate_cents,
             effective_from: from.into(),
             reason: None,
+            minimum_wage_earner: false,
         }
     }
 
@@ -252,6 +254,33 @@ mod tests {
         assert_eq!(c.effective_to, None);
         assert_eq!(c.created_by_name.as_deref(), Some("hr"));
         assert_eq!(history(&db, id).await.expect("history").len(), 1);
+    }
+
+    #[tokio::test]
+    async fn a_rate_can_mark_a_minimum_wage_earner_and_a_raise_can_end_it() {
+        let (_dir, db, id) = db().await;
+        let minimum = CompensationInput {
+            minimum_wage_earner: true,
+            ..monthly(1_400_000, "2025-01-01")
+        };
+        let c = add(&db, hr(), id, minimum, now()).await.expect("first");
+        assert!(c.minimum_wage_earner);
+        add(&db, hr(), id, monthly(2_000_000, "2026-03-01"), now())
+            .await
+            .expect("raise");
+
+        let rows = history(&db, id).await.expect("history");
+        let flags: Vec<bool> = rows.iter().map(|r| r.minimum_wage_earner).collect();
+        assert_eq!(flags, [false, true]);
+    }
+
+    #[test]
+    fn the_flag_is_off_unless_the_form_sends_it() {
+        let input: CompensationInput = serde_json::from_str(
+            r#"{"payBasis":"MONTHLY","rateCents":100,"effectiveFrom":"2025-01-01"}"#,
+        )
+        .expect("parse");
+        assert!(!input.minimum_wage_earner);
     }
 
     #[tokio::test]
@@ -356,6 +385,7 @@ mod tests {
             rate_cents: 0,
             effective_from: "someday".into(),
             reason: Some("x".repeat(201)),
+            minimum_wage_earner: false,
         };
         let names: Vec<String> = fields(add(&db, hr(), id, input, now()).await.unwrap_err())
             .into_iter()

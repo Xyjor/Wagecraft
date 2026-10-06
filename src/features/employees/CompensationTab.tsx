@@ -62,7 +62,14 @@ export function CompensationTab({ employee }: { employee: Employee }) {
                 <td className="py-2">
                   {c.effectiveTo ? formatDate(c.effectiveTo) : <Badge tone="good">Current</Badge>}
                 </td>
-                <td className="py-2">{PAY_BASIS_LABELS[c.payBasis] ?? c.payBasis}</td>
+                <td className="py-2">
+                  {PAY_BASIS_LABELS[c.payBasis] ?? c.payBasis}
+                  {c.minimumWageEarner && (
+                    <div className="pt-0.5">
+                      <Badge tone="muted">Minimum wage earner</Badge>
+                    </div>
+                  )}
+                </td>
                 <td className="py-2 text-right tabular-nums">{formatPesos(c.rateCents)}</td>
                 <td className="py-2 pl-6">{c.reason}</td>
                 <td className="py-2">{c.createdByName}</td>
@@ -143,6 +150,21 @@ function AddRate({
         <Field name="rate" label="Rate (₱)" error={errors.rate} />
         <Field name="effectiveFrom" label="Starts on" type="date" error={errors.effectiveFrom} />
         <Field name="reason" label="Reason" error={errors.reason} />
+        <label className="flex items-start gap-2 text-sm sm:col-span-2">
+          <input
+            type="checkbox"
+            name="minimumWageEarner"
+            defaultChecked={current?.minimumWageEarner ?? false}
+            className="mt-0.5"
+          />
+          <span>
+            Minimum wage earner
+            <span className="block text-zinc-600 dark:text-zinc-400">
+              No tax is withheld while this rate applies. Untick it when a raise takes them above
+              the minimum wage.
+            </span>
+          </span>
+        </label>
       </div>
       <button type="submit" disabled={busy} className={primaryButton}>
         Save rate

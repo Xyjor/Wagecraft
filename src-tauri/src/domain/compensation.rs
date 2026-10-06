@@ -23,6 +23,8 @@ pub struct Compensation {
     /// Empty while this is the rate in effect now.
     pub effective_to: Option<String>,
     pub reason: Option<String>,
+    /// No tax is withheld while this rate is in effect (plan §7.5).
+    pub minimum_wage_earner: bool,
     /// Who made the change, or empty if that user is gone.
     pub created_by_name: Option<String>,
     pub created_at: String,
@@ -37,6 +39,8 @@ pub struct CompensationInput {
     pub rate_cents: i64,
     pub effective_from: String,
     pub reason: Option<String>,
+    #[serde(default)]
+    pub minimum_wage_earner: bool,
 }
 
 /// The first day of the semi-monthly pay period that holds `d`: the 1st or the 16th

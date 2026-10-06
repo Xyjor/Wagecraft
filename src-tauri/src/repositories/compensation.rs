@@ -4,7 +4,7 @@ use crate::domain::compensation::Compensation;
 use sqlx::{SqliteConnection, SqliteExecutor};
 
 const SELECT: &str = "SELECT c.id, c.employee_id, c.pay_basis, c.rate_cents, c.effective_from, \
-    c.effective_to, c.reason, u.username AS created_by_name, c.created_at \
+    c.effective_to, c.reason, c.minimum_wage_earner, u.username AS created_by_name, c.created_at \
     FROM compensations c LEFT JOIN users u ON u.id = c.created_by";
 
 /// Newest first, so the rate in effect now is the first row.
@@ -42,6 +42,7 @@ pub struct NewCompensation<'a> {
     pub rate_cents: i64,
     pub effective_from: &'a str,
     pub reason: Option<&'a str>,
+    pub minimum_wage_earner: bool,
     pub created_by: Option<i64>,
     pub created_at: &'a str,
 }
@@ -49,14 +50,15 @@ pub struct NewCompensation<'a> {
 pub async fn insert(conn: &mut SqliteConnection, c: &NewCompensation<'_>) -> sqlx::Result<i64> {
     let id = sqlx::query(
         "INSERT INTO compensations \
-         (employee_id, pay_basis, rate_cents, effective_from, reason, created_by, created_at) \
-         VALUES (?, ?, ?, ?, ?, ?, ?)",
+         (employee_id, pay_basis, rate_cents, effective_from, reason, minimum_wage_earner, \
+         created_by, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
     )
     .bind(c.employee_id)
     .bind(c.pay_basis)
     .bind(c.rate_cents)
     .bind(c.effective_from)
     .bind(c.reason)
+    .bind(c.minimum_wage_earner)
     .bind(c.created_by)
     .bind(c.created_at)
     .execute(conn)

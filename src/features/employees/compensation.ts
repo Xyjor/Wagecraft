@@ -34,7 +34,13 @@ export function checkCompensation(v: Record<string, string>): Result {
   if (Object.keys(errors).length) return { ok: false, errors };
   return {
     ok: true,
-    value: { payBasis: v.payBasis, rateCents: rateCents!, effectiveFrom, reason },
+    value: {
+      payBasis: v.payBasis,
+      rateCents: rateCents!,
+      effectiveFrom,
+      reason,
+      minimumWageEarner: v.minimumWageEarner === "on",
+    },
   };
 }
 
