@@ -9,5 +9,6 @@ pub mod org;
 pub mod overtime;
 pub mod payroll;
 pub mod payroll_period;
+pub mod recurring_item;
 pub mod schedule;
 pub mod validation;

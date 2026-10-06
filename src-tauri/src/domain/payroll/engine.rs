@@ -58,8 +58,6 @@ pub struct Deduction {
     pub amount_cents: i64,
 }
 
-// Payroll fills these from recurring items and carryovers in a later PR.
-#[allow(dead_code)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum DeductionKind {
     Loan,

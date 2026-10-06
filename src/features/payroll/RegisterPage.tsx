@@ -257,8 +257,9 @@ function LineTable({
     <table className="w-full self-start text-sm">
       <caption className="pb-1 text-left font-medium">{title}</caption>
       <tbody>
-        {lines.map((l) => (
-          <tr key={l.code}>
+        {lines.map((l, i) => (
+          // Several loans or deductions share a code, so the position keeps keys unique.
+          <tr key={`${i}-${l.code}`}>
             <td className="py-1">{l.label}</td>
             <td className="py-1 text-zinc-500">{quantityText(l.quantity, l.unit)}</td>
             <td className="py-1 text-right tabular-nums">{formatPesos(l.amountCents)}</td>
