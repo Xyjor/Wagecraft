@@ -128,3 +128,28 @@ pub async fn missing_time_outs<'e>(
     .fetch_all(db)
     .await
 }
+
+pub async fn mark_computed(
+    conn: &mut SqliteConnection,
+    id: i64,
+    by: Option<i64>,
+    at: &str,
+) -> sqlx::Result<()> {
+    sqlx::query(
+        "UPDATE payroll_periods SET status = 'COMPUTED', computed_by = ?, computed_at = ? \
+         WHERE id = ?",
+    )
+    .bind(by)
+    .bind(at)
+    .bind(id)
+    .execute(conn)
+    .await?;
+    Ok(())
+}
+
+/// The last day of the latest period that is computed, approved or posted.
+pub async fn last_computed_end<'e>(db: impl SqliteExecutor<'e>) -> sqlx::Result<Option<String>> {
+    sqlx::query_scalar("SELECT MAX(period_end) FROM payroll_periods WHERE status <> 'DRAFT'")
+        .fetch_one(db)
+        .await
+}

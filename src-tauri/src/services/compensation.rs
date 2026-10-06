@@ -6,7 +6,7 @@ use crate::audit::{self, Actor, Entry};
 use crate::domain::compensation::{pay_period_start, Compensation, CompensationInput, PAY_BASES};
 use crate::error::{AppError, FieldError};
 use crate::repositories::compensation::{self as repo, NewCompensation};
-use crate::repositories::employees;
+use crate::repositories::{employees, payroll_periods};
 use crate::services::auth::field;
 use crate::services::org::MAX_RATE_CENTS;
 use crate::time;
@@ -83,8 +83,22 @@ pub async fn add(
     }
     let from = from.expect("checked above");
 
-    // TODO(Phase 4): also refuse a start inside a computed, approved or posted payroll
-    // period (plan §6.11) once payroll periods exist.
+    // Payroll takes the rate in effect for a whole period, so a new rate can't reach back
+    // into a period that is already computed (plan §6.2).
+    if let Some(last) = payroll_periods::last_computed_end(&mut *tx)
+        .await?
+        .as_deref()
+        .and_then(parse_date)
+    {
+        if from <= last {
+            let message = format!(
+                "Payroll is already computed up to {}. Start on {} or later",
+                show(last),
+                show(last + Days::new(1))
+            );
+            return Err(AppError::Validation(vec![field("effectiveFrom", &message)]));
+        }
+    }
     if let Some(c) = &current {
         let day_before = from - Days::new(1);
         repo::close(&mut tx, c.id, &day_before.format("%Y-%m-%d").to_string()).await?;
@@ -303,6 +317,35 @@ mod tests {
             );
         }
         assert_eq!(history(&db, id).await.expect("history").len(), 1);
+    }
+
+    #[tokio::test]
+    async fn a_rate_cannot_reach_back_into_computed_payroll() {
+        let (_dir, db, id) = db().await;
+        add(&db, hr(), id, monthly(2_500_000, "2025-01-01"), now())
+            .await
+            .expect("first");
+        sqlx::query(
+            "INSERT INTO payroll_periods (period_start, period_end, pay_date, cutoff_no, status, \
+             rule_pack_id, created_at) SELECT '2026-10-16', '2026-10-31', '2026-10-31', 2, \
+             'COMPUTED', id, '2026-10-31T00:00:00Z' FROM rule_packs",
+        )
+        .execute(&db)
+        .await
+        .unwrap();
+        for inside_or_before in ["2026-10-16", "2026-10-01"] {
+            let err = add(&db, hr(), id, monthly(2_600_000, inside_or_before), now())
+                .await
+                .unwrap_err();
+            assert_eq!(
+                fields(err)[0].1,
+                "Payroll is already computed up to Oct 31, 2026. Start on Nov 1, 2026 or later",
+                "{inside_or_before}"
+            );
+        }
+        add(&db, hr(), id, monthly(2_600_000, "2026-11-01"), now())
+            .await
+            .expect("after the computed period");
     }
 
     #[tokio::test]

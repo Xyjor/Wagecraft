@@ -81,8 +81,6 @@ const DAY_TYPES: [(&str, DayType); 8] = [
 ];
 
 /// The rule pack with this code, such as `PH-2026`.
-// The payroll compute step that loads rule packs arrives in a later PR.
-#[allow(dead_code)]
 pub async fn by_code(conn: &mut SqliteConnection, code: &str) -> anyhow::Result<Option<RulePack>> {
     let Some((id, settings)): Option<(i64, String)> =
         sqlx::query_as("SELECT id, settings_json FROM rule_packs WHERE code = ?")
