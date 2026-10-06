@@ -138,8 +138,12 @@ pub struct PayslipDetail {
     pub period_start: String,
     pub period_end: String,
     pub pay_date: String,
+    /// For the payslip header; empty until setup names the company.
+    pub company_name: String,
     pub employee_no: String,
     pub employee_name: String,
+    pub department: Option<String>,
+    pub position: Option<String>,
     #[ts(type = "\"MONTHLY\" | \"DAILY\"")]
     pub pay_basis: String,
     #[ts(type = "number")]

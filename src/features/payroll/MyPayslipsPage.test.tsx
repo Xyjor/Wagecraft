@@ -47,7 +47,10 @@ const slip: PayslipDetail = {
   periodEnd: "2026-10-15",
   payDate: "2026-10-15",
   employeeNo: "EMP-0001",
+  companyName: "Acme Trading",
   employeeName: "Santos, Ana",
+  department: "Operations",
+  position: "Driver",
   payBasis: "MONTHLY",
   rateCents: 2_500_000,
   lines: [
