@@ -19,6 +19,7 @@ const ITEMS: { to: string; label: string; roles?: Role[] }[] = [
   { to: "/organization", label: "Organization", roles: ["ADMIN", "HR"] },
   { to: "/holidays", label: "Holidays", roles: ["ADMIN", "HR"] },
   { to: "/users", label: "Users", roles: ["ADMIN"] },
+  { to: "/backups", label: "Backups", roles: ["ADMIN"] },
 ];
 
 export function Sidebar() {
