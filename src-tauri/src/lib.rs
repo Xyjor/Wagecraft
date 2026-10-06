@@ -31,11 +31,23 @@ pub fn run() {
             let dir = app.path().app_data_dir()?;
             std::fs::create_dir_all(&dir)?;
             let pool = tauri::async_runtime::block_on(db::open(&dir.join("wagecraft.db")))?;
+            let backup_dir = dir.join("backups");
+            let (db, daily_dir) = (pool.clone(), backup_dir.clone());
+            tauri::async_runtime::spawn(async move {
+                let local = chrono::Local::now().naive_local();
+                let keep = services::backups::KEEP_DAILY;
+                let taken =
+                    services::backups::daily(&db, &daily_dir, keep, local, chrono::Utc::now());
+                // A failed daily backup must not stop the app; it tries again next start.
+                if let Err(e) = taken.await {
+                    log::error!("daily backup failed: {e}");
+                }
+            });
             app.manage(state::AppState {
                 db: pool,
                 auth: auth::session::Auth::new(IDLE_TIMEOUT),
                 kiosk: auth::kiosk_lock::KioskLock::default(),
-                backup_dir: dir.join("backups"),
+                backup_dir,
             });
             Ok(())
         })
@@ -134,6 +146,8 @@ pub fn run() {
             commands::reports::report_masterlist_csv,
             commands::reports::report_payroll_register,
             commands::reports::report_payroll_register_csv,
+            commands::backups::backup_list,
+            commands::backups::backup_create,
         ])
         .run(tauri::generate_context!())
         .expect("error while running Wagecraft");

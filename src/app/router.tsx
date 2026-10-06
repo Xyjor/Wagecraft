@@ -2,6 +2,7 @@ import { createBrowserRouter } from "react-router";
 import { AppShell } from "./AppShell";
 import { AttendancePage } from "@/features/attendance/AttendancePage";
 import { MyAttendancePage } from "@/features/attendance/MyAttendancePage";
+import { BackupsPage } from "@/features/backups/BackupsPage";
 import { EmployeeFormPage } from "@/features/employees/EmployeeFormPage";
 import { EmployeeProfilePage } from "@/features/employees/EmployeeProfilePage";
 import { EmployeesPage } from "@/features/employees/EmployeesPage";
@@ -42,6 +43,7 @@ export const router = createBrowserRouter([
       { path: "organization", element: <OrganizationPage /> },
       { path: "holidays", element: <HolidaysPage /> },
       { path: "users", element: <UsersPage /> },
+      { path: "backups", element: <BackupsPage /> },
     ],
   },
 ]);
