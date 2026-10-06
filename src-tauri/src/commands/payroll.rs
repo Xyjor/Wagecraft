@@ -5,7 +5,7 @@
 use crate::auth::permissions::Permission;
 use crate::domain::payroll_period::{
     MyPayslip, PayrollPeriod, PayrollPeriodInput, PayrollRegister, PayslipDetail, PeriodChecks,
-    RulePackSummary,
+    RulePackDetail, RulePackSummary,
 };
 use crate::error::AppError;
 use crate::services::{accounts, payroll, payroll_approval, payslips};
@@ -25,6 +25,16 @@ pub async fn payroll_period_list(
 pub async fn rule_pack_list(state: State<'_, AppState>) -> Result<Vec<RulePackSummary>, AppError> {
     state.require(Permission::PayrollCompute).await?;
     payroll::rule_packs(&state.db).await
+}
+
+/// Every rate and bracket in one pack, for the read-only viewer.
+#[tauri::command]
+pub async fn rule_pack_get(
+    state: State<'_, AppState>,
+    id: i64,
+) -> Result<RulePackDetail, AppError> {
+    state.require(Permission::PayrollCompute).await?;
+    payroll::rule_pack(&state.db, id).await
 }
 
 /// Unfinished leave, overtime and time-outs inside a period, shown before creating it.

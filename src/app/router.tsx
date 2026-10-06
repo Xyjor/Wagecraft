@@ -16,6 +16,7 @@ import { OvertimePage } from "@/features/overtime/OvertimePage";
 import { MyPayslipsPage } from "@/features/payroll/MyPayslipsPage";
 import { PayrollPage } from "@/features/payroll/PayrollPage";
 import { RegisterPage } from "@/features/payroll/RegisterPage";
+import { RulePacksPage } from "@/features/payroll/RulePacksPage";
 import { UsersPage } from "@/features/users/UsersPage";
 
 export const router = createBrowserRouter([
@@ -36,6 +37,7 @@ export const router = createBrowserRouter([
       { path: "employees/:id", element: <EmployeeProfilePage /> },
       { path: "employees/:id/edit", element: <EmployeeFormPage /> },
       { path: "payroll", element: <PayrollPage /> },
+      { path: "payroll/rules", element: <RulePacksPage /> },
       { path: "payroll/:id", element: <RegisterPage /> },
       { path: "organization", element: <OrganizationPage /> },
       { path: "holidays", element: <HolidaysPage /> },

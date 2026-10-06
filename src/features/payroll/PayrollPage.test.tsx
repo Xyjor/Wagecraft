@@ -113,6 +113,14 @@ describe("PayrollPage", () => {
     ).toBe("/payroll/1");
   });
 
+  it("links to the rule packs payroll is computed with", async () => {
+    renderAs();
+    await screen.findByText("Oct 16 – 31, 2026");
+    expect(screen.getByRole("link", { name: "Rule packs" }).getAttribute("href")).toBe(
+      "/payroll/rules",
+    );
+  });
+
   it("creates a period, suggesting the cutoff's last day as the pay date", async () => {
     renderAs();
     fireEvent.click(await screen.findByRole("button", { name: "New pay period" }));

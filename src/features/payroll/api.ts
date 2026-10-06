@@ -4,6 +4,7 @@ import type { PayrollPeriodInput } from "@/bindings/PayrollPeriodInput";
 import type { PayrollRegister } from "@/bindings/PayrollRegister";
 import type { PayslipDetail } from "@/bindings/PayslipDetail";
 import type { PeriodChecks } from "@/bindings/PeriodChecks";
+import type { RulePackDetail } from "@/bindings/RulePackDetail";
 import type { RulePackSummary } from "@/bindings/RulePackSummary";
 import { call } from "@/lib/ipc";
 
@@ -27,3 +28,4 @@ export const postPayroll = (periodId: number) =>
 export const getPayslip = (id: number) => call<PayslipDetail>("payslip_get", { id });
 export const myPayslips = () => call<MyPayslip[]>("payslip_my_list");
 export const getMyPayslip = (id: number) => call<PayslipDetail>("payslip_my_get", { id });
+export const getRulePack = (id: number) => call<RulePackDetail>("rule_pack_get", { id });
