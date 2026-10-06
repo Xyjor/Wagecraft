@@ -18,6 +18,7 @@ import {
   sendBackPayroll,
 } from "./api";
 import { PayslipView } from "./PayslipView";
+import { RegisterDownloads } from "./RegisterDownloads";
 import { periodLabel, STATUS_LABELS, STATUS_TONES } from "./periods";
 
 export function RegisterPage() {
@@ -128,6 +129,8 @@ function Register({ id }: { id: number }) {
           locked.
         </p>
       )}
+
+      {period.status !== "DRAFT" && rows.length > 0 && <RegisterDownloads periodId={id} />}
 
       {period.status === "DRAFT" ? (
         <p className="text-zinc-500">Not computed yet.</p>

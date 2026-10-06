@@ -4,6 +4,7 @@ import type { PayrollPeriodInput } from "@/bindings/PayrollPeriodInput";
 import type { PayrollRegister } from "@/bindings/PayrollRegister";
 import type { PayslipDetail } from "@/bindings/PayslipDetail";
 import type { PeriodChecks } from "@/bindings/PeriodChecks";
+import type { RegisterReport } from "@/bindings/RegisterReport";
 import type { RulePackDetail } from "@/bindings/RulePackDetail";
 import type { RulePackSummary } from "@/bindings/RulePackSummary";
 import { call } from "@/lib/ipc";
@@ -32,3 +33,8 @@ export const getRulePack = (id: number) => call<RulePackDetail>("rule_pack_get",
 /** Asks where to save, then writes the file. Null when the person cancels. */
 export const savePdf = (fileName: string, bytes: Uint8Array) =>
   call<string | null>("export_save_pdf", { fileName, bytes: Array.from(bytes) });
+export const getRegisterReport = (periodId: number) =>
+  call<RegisterReport>("report_payroll_register", { periodId });
+/** Asks where to save the register CSV, then writes it. Null when the person cancels. */
+export const saveRegisterCsv = (periodId: number) =>
+  call<string | null>("report_payroll_register_csv", { periodId });

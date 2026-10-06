@@ -3,6 +3,7 @@
 import { describe, expect, it } from "vitest";
 import type { PayslipDetail } from "@/bindings/PayslipDetail";
 import type { PayslipLine } from "@/bindings/PayslipLine";
+import { expectReadablePdf } from "@/test/pdf";
 import { formatAmount, payslipFileName, payslipSections, renderPayslipPdf } from "./payslipPdf";
 
 const line = (
@@ -47,11 +48,6 @@ const slip: PayslipDetail = {
   warnings: [],
 };
 
-const inflate = (data: Uint8Array<ArrayBuffer>) =>
-  new Response(
-    new Blob([data]).stream().pipeThrough(new DecompressionStream("deflate")),
-  ).arrayBuffer();
-
 describe("payslip PDF", () => {
   it("writes amounts without the peso sign, which the PDF's built-in font lacks", () => {
     expect(formatAmount(1_250_000)).toBe("12,500.00");
@@ -80,16 +76,6 @@ describe("payslip PDF", () => {
   });
 
   it("renders a real PDF file", async () => {
-    const bytes = await renderPayslipPdf(slip);
-    expect(new TextDecoder().decode(bytes.slice(0, 5))).toBe("%PDF-");
-    // Every page stream must unpack. jsdom's Blob mangles binary bytes, which keeps the
-    // header but breaks the compressed page, so a viewer shows a blank page.
-    const text = new TextDecoder("latin1").decode(bytes);
-    const streams = [...text.matchAll(/\/Length (\d+)[^]*?stream\r?\n/g)];
-    expect(streams.length).toBeGreaterThan(0);
-    for (const m of streams) {
-      const start = m.index + m[0].length;
-      await expect(inflate(bytes.slice(start, start + Number(m[1])))).resolves.toBeDefined();
-    }
+    await expectReadablePdf(await renderPayslipPdf(slip));
   }, 20_000);
 });

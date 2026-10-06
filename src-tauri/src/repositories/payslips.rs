@@ -1,7 +1,7 @@
 //! SQL for computing and reading payslips: the facts compute gathers for each employee,
 //! and the payslips it saves. No rules here: the payroll service decides.
 
-use crate::domain::payroll_period::{MyPayslip, PayslipLine, SkippedEmployee};
+use crate::domain::payroll_period::{MyPayslip, PayslipLine, RegisterReportRow, SkippedEmployee};
 use sqlx::{FromRow, SqliteConnection, SqliteExecutor};
 
 const NAME: &str = "e.employee_no, e.last_name || ', ' || e.first_name AS employee_name";
@@ -247,6 +247,34 @@ pub async fn for_period<'e>(
     sqlx::query_as(&format!(
         "{PAYSLIP} WHERE p.payroll_period_id = ? \
          ORDER BY e.last_name, e.first_name, e.employee_no"
+    ))
+    .bind(period_id)
+    .fetch_all(db)
+    .await
+}
+
+/// The period's payslips with each government deduction in its own column, by name.
+pub async fn register_report_rows<'e>(
+    db: impl SqliteExecutor<'e>,
+    period_id: i64,
+) -> sqlx::Result<Vec<RegisterReportRow>> {
+    // Deduction lines are negative; the report shows them as positive amounts.
+    let deduction = |code: &str| {
+        format!(
+            "-COALESCE(SUM(CASE WHEN l.kind = 'DEDUCTION' AND l.code = '{code}' \
+             THEN l.amount_cents END), 0)"
+        )
+    };
+    sqlx::query_as(&format!(
+        "SELECT {NAME}, p.gross_cents, {} AS sss_cents, {} AS philhealth_cents, \
+         {} AS pagibig_cents, p.tax_cents, p.other_deductions_cents, p.net_cents \
+         FROM payslips p JOIN employees e ON e.id = p.employee_id \
+         LEFT JOIN payslip_lines l ON l.payslip_id = p.id \
+         WHERE p.payroll_period_id = ? GROUP BY p.id \
+         ORDER BY e.last_name, e.first_name, e.employee_no",
+        deduction("SSS"),
+        deduction("PHILHEALTH"),
+        deduction("PAGIBIG"),
     ))
     .bind(period_id)
     .fetch_all(db)
