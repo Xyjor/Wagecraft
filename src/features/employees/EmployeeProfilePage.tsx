@@ -14,6 +14,7 @@ import { CompensationTab } from "./CompensationTab";
 import { ScheduleTab } from "./ScheduleTab";
 import { isSeparated } from "./format";
 import { KioskPinTab } from "./KioskPinTab";
+import { PayItemsTab } from "./PayItemsTab";
 import { ProfileView } from "./ProfileView";
 
 /** HR's view of any employee (`/employees/:id`), with edit, archive, pay and account. */
@@ -70,6 +71,7 @@ export function EmployeeProfilePage() {
       }
       extraTabs={[
         { name: "Compensation", content: <CompensationTab employee={e} /> },
+        { name: "Pay items", content: <PayItemsTab employee={e} /> },
         { name: "Schedule", content: <ScheduleTab employee={e} /> },
         { name: "Attendance", content: <AttendanceMonth load={loadAttendance} /> },
         { name: "Leave", content: <LeaveTab employee={e} /> },

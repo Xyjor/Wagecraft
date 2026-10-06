@@ -8,6 +8,7 @@ pub mod org;
 pub mod overtime;
 pub mod payroll_periods;
 pub mod payslips;
+pub mod recurring_items;
 pub mod rule_packs;
 pub mod schedules;
 pub mod users;

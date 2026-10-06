@@ -6,16 +6,20 @@
 use crate::audit::{self, Actor, Entry};
 use crate::domain::attendance_calc::{parse_work_days, HolidayKind, Interval};
 use crate::domain::payroll::contributions::Cutoff;
-use crate::domain::payroll::engine::{DayRecord, DayStatus, Line, OvertimeBlock, PayslipInput};
+use crate::domain::payroll::engine::{
+    DayRecord, DayStatus, DeductionKind, Line, OvertimeBlock, PayslipInput,
+};
 use crate::domain::payroll::inputs::{day_record, DayFacts, LeaveFacts, RecordFacts};
 use crate::domain::payroll::payslip::compute_payslip;
 use crate::domain::payroll::rates::PayBasis;
 use crate::domain::payroll_period::{
     PayrollPeriod, PayrollRegister, PayslipDetail, PayslipLine, RegisterRow,
 };
+use crate::domain::recurring_item::for_cutoff;
 use crate::domain::schedule::ScheduleHistory;
 use crate::error::AppError;
 use crate::repositories::payslips::{self as repo, NewPayslip, ScopeEmployee};
+use crate::repositories::recurring_items::{self, NewCarryover};
 use crate::repositories::{payroll_periods, rule_packs, schedules};
 use crate::time;
 use chrono::{DateTime, Datelike, Days, NaiveDate, NaiveDateTime, Utc};
@@ -61,6 +65,11 @@ pub async fn compute(
             continue;
         };
         let gathered = gather(&mut tx, e, &period, from, &holidays).await?;
+        let items =
+            recurring_items::in_effect(&mut *tx, e.id, &period.period_start, &period.period_end)
+                .await?;
+        let open = recurring_items::open_carryovers(&mut *tx, e.id, &period.period_start).await?;
+        let scheduled = for_cutoff(&items, &open, start, end, period.cutoff_no);
         let input = PayslipInput {
             basis: if basis == "DAILY" {
                 PayBasis::Daily
@@ -72,14 +81,14 @@ pub async fn compute(
             days: gathered.days,
             status_before_period: gathered.status_before_period,
             overtime: gathered.overtime,
-            allowances: vec![],
+            allowances: scheduled.allowances,
             cutoff: if period.cutoff_no == 1 {
                 Cutoff::First
             } else {
                 Cutoff::Second
             },
             minimum_wage_earner: false,
-            deductions: vec![],
+            deductions: scheduled.deductions,
             minimum_net_cents: 0,
         };
         let result = compute_payslip(&input, &rules);
@@ -111,6 +120,30 @@ pub async fn compute(
             .chain(result.employer.iter().map(|l| line(l, true, input.basis)));
         for (order, l) in lines.enumerate() {
             repo::insert_line(&mut tx, id, order as i64, &l).await?;
+        }
+        // This payslip took the open carryovers, in full or in part; what it couldn't take
+        // is carried over again below, with everything else that didn't fit.
+        for carryover in scheduled.sources.iter().filter_map(|s| s.carryover_id) {
+            recurring_items::mark_applied(&mut tx, carryover, id).await?;
+        }
+        for u in &result.unpaid {
+            let source = &scheduled.sources[u.index];
+            let code = match input.deductions[u.index].kind {
+                DeductionKind::Loan => "LOAN",
+                DeductionKind::Other => "DEDUCTION",
+            };
+            recurring_items::insert_carryover(
+                &mut tx,
+                &NewCarryover {
+                    employee_id: e.id,
+                    source_payslip_id: id,
+                    recurring_item_id: source.recurring_item_id,
+                    code,
+                    label: &source.label,
+                    amount_cents: cents(u.amount),
+                },
+            )
+            .await?;
         }
         count += 1;
         net_cents += cents(result.net);
@@ -376,6 +409,16 @@ fn snapshot(input: &PayslipInput, period: &PayrollPeriod) -> Value {
             "dayType": format!("{:?}", o.day_type),
             "minutes": o.minutes,
             "night": o.night_minutes,
+        })).collect::<Vec<_>>(),
+        "allowances": input.allowances.iter().map(|a| json!({
+            "label": a.label,
+            "amountCents": a.amount_cents,
+            "taxable": a.taxable,
+        })).collect::<Vec<_>>(),
+        "deductions": input.deductions.iter().map(|d| json!({
+            "kind": format!("{:?}", d.kind),
+            "label": d.label,
+            "amountCents": d.amount_cents,
         })).collect::<Vec<_>>(),
     })
 }
@@ -793,5 +836,195 @@ mod tests {
         let after: serde_json::Value =
             serde_json::from_str(last.after_json.as_deref().unwrap()).unwrap();
         assert_eq!(after["payslips"], 1);
+    }
+
+    /// A recurring item from Jan 1, 2026; a loan owes ₱100,000.
+    async fn item(db: &SqlitePool, id: i64, kind: &str, label: &str, amount: i64, end: &str) {
+        let balance = if kind == "LOAN" { "10000000" } else { "NULL" };
+        let end = if end.is_empty() {
+            "NULL".to_string()
+        } else {
+            format!("'{end}'")
+        };
+        sql(
+            db,
+            &format!(
+                "INSERT INTO recurring_items (employee_id, kind, label, amount_cents, taxable, \
+                 schedule, start_date, end_date, remaining_balance_cents, created_at) VALUES \
+                 ({id}, '{kind}', '{label}', {amount}, 0, 'EVERY_CUTOFF', '2026-01-01', {end}, \
+                 {balance}, '2026-01-01T00:00:00Z')"
+            ),
+        )
+        .await;
+    }
+
+    /// The Nov 1–15, 2026 period, with a full day on each of its 10 work days.
+    async fn november(db: &SqlitePool, id: i64) -> i64 {
+        let pack: i64 = sqlx::query_scalar("SELECT id FROM rule_packs WHERE code = 'PH-2026'")
+            .fetch_one(db)
+            .await
+            .unwrap();
+        let p = periods::create(
+            db,
+            hr(),
+            PayrollPeriodInput {
+                period_start: "2026-11-01".into(),
+                pay_date: "2026-11-15".into(),
+                rule_pack_id: pack,
+            },
+            now(),
+        )
+        .await
+        .expect("november");
+        let days = [
+            "2026-11-02",
+            "2026-11-03",
+            "2026-11-04",
+            "2026-11-05",
+            "2026-11-06",
+            "2026-11-09",
+            "2026-11-10",
+            "2026-11-11",
+            "2026-11-12",
+            "2026-11-13",
+        ];
+        full_days(db, id, &days).await;
+        p.id
+    }
+
+    async fn net(db: &SqlitePool, period: i64) -> i64 {
+        compute(db, hr(), period, now())
+            .await
+            .expect("compute")
+            .rows[0]
+            .net_cents
+    }
+
+    /// (code, label, amount) of the payslip's loan, deduction and allowance lines.
+    async fn item_lines(db: &SqlitePool, period: i64) -> Vec<(String, String, i64)> {
+        let reg = register(db, period).await.unwrap();
+        payslip(db, reg.rows[0].payslip_id)
+            .await
+            .unwrap()
+            .lines
+            .into_iter()
+            .filter(|l| matches!(l.code.as_str(), "ALLOWANCE" | "LOAN" | "DEDUCTION"))
+            .map(|l| (l.code, l.label, l.amount_cents))
+            .collect()
+    }
+
+    /// (amount, applied payslip) of each carryover, oldest first.
+    async fn carryovers(db: &SqlitePool) -> Vec<(i64, Option<i64>)> {
+        sqlx::query_as(
+            "SELECT amount_cents, applied_payslip_id FROM deduction_carryovers ORDER BY id",
+        )
+        .fetch_all(db)
+        .await
+        .unwrap()
+    }
+
+    #[tokio::test]
+    async fn recurring_allowances_and_deductions_are_on_the_payslip() {
+        let (_d, db, period) = db().await;
+        employee(&db, 1, "Santos", "2025-01-06", "MONTHLY", 2_500_000).await;
+        full_days(&db, 1, &work_days_except(&[])).await;
+        let before = net(&db, period).await;
+
+        item(&db, 1, "ALLOWANCE", "Rice subsidy", 100_000, "").await;
+        item(&db, 1, "DEDUCTION", "Uniform", 50_000, "").await;
+        item(&db, 1, "LOAN", "Company loan", 200_000, "").await;
+        item(
+            &db,
+            1,
+            "ALLOWANCE",
+            "Ended in September",
+            999_999,
+            "2026-09-30",
+        )
+        .await;
+
+        // A non-taxable allowance leaves tax alone: net moves by exactly the items.
+        assert_eq!(net(&db, period).await, before + 100_000 - 200_000 - 50_000);
+        assert_eq!(
+            item_lines(&db, period).await,
+            [
+                ("ALLOWANCE".into(), "Rice subsidy".into(), 100_000),
+                ("LOAN".into(), "Company loan".into(), -200_000),
+                ("DEDUCTION".into(), "Uniform".into(), -50_000),
+            ]
+        );
+        let reg = register(&db, period).await.unwrap();
+        assert_eq!(reg.rows[0].other_deductions_cents, 250_000);
+        let line = payslip(&db, reg.rows[0].payslip_id).await.unwrap();
+        let kinds: Vec<_> = line
+            .lines
+            .iter()
+            .filter(|l| l.code == "ALLOWANCE" || l.code == "LOAN")
+            .map(|l| (l.kind.as_str(), l.unit.clone()))
+            .collect();
+        assert_eq!(kinds, [("EARNING", None), ("DEDUCTION", None)]);
+        let snapshot: String = sqlx::query_scalar(
+            "SELECT json_extract(inputs_json, '$.deductions[0].label') FROM payslips",
+        )
+        .fetch_one(&db)
+        .await
+        .unwrap();
+        assert_eq!(snapshot, "Company loan");
+        assert!(carryovers(&db).await.is_empty());
+    }
+
+    #[tokio::test]
+    async fn what_does_not_fit_is_carried_into_the_next_posted_period() {
+        let (_d, db, october) = db().await;
+        employee(&db, 1, "Santos", "2025-01-06", "MONTHLY", 2_500_000).await;
+        full_days(&db, 1, &work_days_except(&[])).await;
+        let full_net = net(&db, october).await;
+        item(&db, 1, "DEDUCTION", "Cash advance", 2_000_000, "2026-10-31").await;
+
+        let reg = compute(&db, hr(), october, now()).await.unwrap();
+        assert_eq!(reg.rows[0].net_cents, 0);
+        let carried = 2_000_000 - full_net;
+        assert_eq!(carryovers(&db).await, [(carried, None)]);
+        assert!(
+            reg.rows[0]
+                .warnings
+                .iter()
+                .any(|w| w.starts_with("Cash advance: ")),
+            "{:?}",
+            reg.rows[0].warnings
+        );
+        // Recomputing October rewrites its carryover instead of adding another.
+        compute(&db, hr(), october, now()).await.unwrap();
+        assert_eq!(carryovers(&db).await, [(carried, None)]);
+
+        // Until October is posted it can still change, so November leaves it alone.
+        let november = november(&db, 1).await;
+        let nov_full = net(&db, november).await;
+        assert!(item_lines(&db, november).await.is_empty());
+
+        sql(
+            &db,
+            "UPDATE payroll_periods SET status = 'POSTED' WHERE period_start = '2026-10-16'",
+        )
+        .await;
+        assert_eq!(net(&db, november).await, nov_full - carried);
+        assert_eq!(
+            item_lines(&db, november).await,
+            [(
+                "DEDUCTION".into(),
+                "Cash advance (carried over)".into(),
+                -carried
+            )]
+        );
+        let slip = register(&db, november).await.unwrap().rows[0].payslip_id;
+        assert_eq!(carryovers(&db).await, [(carried, Some(slip))]);
+
+        // Recomputing November takes it again, once.
+        let again = compute(&db, hr(), november, now()).await.unwrap();
+        assert_eq!(again.rows[0].net_cents, nov_full - carried);
+        assert_eq!(
+            carryovers(&db).await,
+            [(carried, Some(again.rows[0].payslip_id))]
+        );
     }
 }

@@ -11,6 +11,7 @@ pub mod org;
 pub mod overtime;
 pub mod payroll;
 pub mod payslips;
+pub mod recurring_items;
 pub mod reports;
 pub mod schedules;
 pub mod users;

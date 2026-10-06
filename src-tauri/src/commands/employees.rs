@@ -5,10 +5,11 @@ use crate::auth::kiosk_lock::KioskLock;
 use crate::auth::permissions::Permission;
 use crate::domain::compensation::{Compensation, CompensationInput};
 use crate::domain::employee::{Employee, EmployeeInput, EmployeePage, EmployeeQuery};
+use crate::domain::recurring_item::{RecurringItem, RecurringItemInput};
 use crate::domain::schedule::{ScheduleAssignment, ScheduleChangeInput};
 use crate::error::AppError;
 use crate::services::accounts::{self, AccountSummary, NewStaffAccount};
-use crate::services::{compensation, employees, kiosk, schedules};
+use crate::services::{compensation, employees, kiosk, recurring_items, schedules};
 use crate::state::AppState;
 use chrono::{Local, Utc};
 use tauri::State;
@@ -89,6 +90,41 @@ pub async fn employee_add_compensation(
 ) -> Result<Compensation, AppError> {
     let session = state.require(Permission::EmployeeWrite).await?;
     compensation::add(&state.db, session.actor(), id, input, Utc::now()).await
+}
+
+#[tauri::command]
+pub async fn employee_recurring_items(
+    state: State<'_, AppState>,
+    id: i64,
+) -> Result<Vec<RecurringItem>, AppError> {
+    state.require(Permission::EmployeeReadAll).await?;
+    recurring_items::list(&state.db, id).await
+}
+
+#[tauri::command]
+pub async fn employee_add_recurring_item(
+    state: State<'_, AppState>,
+    id: i64,
+    input: RecurringItemInput,
+) -> Result<RecurringItem, AppError> {
+    let session = state.require(Permission::EmployeeWrite).await?;
+    recurring_items::create(&state.db, session.actor(), id, input, Utc::now()).await
+}
+
+#[tauri::command]
+pub async fn recurring_item_update(
+    state: State<'_, AppState>,
+    id: i64,
+    input: RecurringItemInput,
+) -> Result<RecurringItem, AppError> {
+    let session = state.require(Permission::EmployeeWrite).await?;
+    recurring_items::update(&state.db, session.actor(), id, input, Utc::now()).await
+}
+
+#[tauri::command]
+pub async fn recurring_item_delete(state: State<'_, AppState>, id: i64) -> Result<(), AppError> {
+    let session = state.require(Permission::EmployeeWrite).await?;
+    recurring_items::delete(&state.db, session.actor(), id, Utc::now()).await
 }
 
 #[tauri::command]

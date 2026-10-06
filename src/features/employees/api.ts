@@ -6,6 +6,8 @@ import type { Employee } from "@/bindings/Employee";
 import type { EmployeeInput } from "@/bindings/EmployeeInput";
 import type { EmployeePage } from "@/bindings/EmployeePage";
 import type { EmployeeQuery } from "@/bindings/EmployeeQuery";
+import type { RecurringItem } from "@/bindings/RecurringItem";
+import type { RecurringItemInput } from "@/bindings/RecurringItemInput";
 import type { ScheduleAssignment } from "@/bindings/ScheduleAssignment";
 import type { ScheduleChangeInput } from "@/bindings/ScheduleChangeInput";
 import { call } from "@/lib/ipc";
@@ -23,6 +25,13 @@ export const compensationHistory = (id: number) =>
   call<Compensation[]>("employee_compensation_history", { id });
 export const addCompensation = (id: number, input: CompensationInput) =>
   call<Compensation>("employee_add_compensation", { id, input });
+export const recurringItems = (id: number) =>
+  call<RecurringItem[]>("employee_recurring_items", { id });
+export const addRecurringItem = (id: number, input: RecurringItemInput) =>
+  call<RecurringItem>("employee_add_recurring_item", { id, input });
+export const updateRecurringItem = (id: number, input: RecurringItemInput) =>
+  call<RecurringItem>("recurring_item_update", { id, input });
+export const deleteRecurringItem = (id: number) => call<void>("recurring_item_delete", { id });
 export const scheduleHistory = (id: number) =>
   call<ScheduleAssignment[]>("employee_schedule_history", { id });
 export const changeSchedule = (id: number, input: ScheduleChangeInput) =>
