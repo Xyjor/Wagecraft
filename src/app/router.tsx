@@ -13,6 +13,7 @@ import { MyLeavePage } from "@/features/leave/MyLeavePage";
 import { HolidaysPage } from "@/features/org/HolidaysPage";
 import { OrganizationPage } from "@/features/org/OrganizationPage";
 import { OvertimePage } from "@/features/overtime/OvertimePage";
+import { MyPayslipsPage } from "@/features/payroll/MyPayslipsPage";
 import { PayrollPage } from "@/features/payroll/PayrollPage";
 import { RegisterPage } from "@/features/payroll/RegisterPage";
 import { UsersPage } from "@/features/users/UsersPage";
@@ -25,6 +26,7 @@ export const router = createBrowserRouter([
       { path: "me", element: <MyProfilePage /> },
       { path: "my-attendance", element: <MyAttendancePage /> },
       { path: "my-leave", element: <MyLeavePage /> },
+      { path: "my-payslips", element: <MyPayslipsPage /> },
       { path: "attendance", element: <AttendancePage /> },
       { path: "overtime", element: <OvertimePage /> },
       { path: "leave", element: <LeavePage /> },

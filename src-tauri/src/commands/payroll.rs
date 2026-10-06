@@ -1,13 +1,14 @@
 //! Payroll periods and payslips (plan §6.5). Creating, deleting and computing periods
-//! needs `payroll.compute`; reading any payslip needs `payslip.read_all`.
+//! needs `payroll.compute`; reading any payslip needs `payslip.read_all`. Staff read their
+//! own posted payslips with `self.payslip`.
 
 use crate::auth::permissions::Permission;
 use crate::domain::payroll_period::{
-    PayrollPeriod, PayrollPeriodInput, PayrollRegister, PayslipDetail, PeriodChecks,
+    MyPayslip, PayrollPeriod, PayrollPeriodInput, PayrollRegister, PayslipDetail, PeriodChecks,
     RulePackSummary,
 };
 use crate::error::AppError;
-use crate::services::{payroll, payroll_approval, payslips};
+use crate::services::{accounts, payroll, payroll_approval, payslips};
 use crate::state::AppState;
 use chrono::{Local, Utc};
 use tauri::State;
@@ -115,4 +116,28 @@ pub async fn payroll_register(
 pub async fn payslip_get(state: State<'_, AppState>, id: i64) -> Result<PayslipDetail, AppError> {
     state.require(Permission::PayslipReadAll).await?;
     payslips::payslip(&state.db, id).await
+}
+
+/// The signed-in employee's posted payslips. The employee comes from the session, never
+/// the UI, so nobody can ask for someone else's (plan §3.3).
+#[tauri::command]
+pub async fn payslip_my_list(state: State<'_, AppState>) -> Result<Vec<MyPayslip>, AppError> {
+    let session = state.require(Permission::SelfPayslip).await?;
+    let id = accounts::employee_of(&state.db, session.user_id)
+        .await?
+        .ok_or(AppError::NotFound("Employee"))?;
+    payslips::mine(&state.db, id).await
+}
+
+/// One of the signed-in employee's own posted payslips.
+#[tauri::command]
+pub async fn payslip_my_get(
+    state: State<'_, AppState>,
+    id: i64,
+) -> Result<PayslipDetail, AppError> {
+    let session = state.require(Permission::SelfPayslip).await?;
+    let employee_id = accounts::employee_of(&state.db, session.user_id)
+        .await?
+        .ok_or(AppError::NotFound("Employee"))?;
+    payslips::my_payslip(&state.db, employee_id, id).await
 }

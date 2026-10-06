@@ -1,3 +1,4 @@
+import type { MyPayslip } from "@/bindings/MyPayslip";
 import type { PayrollPeriod } from "@/bindings/PayrollPeriod";
 import type { PayrollPeriodInput } from "@/bindings/PayrollPeriodInput";
 import type { PayrollRegister } from "@/bindings/PayrollRegister";
@@ -24,3 +25,5 @@ export const sendBackPayroll = (periodId: number, reason: string) =>
 export const postPayroll = (periodId: number) =>
   call<PayrollRegister>("payroll_post", { periodId });
 export const getPayslip = (id: number) => call<PayslipDetail>("payslip_get", { id });
+export const myPayslips = () => call<MyPayslip[]>("payslip_my_list");
+export const getMyPayslip = (id: number) => call<PayslipDetail>("payslip_my_get", { id });

@@ -112,6 +112,22 @@ pub struct SkippedEmployee {
     pub reason: String,
 }
 
+/// One of the signed-in employee's posted payslips, for their list.
+#[derive(Debug, Clone, Serialize, FromRow, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export)]
+pub struct MyPayslip {
+    #[ts(type = "number")]
+    pub id: i64,
+    pub period_start: String,
+    pub period_end: String,
+    pub pay_date: String,
+    #[ts(type = "number")]
+    pub gross_cents: i64,
+    #[ts(type = "number")]
+    pub net_cents: i64,
+}
+
 /// One payslip, line by line.
 #[derive(Debug, Clone, Serialize, TS)]
 #[serde(rename_all = "camelCase")]
@@ -121,6 +137,7 @@ pub struct PayslipDetail {
     pub id: i64,
     pub period_start: String,
     pub period_end: String,
+    pub pay_date: String,
     pub employee_no: String,
     pub employee_name: String,
     #[ts(type = "\"MONTHLY\" | \"DAILY\"")]

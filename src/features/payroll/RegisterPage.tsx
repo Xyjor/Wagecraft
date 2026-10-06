@@ -1,8 +1,7 @@
-import { useEffect, useState, type FormEvent, type ReactNode } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { Link, useParams } from "react-router";
 import type { PayrollRegister } from "@/bindings/PayrollRegister";
 import type { PayslipDetail } from "@/bindings/PayslipDetail";
-import type { PayslipLine } from "@/bindings/PayslipLine";
 import type { RegisterRow } from "@/bindings/RegisterRow";
 import { Field, FormAlert } from "@/components/form";
 import { Badge, primaryButton, quietButton } from "@/components/ui";
@@ -18,7 +17,8 @@ import {
   postPayroll,
   sendBackPayroll,
 } from "./api";
-import { periodLabel, quantityText, STATUS_LABELS, STATUS_TONES } from "./periods";
+import { PayslipView } from "./PayslipView";
+import { periodLabel, STATUS_LABELS, STATUS_TONES } from "./periods";
 
 export function RegisterPage() {
   const { me } = useSession();
@@ -337,49 +337,5 @@ function Payslip({ id, name }: { id: number; name: string }) {
   }, [id]);
 
   if (!slip) return <FormAlert message={alert} />;
-  const employee = slip.lines.filter((l) => l.kind !== "EMPLOYER_SHARE");
-  const employer = slip.lines.filter((l) => l.kind === "EMPLOYER_SHARE");
-
-  return (
-    <section
-      aria-label={`Payslip for ${name}`}
-      className="grid gap-4 rounded-lg border border-zinc-200 p-4 sm:grid-cols-2 dark:border-zinc-800"
-    >
-      <LineTable title="Earnings and deductions" lines={employee}>
-        <tr className="border-t border-zinc-300 font-medium dark:border-zinc-700">
-          <td className="py-1">Net pay</td>
-          <td />
-          <td className="py-1 text-right tabular-nums">{formatPesos(slip.netCents)}</td>
-        </tr>
-      </LineTable>
-      <LineTable title="Employer contributions" lines={employer} />
-    </section>
-  );
-}
-
-function LineTable({
-  title,
-  lines,
-  children,
-}: {
-  title: string;
-  lines: PayslipLine[];
-  children?: ReactNode;
-}) {
-  return (
-    <table className="w-full self-start text-sm">
-      <caption className="pb-1 text-left font-medium">{title}</caption>
-      <tbody>
-        {lines.map((l, i) => (
-          // Several loans or deductions share a code, so the position keeps keys unique.
-          <tr key={`${i}-${l.code}`}>
-            <td className="py-1">{l.label}</td>
-            <td className="py-1 text-zinc-500">{quantityText(l.quantity, l.unit)}</td>
-            <td className="py-1 text-right tabular-nums">{formatPesos(l.amountCents)}</td>
-          </tr>
-        ))}
-        {children}
-      </tbody>
-    </table>
-  );
+  return <PayslipView slip={slip} label={`Payslip for ${name}`} />;
 }

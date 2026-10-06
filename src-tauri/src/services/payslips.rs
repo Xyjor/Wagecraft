@@ -13,7 +13,7 @@ use crate::domain::payroll::inputs::{day_record, DayFacts, LeaveFacts, RecordFac
 use crate::domain::payroll::payslip::compute_payslip;
 use crate::domain::payroll::rates::PayBasis;
 use crate::domain::payroll_period::{
-    PayrollPeriod, PayrollRegister, PayslipDetail, PayslipLine, RegisterRow,
+    MyPayslip, PayrollPeriod, PayrollRegister, PayslipDetail, PayslipLine, RegisterRow,
 };
 use crate::domain::recurring_item::{for_cutoff, DeductionSource};
 use crate::domain::schedule::ScheduleHistory;
@@ -216,6 +216,7 @@ pub async fn payslip(db: &SqlitePool, id: i64) -> Result<PayslipDetail, AppError
         id: p.id,
         period_start: period.period_start,
         period_end: period.period_end,
+        pay_date: period.pay_date,
         employee_no: p.employee_no,
         employee_name: p.employee_name,
         pay_basis: p.pay_basis,
@@ -229,6 +230,25 @@ pub async fn payslip(db: &SqlitePool, id: i64) -> Result<PayslipDetail, AppError
         net_cents: p.net_cents,
         warnings: warnings(&p.warnings_json),
     })
+}
+
+/// The employee's payslips from posted periods, newest first. Staff never see a payslip
+/// before its period is posted (plan §6.5).
+pub async fn mine(db: &SqlitePool, employee_id: i64) -> Result<Vec<MyPayslip>, AppError> {
+    Ok(repo::posted_for_employee(db, employee_id).await?)
+}
+
+/// One of the employee's own posted payslips. Anyone else's, or one not yet posted, is
+/// "not found", so staff can't tell whether it exists.
+pub async fn my_payslip(
+    db: &SqlitePool,
+    employee_id: i64,
+    id: i64,
+) -> Result<PayslipDetail, AppError> {
+    if !repo::is_posted_for(db, employee_id, id).await? {
+        return Err(AppError::NotFound("Payslip"));
+    }
+    payslip(db, id).await
 }
 
 /// What compute gathers for one employee.
@@ -649,6 +669,44 @@ mod tests {
             ["Minimum wage earner: no tax withheld on this payslip."]
         );
         assert!(reg.rows[1].warnings.is_empty());
+    }
+
+    #[tokio::test]
+    async fn staff_see_only_their_own_payslips_once_posted() {
+        let (_d, db, period) = db().await;
+        employee(&db, 1, "Santos", "2025-01-06", "MONTHLY", 2_500_000).await;
+        employee(&db, 2, "Reyes", "2025-01-06", "MONTHLY", 2_000_000).await;
+        full_days(&db, 1, &work_days_except(&[])).await;
+        full_days(&db, 2, &work_days_except(&[])).await;
+        let reg = compute(&db, hr(), period, now()).await.expect("compute");
+        let slip_of = |no: &str| {
+            reg.rows
+                .iter()
+                .find(|r| r.employee_no == no)
+                .expect("row")
+                .payslip_id
+        };
+        let (santos, reyes) = (slip_of("EMP-0001"), slip_of("EMP-0002"));
+
+        // Computed is not enough: HR may still change it.
+        assert!(mine(&db, 1).await.expect("mine").is_empty());
+        let r = my_payslip(&db, 1, santos).await;
+        assert!(matches!(r, Err(AppError::NotFound("Payslip"))), "{r:?}");
+
+        sql(&db, "UPDATE payroll_periods SET status = 'POSTED'").await;
+        let list = mine(&db, 1).await.expect("mine");
+        assert_eq!(list.len(), 1);
+        assert_eq!(list[0].id, santos);
+        assert_eq!(
+            (list[0].period_start.as_str(), list[0].pay_date.as_str()),
+            ("2026-10-16", "2026-10-31")
+        );
+        assert_eq!(list[0].net_cents, reg.rows[1].net_cents);
+        let own = my_payslip(&db, 1, santos).await.expect("own");
+        assert_eq!(own.employee_no, "EMP-0001");
+        assert_eq!(own.pay_date, "2026-10-31");
+        let r = my_payslip(&db, 1, reyes).await;
+        assert!(matches!(r, Err(AppError::NotFound("Payslip"))), "{r:?}");
     }
 
     #[tokio::test]
