@@ -132,6 +132,8 @@ pub fn run() {
             commands::leave::leave_request_pending,
             commands::leave::leave_request_decide,
             commands::reports::report_masterlist_csv,
+            commands::reports::report_payroll_register,
+            commands::reports::report_payroll_register_csv,
         ])
         .run(tauri::generate_context!())
         .expect("error while running Wagecraft");

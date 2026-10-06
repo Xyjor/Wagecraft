@@ -1,12 +1,10 @@
-import { type ReactNode, useState } from "react";
+import type { ReactNode } from "react";
 import type { PayslipDetail } from "@/bindings/PayslipDetail";
 import type { PayslipLine } from "@/bindings/PayslipLine";
-import { FormAlert } from "@/components/form";
-import { quietButton } from "@/components/ui";
-import type { AppError } from "@/lib/ipc";
 import { formatPesos } from "@/lib/money";
 import { savePdf } from "./api";
 import { payslipFileName, renderPayslipPdf } from "./payslipPdf";
+import { SaveButton } from "./SaveButton";
 import { quantityText } from "./periods";
 
 /** One payslip, line by line: what the employee earned and paid, then the employer's share. */
@@ -60,38 +58,14 @@ function LineTable({
 }
 
 function DownloadPdf({ slip, label }: { slip: PayslipDetail; label: string }) {
-  const [busy, setBusy] = useState(false);
-  const [saved, setSaved] = useState<string>();
-  const [alert, setAlert] = useState<string>();
-
-  async function download() {
-    setBusy(true);
-    setSaved(undefined);
-    setAlert(undefined);
-    try {
-      const path = await savePdf(payslipFileName(slip), await renderPayslipPdf(slip));
-      if (path) setSaved(path);
-    } catch (e) {
-      // A save error comes back as an AppError; a layout error from the PDF library doesn't.
-      setAlert((e as Partial<AppError>).message ?? "The PDF couldn't be made. Please try again");
-    } finally {
-      setBusy(false);
-    }
-  }
-
   return (
-    <div className="flex flex-wrap items-center gap-3 sm:col-span-2">
-      <button
-        type="button"
-        className={quietButton}
-        aria-label={`Download PDF of ${label}`}
-        disabled={busy}
-        onClick={download}
-      >
-        {busy ? "Making PDF…" : "Download PDF"}
-      </button>
-      {saved && <p className="text-sm text-zinc-500">Saved to {saved}</p>}
-      <FormAlert message={alert} />
+    <div className="sm:col-span-2">
+      <SaveButton
+        label="Download PDF"
+        busyLabel="Making PDF…"
+        ariaLabel={`Download PDF of ${label}`}
+        save={async () => savePdf(payslipFileName(slip), await renderPayslipPdf(slip))}
+      />
     </div>
   );
 }

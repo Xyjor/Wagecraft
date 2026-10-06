@@ -191,6 +191,43 @@ pub struct PayrollRegister {
     pub skipped: Vec<SkippedEmployee>,
 }
 
+/// The payroll register as a report (plan §6.8): each deduction in its own column, and a
+/// totals row. Deductions are positive amounts.
+#[derive(Debug, Clone, Serialize, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export)]
+pub struct RegisterReport {
+    pub period: PayrollPeriod,
+    /// Empty until setup names the company.
+    pub company_name: String,
+    pub rows: Vec<RegisterReportRow>,
+    /// Every column added up; the name is "Total" and the number is empty.
+    pub totals: RegisterReportRow,
+}
+
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, FromRow, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export)]
+pub struct RegisterReportRow {
+    pub employee_no: String,
+    pub employee_name: String,
+    #[ts(type = "number")]
+    pub gross_cents: i64,
+    #[ts(type = "number")]
+    pub sss_cents: i64,
+    #[ts(type = "number")]
+    pub philhealth_cents: i64,
+    #[ts(type = "number")]
+    pub pagibig_cents: i64,
+    #[ts(type = "number")]
+    pub tax_cents: i64,
+    /// Loans and other deductions.
+    #[ts(type = "number")]
+    pub other_deductions_cents: i64,
+    #[ts(type = "number")]
+    pub net_cents: i64,
+}
+
 #[derive(Debug, Clone, Serialize, TS)]
 #[serde(rename_all = "camelCase")]
 #[ts(export)]

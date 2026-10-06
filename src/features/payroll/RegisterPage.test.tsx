@@ -175,6 +175,7 @@ describe("RegisterPage", () => {
       await screen.findByRole("heading", { name: "Payroll for Oct 16 – 31, 2026" }),
     ).toBeTruthy();
     expect(screen.getByText("Not computed yet.")).toBeTruthy();
+    expect(screen.queryByRole("button", { name: "Download CSV" })).toBeNull();
     fireEvent.click(screen.getByRole("button", { name: "Compute payroll" }));
     await waitFor(() => expect(call).toHaveBeenCalledWith("payroll_compute", { periodId: 4 }));
 
@@ -185,6 +186,9 @@ describe("RegisterPage", () => {
     expect(within(totals).getByText("₱18,267.52")).toBeTruthy();
     expect(within(totals).getByText("₱16,675.57")).toBeTruthy();
     expect(screen.getByRole("button", { name: "Recompute" })).toBeTruthy();
+    // Once there are payslips, the register can be downloaded.
+    expect(screen.getByRole("button", { name: "Download CSV" })).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Download PDF" })).toBeTruthy();
   });
 
   it("shows warnings and who was left out", async () => {
