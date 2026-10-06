@@ -50,6 +50,116 @@ pub struct RulePackSummary {
     pub effective_to: Option<String>,
 }
 
+/// Everything in a rule pack, for the read-only viewer (plan §6.5). Money is in centavos
+/// and rates in basis points, as stored; the screen formats them.
+#[derive(Debug, Clone, Serialize, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export)]
+pub struct RulePackDetail {
+    pub summary: RulePackSummary,
+    pub settings: RulePackSettings,
+    pub sss_brackets: Vec<SssBracketRow>,
+    /// Semi-monthly brackets first, each lowest first.
+    pub tax_brackets: Vec<TaxBracketRow>,
+    pub premiums: Vec<PremiumRow>,
+}
+
+/// `rule_packs.settings_json`.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export)]
+pub struct RulePackSettings {
+    /// Paid days per year for a 5-day and a 6-day work week.
+    pub factor_five_day: u32,
+    pub factor_six_day: u32,
+    #[ts(type = "number")]
+    pub sss_employee_bp: i64,
+    #[ts(type = "number")]
+    pub sss_employer_bp: i64,
+    pub philhealth: PhilHealthSettings,
+    pub pagibig: PagIbigSettings,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export)]
+pub struct PhilHealthSettings {
+    #[ts(type = "number")]
+    pub rate_bp: i64,
+    #[ts(type = "number")]
+    pub floor_cents: i64,
+    #[ts(type = "number")]
+    pub ceiling_cents: i64,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export)]
+pub struct PagIbigSettings {
+    /// Monthly pay up to this uses the low rate for the employee's share.
+    #[ts(type = "number")]
+    pub low_pay_limit_cents: i64,
+    #[ts(type = "number")]
+    pub low_rate_bp: i64,
+    #[ts(type = "number")]
+    pub employee_bp: i64,
+    #[ts(type = "number")]
+    pub employer_bp: i64,
+    #[ts(type = "number")]
+    pub max_base_cents: i64,
+}
+
+/// One SSS Monthly Salary Credit bracket. `to_cents` is inclusive; `None` on the top one.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, FromRow, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export)]
+pub struct SssBracketRow {
+    #[ts(type = "number")]
+    pub from_cents: i64,
+    #[ts(type = "number | null")]
+    pub to_cents: Option<i64>,
+    #[ts(type = "number")]
+    pub msc_cents: i64,
+    #[ts(type = "number")]
+    pub ee_cents: i64,
+    #[ts(type = "number")]
+    pub er_cents: i64,
+    /// Employees' Compensation, paid by the employer.
+    #[ts(type = "number")]
+    pub ec_cents: i64,
+}
+
+/// One withholding tax bracket: tax is `base_tax` plus `rate` of the amount over `over`.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, FromRow, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export)]
+pub struct TaxBracketRow {
+    #[ts(type = "\"SEMI_MONTHLY\" | \"MONTHLY\"")]
+    pub frequency: String,
+    #[ts(type = "number")]
+    pub over_cents: i64,
+    #[ts(type = "number | null")]
+    pub not_over_cents: Option<i64>,
+    #[ts(type = "number")]
+    pub base_tax_cents: i64,
+    #[ts(type = "number")]
+    pub rate_bp: i64,
+}
+
+/// Pay for work, overtime and night hours on one kind of day, as a share of the hourly rate.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, FromRow, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export)]
+pub struct PremiumRow {
+    pub day_type: String,
+    #[ts(type = "number")]
+    pub work_bp: i64,
+    #[ts(type = "number")]
+    pub ot_bp: i64,
+    #[ts(type = "number")]
+    pub night_diff_bp: i64,
+}
+
 /// Unfinished work inside a period that would change its payslips (plan §6.5). These are
 /// warnings: HR can still create the period and sort them out before computing.
 #[derive(Debug, Clone, Default, Serialize, TS)]

@@ -58,3 +58,12 @@ export function quantityText(quantity: string, unit: PayslipLine["unit"]): strin
       return "";
   }
 }
+
+/** 12500 → "125%", 250 → "2.5%". Integer math, so no rounding creeps in. */
+export function percentText(bp: number): string {
+  const whole = Math.trunc(bp / 100);
+  const part = String(bp % 100)
+    .padStart(2, "0")
+    .replace(/0+$/, "");
+  return `${whole}${part ? `.${part}` : ""}%`;
+}

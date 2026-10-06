@@ -63,7 +63,12 @@ function Payroll({ today }: { today: string }) {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-semibold tracking-tight">Payroll</h1>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h1 className="text-2xl font-semibold tracking-tight">Payroll</h1>
+        <Link to="/payroll/rules" className={quietButton}>
+          Rule packs
+        </Link>
+      </div>
       <p className="max-w-prose text-sm text-zinc-600 dark:text-zinc-400">
         Each pay period is one semi-monthly cutoff: the 1st to the 15th, or the 16th to the end of
         the month. Create the period, then compute, approve and post it.

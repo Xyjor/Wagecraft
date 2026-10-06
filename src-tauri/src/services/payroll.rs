@@ -3,7 +3,7 @@
 
 use crate::audit::{self, Actor, Entry};
 use crate::domain::payroll_period::{
-    cutoff, PayrollPeriod, PayrollPeriodInput, PeriodChecks, RulePackSummary,
+    cutoff, PayrollPeriod, PayrollPeriodInput, PeriodChecks, RulePackDetail, RulePackSummary,
 };
 use crate::error::{AppError, FieldError};
 use crate::repositories::payroll_periods::{self as repo, NewPeriod};
@@ -25,6 +25,14 @@ pub async fn list(db: &SqlitePool) -> Result<Vec<PayrollPeriod>, AppError> {
 
 pub async fn rule_packs(db: &SqlitePool) -> Result<Vec<RulePackSummary>, AppError> {
     Ok(rule_packs::active(db).await?)
+}
+
+/// One rule pack with all its rates and brackets, for the read-only viewer.
+pub async fn rule_pack(db: &SqlitePool, id: i64) -> Result<RulePackDetail, AppError> {
+    let mut conn = db.acquire().await?;
+    rule_packs::detail(&mut conn, id)
+        .await?
+        .ok_or(AppError::NotFound("Rule pack"))
 }
 
 /// Pending leave and overtime, and missing time-outs, inside the period starting on
@@ -432,6 +440,95 @@ mod tests {
         assert_eq!(packs[0].code, "PH-2026");
         assert_eq!(packs[0].effective_from, "2026-01-01");
         assert_eq!(packs[0].effective_to, None);
+    }
+
+    #[tokio::test]
+    async fn shows_every_value_in_a_rule_pack() {
+        let (_d, db) = db().await;
+        let id = rule_packs(&db).await.expect("packs")[0].id;
+        // A higher id moves a row last on disk, so the order checked below has to come
+        // from the query, not from the order the seed happened to insert rows in.
+        sql(
+            &db,
+            "UPDATE premium_rates SET id = 1000 WHERE day_type = 'ORDINARY'",
+        )
+        .await;
+        sql(
+            &db,
+            "UPDATE tax_brackets SET id = 1000 WHERE frequency = 'SEMI_MONTHLY' AND over_cents = 0",
+        )
+        .await;
+        let p = rule_pack(&db, id).await.expect("pack");
+
+        assert_eq!(p.summary.code, "PH-2026");
+        assert_eq!(
+            (p.settings.factor_five_day, p.settings.factor_six_day),
+            (261, 313)
+        );
+        assert_eq!(
+            (p.settings.sss_employee_bp, p.settings.sss_employer_bp),
+            (500, 1000)
+        );
+        assert_eq!(p.settings.philhealth.ceiling_cents, 10_000_000);
+        assert_eq!(p.settings.pagibig.max_base_cents, 1_000_000);
+
+        // MSC ₱5,000 to ₱35,000 in ₱500 steps, lowest first (plan Appendix A).
+        assert_eq!(p.sss_brackets.len(), 61);
+        let first = &p.sss_brackets[0];
+        assert_eq!(
+            (first.from_cents, first.to_cents, first.msc_cents),
+            (0, Some(524_999), 500_000)
+        );
+        assert_eq!(
+            (first.ee_cents, first.er_cents, first.ec_cents),
+            (25_000, 50_000, 1_000)
+        );
+        let top = &p.sss_brackets[60];
+        assert_eq!(
+            (top.from_cents, top.to_cents, top.msc_cents),
+            (3_475_000, None, 3_500_000)
+        );
+        assert_eq!(top.ec_cents, 3_000);
+
+        let tax: Vec<_> = p
+            .tax_brackets
+            .iter()
+            .map(|t| (t.frequency.as_str(), t.over_cents))
+            .collect();
+        assert_eq!(tax.len(), 12);
+        assert_eq!(
+            &tax[..2],
+            [("SEMI_MONTHLY", 0), ("SEMI_MONTHLY", 1_041_700)]
+        );
+        assert_eq!(tax[6], ("MONTHLY", 0));
+        let third = &p.tax_brackets[2];
+        assert_eq!(
+            (third.not_over_cents, third.base_tax_cents, third.rate_bp),
+            (Some(3_333_300), 93_750, 2000)
+        );
+
+        // In the engine's day-type order, ordinary days first.
+        let premiums: Vec<_> = p
+            .premiums
+            .iter()
+            .map(|r| (r.day_type.as_str(), r.work_bp, r.ot_bp, r.night_diff_bp))
+            .collect();
+        assert_eq!(premiums.len(), 8);
+        assert_eq!(premiums[0], ("ORDINARY", 10_000, 12_500, 1000));
+        assert_eq!(premiums[4], ("REGULAR", 20_000, 26_000, 1000));
+        assert_eq!(
+            premiums[7],
+            ("DOUBLE_REGULAR_REST_DAY", 39_000, 50_700, 1000)
+        );
+    }
+
+    #[tokio::test]
+    async fn an_unknown_rule_pack_is_not_found() {
+        let (_d, db) = db().await;
+        assert!(matches!(
+            rule_pack(&db, 999).await,
+            Err(AppError::NotFound("Rule pack"))
+        ));
     }
 
     #[tokio::test]

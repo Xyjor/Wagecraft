@@ -4,9 +4,10 @@
 use crate::domain::payroll::rules::{
     DayType, PagIbigRule, PhilHealthRule, PremiumRate, RulePack, SssBracket, TaxBracket,
 };
-use crate::domain::payroll_period::RulePackSummary;
+use crate::domain::payroll_period::{
+    PremiumRow, RulePackDetail, RulePackSettings as Settings, RulePackSummary,
+};
 use rust_decimal::Decimal;
-use serde::Deserialize;
 use sqlx::{SqliteConnection, SqliteExecutor};
 
 const SUMMARY: &str =
@@ -30,34 +31,55 @@ pub async fn active_by_id<'e>(
         .await
 }
 
-/// `rule_packs.settings_json`.
-#[derive(Deserialize)]
-#[serde(rename_all = "camelCase")]
-struct Settings {
-    factor_five_day: u32,
-    factor_six_day: u32,
-    sss_employee_bp: i64,
-    sss_employer_bp: i64,
-    philhealth: PhilHealthSettings,
-    pagibig: PagIbigSettings,
-}
+/// Every value in the pack with this id, active or not, for the viewer.
+pub async fn detail(
+    conn: &mut SqliteConnection,
+    id: i64,
+) -> anyhow::Result<Option<RulePackDetail>> {
+    let Some((settings,)): Option<(String,)> =
+        sqlx::query_as("SELECT settings_json FROM rule_packs WHERE id = ?")
+            .bind(id)
+            .fetch_optional(&mut *conn)
+            .await?
+    else {
+        return Ok(None);
+    };
+    let summary = sqlx::query_as(
+        "SELECT id, code, name, effective_from, effective_to FROM rule_packs WHERE id = ?",
+    )
+    .bind(id)
+    .fetch_one(&mut *conn)
+    .await?;
+    let sss_brackets = sqlx::query_as(
+        "SELECT range_from_cents AS from_cents, range_to_cents AS to_cents, \
+         base_cents AS msc_cents, ee_cents, er_cents, ec_cents FROM contribution_brackets \
+         WHERE rule_pack_id = ? AND agency = 'SSS' ORDER BY range_from_cents",
+    )
+    .bind(id)
+    .fetch_all(&mut *conn)
+    .await?;
+    let tax_brackets = sqlx::query_as(
+        "SELECT frequency, over_cents, not_over_cents, base_tax_cents, rate_bp FROM tax_brackets \
+         WHERE rule_pack_id = ? ORDER BY frequency = 'MONTHLY', over_cents",
+    )
+    .bind(id)
+    .fetch_all(&mut *conn)
+    .await?;
+    let mut premiums: Vec<PremiumRow> = sqlx::query_as(
+        "SELECT day_type, work_bp, ot_bp, night_diff_bp FROM premium_rates WHERE rule_pack_id = ?",
+    )
+    .bind(id)
+    .fetch_all(&mut *conn)
+    .await?;
+    premiums.sort_by_key(|r| DAY_TYPES.iter().position(|(name, _)| *name == r.day_type));
 
-#[derive(Deserialize)]
-#[serde(rename_all = "camelCase")]
-struct PhilHealthSettings {
-    rate_bp: i64,
-    floor_cents: i64,
-    ceiling_cents: i64,
-}
-
-#[derive(Deserialize)]
-#[serde(rename_all = "camelCase")]
-struct PagIbigSettings {
-    low_pay_limit_cents: i64,
-    low_rate_bp: i64,
-    employee_bp: i64,
-    employer_bp: i64,
-    max_base_cents: i64,
+    Ok(Some(RulePackDetail {
+        summary,
+        settings: serde_json::from_str(&settings)?,
+        sss_brackets,
+        tax_brackets,
+        premiums,
+    }))
 }
 
 fn pesos(cents: i64) -> Decimal {

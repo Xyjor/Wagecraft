@@ -107,6 +107,7 @@ pub fn run() {
             commands::payroll::payroll_period_create,
             commands::payroll::payroll_period_delete,
             commands::payroll::rule_pack_list,
+            commands::payroll::rule_pack_get,
             commands::payroll::payroll_compute,
             commands::payroll::payroll_approve,
             commands::payroll::payroll_send_back,
