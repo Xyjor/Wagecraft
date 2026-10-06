@@ -625,6 +625,7 @@ pub(crate) async fn cancel_after_separation(
 mod tests {
     use super::*;
     use crate::audit::test_support as audit_rows;
+    use crate::services::payroll_fixtures::posted;
     use chrono::TimeZone;
 
     fn t0() -> DateTime<Utc> {
@@ -1231,6 +1232,50 @@ mod tests {
                 .unwrap_err(),
             AppError::Conflict(LOCKED)
         ));
+    }
+
+    #[tokio::test]
+    async fn a_posted_period_locks_its_days_even_without_attendance() {
+        let (_d, db) = db().await;
+        let pending = file(
+            &db,
+            juan(),
+            Some(1),
+            leave(&db, "VL", "2026-10-12", "2026-10-13").await,
+            today(),
+            t0(),
+        )
+        .await
+        .expect("file");
+        let approved = file(
+            &db,
+            juan(),
+            Some(1),
+            leave(&db, "SL", "2026-10-14", "2026-10-14").await,
+            today(),
+            t0(),
+        )
+        .await
+        .expect("file");
+        decide(&db, hr(), None, approved.id, true, None, t0())
+            .await
+            .expect("approve");
+        posted(&db, "2026-10-01", "2026-10-15").await;
+
+        let read = repo::by_id(&db, pending.id).await.expect("read");
+        assert!(read.expect("row").locked);
+        let r = decide(&db, hr(), None, pending.id, true, None, t0()).await;
+        assert!(matches!(r, Err(AppError::Conflict(LOCKED))));
+        let r = cancel(&db, hr(), None, true, approved.id, t0()).await;
+        assert!(matches!(r, Err(AppError::Conflict(LOCKED))));
+        let new = leave(&db, "VL", "2026-10-15", "2026-10-16").await;
+        let r = file(&db, juan(), Some(1), new, today(), t0()).await;
+        assert!(matches!(r, Err(AppError::Conflict(LOCKED))));
+        // Days after the period are still open.
+        let after = leave(&db, "VL", "2026-10-19", "2026-10-19").await;
+        file(&db, juan(), Some(1), after, today(), t0())
+            .await
+            .expect("after the period");
     }
 
     #[tokio::test]

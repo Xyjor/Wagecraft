@@ -5,7 +5,9 @@ use sqlx::{SqliteConnection, SqliteExecutor};
 
 const HOLIDAY: &str = "SELECT h.id, h.date, h.name, h.type AS kind, \
     EXISTS (SELECT 1 FROM attendance_records a \
-            WHERE a.work_date = h.date AND a.locked_by_period_id IS NOT NULL) AS locked \
+            WHERE a.work_date = h.date AND a.locked_by_period_id IS NOT NULL) \
+    OR EXISTS (SELECT 1 FROM payroll_periods pp WHERE pp.status = 'POSTED' \
+            AND h.date BETWEEN pp.period_start AND pp.period_end) AS locked \
     FROM holidays h";
 
 /// Every holiday in `year`, by date then name.
@@ -57,12 +59,15 @@ pub async fn name_taken(
     .await
 }
 
-/// Whether any attendance on `date` is in a posted payroll period.
+/// Whether `date` is in a posted payroll period, or any attendance on it is locked by one.
 pub async fn date_locked(conn: &mut SqliteConnection, date: &str) -> sqlx::Result<bool> {
     sqlx::query_scalar(
         "SELECT EXISTS (SELECT 1 FROM attendance_records \
-         WHERE work_date = ? AND locked_by_period_id IS NOT NULL)",
+         WHERE work_date = ? AND locked_by_period_id IS NOT NULL) \
+         OR EXISTS (SELECT 1 FROM payroll_periods WHERE status = 'POSTED' \
+         AND ? BETWEEN period_start AND period_end)",
     )
+    .bind(date)
     .bind(date)
     .fetch_one(conn)
     .await

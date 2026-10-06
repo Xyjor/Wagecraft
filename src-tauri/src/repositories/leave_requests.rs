@@ -11,7 +11,9 @@ const REQUEST: &str = "SELECT r.id, r.employee_id, e.employee_no, \
     r.decision_note, \
     EXISTS (SELECT 1 FROM attendance_records a WHERE a.employee_id = r.employee_id \
             AND a.work_date BETWEEN r.start_date AND r.end_date \
-            AND a.locked_by_period_id IS NOT NULL) AS locked \
+            AND a.locked_by_period_id IS NOT NULL) \
+    OR EXISTS (SELECT 1 FROM payroll_periods pp WHERE pp.status = 'POSTED' \
+            AND pp.period_start <= r.end_date AND pp.period_end >= r.start_date) AS locked \
     FROM leave_requests r \
     JOIN employees e ON e.id = r.employee_id \
     JOIN leave_types t ON t.id = r.leave_type_id \
@@ -118,7 +120,8 @@ pub async fn days_off(
     .await
 }
 
-/// Whether any of the employee's attendance in `[from, to]` is in a posted payroll period.
+/// Whether any day in `[from, to]` is in a posted payroll period, or has attendance locked
+/// by one.
 pub async fn range_locked(
     conn: &mut SqliteConnection,
     employee_id: i64,
@@ -127,11 +130,15 @@ pub async fn range_locked(
 ) -> sqlx::Result<bool> {
     sqlx::query_scalar(
         "SELECT EXISTS (SELECT 1 FROM attendance_records WHERE employee_id = ? \
-         AND work_date BETWEEN ? AND ? AND locked_by_period_id IS NOT NULL)",
+         AND work_date BETWEEN ? AND ? AND locked_by_period_id IS NOT NULL) \
+         OR EXISTS (SELECT 1 FROM payroll_periods WHERE status = 'POSTED' \
+         AND period_start <= ? AND period_end >= ?)",
     )
     .bind(employee_id)
     .bind(from)
     .bind(to)
+    .bind(to)
+    .bind(from)
     .fetch_one(conn)
     .await
 }

@@ -192,3 +192,18 @@ pub(crate) async fn november(db: &SqlitePool, id: i64) -> i64 {
     full_days(db, id, &days).await;
     p.id
 }
+
+/// A payroll period from `start` to `end` that is already posted, with no attendance in it.
+pub(crate) async fn posted(db: &SqlitePool, start: &str, end: &str) {
+    sqlx::query(
+        "INSERT INTO payroll_periods (period_start, period_end, pay_date, cutoff_no, status, \
+         rule_pack_id, created_at) VALUES (?, ?, ?, 1, 'POSTED', \
+         (SELECT id FROM rule_packs LIMIT 1), '2026-01-01T00:00:00Z')",
+    )
+    .bind(start)
+    .bind(end)
+    .bind(end)
+    .execute(db)
+    .await
+    .expect("posted period");
+}
