@@ -217,8 +217,11 @@ pub async fn payslip(db: &SqlitePool, id: i64) -> Result<PayslipDetail, AppError
         period_start: period.period_start,
         period_end: period.period_end,
         pay_date: period.pay_date,
+        company_name: repo::company_name(&mut *conn).await?,
         employee_no: p.employee_no,
         employee_name: p.employee_name,
+        department: p.department,
+        position: p.position,
         pay_basis: p.pay_basis,
         rate_cents: p.rate_cents,
         lines: repo::lines(&mut *conn, id).await?,
@@ -707,6 +710,31 @@ mod tests {
         assert_eq!(own.pay_date, "2026-10-31");
         let r = my_payslip(&db, 1, reyes).await;
         assert!(matches!(r, Err(AppError::NotFound("Payslip"))), "{r:?}");
+    }
+
+    #[tokio::test]
+    async fn a_payslip_names_the_company_and_the_employee_s_department_and_position() {
+        let (_d, db, period) = db().await;
+        employee(&db, 1, "Santos", "2025-01-06", "MONTHLY", 2_500_000).await;
+        employee(&db, 2, "Reyes", "2025-01-06", "MONTHLY", 2_000_000).await;
+        full_days(&db, 1, &work_days_except(&[])).await;
+        full_days(&db, 2, &work_days_except(&[])).await;
+        sql(
+            &db,
+            "INSERT INTO settings (key, value) VALUES ('company_name', 'Acme Trading'); \
+             INSERT INTO departments (id, code, name) VALUES (5, 'OPS', 'Operations'); \
+             INSERT INTO positions (id, department_id, title) VALUES (7, 5, 'Driver'); \
+             UPDATE employees SET department_id = 5, position_id = 7 WHERE id = 1",
+        )
+        .await;
+        let reg = compute(&db, hr(), period, now()).await.expect("compute");
+
+        let santos = payslip(&db, reg.rows[1].payslip_id).await.expect("santos");
+        assert_eq!(santos.company_name, "Acme Trading");
+        assert_eq!(santos.department.as_deref(), Some("Operations"));
+        assert_eq!(santos.position.as_deref(), Some("Driver"));
+        let reyes = payslip(&db, reg.rows[0].payslip_id).await.expect("reyes");
+        assert_eq!((reyes.department, reyes.position), (None, None));
     }
 
     #[tokio::test]

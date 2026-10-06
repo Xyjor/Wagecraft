@@ -217,6 +217,8 @@ pub struct PayslipRow {
     pub payroll_period_id: i64,
     pub employee_no: String,
     pub employee_name: String,
+    pub department: Option<String>,
+    pub position: Option<String>,
     pub pay_basis: String,
     pub rate_cents: i64,
     pub gross_cents: i64,
@@ -229,10 +231,13 @@ pub struct PayslipRow {
 }
 
 const PAYSLIP: &str = "SELECT p.id, p.payroll_period_id, e.employee_no, \
-    e.last_name || ', ' || e.first_name AS employee_name, p.pay_basis, p.rate_cents, \
+    e.last_name || ', ' || e.first_name AS employee_name, d.name AS department, \
+    pos.title AS position, p.pay_basis, p.rate_cents, \
     p.gross_cents, p.taxable_cents, p.statutory_ee_cents, p.tax_cents, \
     p.other_deductions_cents, p.net_cents, p.warnings_json \
-    FROM payslips p JOIN employees e ON e.id = p.employee_id";
+    FROM payslips p JOIN employees e ON e.id = p.employee_id \
+    LEFT JOIN departments d ON d.id = e.department_id \
+    LEFT JOIN positions pos ON pos.id = e.position_id";
 
 /// The period's payslips, by employee name.
 pub async fn for_period<'e>(
@@ -336,4 +341,13 @@ pub async fn inputs_for_period<'e>(
         .bind(period_id)
         .fetch_all(db)
         .await
+}
+
+/// The company name from setup, or empty if it was never set.
+pub async fn company_name<'e>(db: impl SqliteExecutor<'e>) -> sqlx::Result<String> {
+    let name: Option<String> =
+        sqlx::query_scalar("SELECT value FROM settings WHERE key = 'company_name'")
+            .fetch_optional(db)
+            .await?;
+    Ok(name.unwrap_or_default())
 }

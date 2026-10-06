@@ -27,3 +27,6 @@ export const postPayroll = (periodId: number) =>
 export const getPayslip = (id: number) => call<PayslipDetail>("payslip_get", { id });
 export const myPayslips = () => call<MyPayslip[]>("payslip_my_list");
 export const getMyPayslip = (id: number) => call<PayslipDetail>("payslip_my_get", { id });
+/** Asks where to save, then writes the file. Null when the person cancels. */
+export const savePdf = (fileName: string, bytes: Uint8Array) =>
+  call<string | null>("export_save_pdf", { fileName, bytes: Array.from(bytes) });
