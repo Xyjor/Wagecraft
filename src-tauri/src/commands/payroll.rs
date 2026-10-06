@@ -7,9 +7,9 @@ use crate::domain::payroll_period::{
     RulePackSummary,
 };
 use crate::error::AppError;
-use crate::services::{payroll, payslips};
+use crate::services::{payroll, payroll_approval, payslips};
 use crate::state::AppState;
-use chrono::Utc;
+use chrono::{Local, Utc};
 use tauri::State;
 
 #[tauri::command]
@@ -59,6 +59,47 @@ pub async fn payroll_compute(
 ) -> Result<PayrollRegister, AppError> {
     let session = state.require(Permission::PayrollCompute).await?;
     payslips::compute(&state.db, session.actor(), period_id, Utc::now()).await
+}
+
+#[tauri::command]
+pub async fn payroll_approve(
+    state: State<'_, AppState>,
+    period_id: i64,
+) -> Result<PayrollRegister, AppError> {
+    let session = state.require(Permission::PayrollApprove).await?;
+    payroll_approval::approve(&state.db, session.actor(), period_id, Utc::now()).await?;
+    payslips::register(&state.db, period_id).await
+}
+
+#[tauri::command]
+pub async fn payroll_send_back(
+    state: State<'_, AppState>,
+    period_id: i64,
+    reason: String,
+) -> Result<PayrollRegister, AppError> {
+    let session = state.require(Permission::PayrollApprove).await?;
+    payroll_approval::send_back(&state.db, session.actor(), period_id, &reason, Utc::now()).await?;
+    payslips::register(&state.db, period_id).await
+}
+
+#[tauri::command]
+pub async fn payroll_post(
+    state: State<'_, AppState>,
+    period_id: i64,
+) -> Result<PayrollRegister, AppError> {
+    let session = state.require(Permission::PayrollPost).await?;
+    let local = Local::now();
+    payroll_approval::post(
+        &state.db,
+        session.actor(),
+        period_id,
+        &state.backup_dir,
+        local.naive_local(),
+        local.date_naive(),
+        Utc::now(),
+    )
+    .await?;
+    payslips::register(&state.db, period_id).await
 }
 
 #[tauri::command]

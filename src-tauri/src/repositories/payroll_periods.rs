@@ -153,3 +153,112 @@ pub async fn last_computed_end<'e>(db: impl SqliteExecutor<'e>) -> sqlx::Result<
         .fetch_one(db)
         .await
 }
+
+pub async fn mark_approved(
+    conn: &mut SqliteConnection,
+    id: i64,
+    by: Option<i64>,
+    at: &str,
+) -> sqlx::Result<()> {
+    sqlx::query(
+        "UPDATE payroll_periods SET status = 'APPROVED', approved_by = ?, approved_at = ? \
+         WHERE id = ?",
+    )
+    .bind(by)
+    .bind(at)
+    .bind(id)
+    .execute(conn)
+    .await?;
+    Ok(())
+}
+
+pub async fn mark_sent_back(conn: &mut SqliteConnection, id: i64) -> sqlx::Result<()> {
+    sqlx::query(
+        "UPDATE payroll_periods SET status = 'COMPUTED', approved_by = NULL, \
+         approved_at = NULL WHERE id = ?",
+    )
+    .bind(id)
+    .execute(conn)
+    .await?;
+    Ok(())
+}
+
+pub async fn mark_posted(
+    conn: &mut SqliteConnection,
+    id: i64,
+    by: Option<i64>,
+    at: &str,
+) -> sqlx::Result<()> {
+    sqlx::query(
+        "UPDATE payroll_periods SET status = 'POSTED', posted_by = ?, posted_at = ? \
+         WHERE id = ?",
+    )
+    .bind(by)
+    .bind(at)
+    .bind(id)
+    .execute(conn)
+    .await?;
+    Ok(())
+}
+
+/// When the period was last computed.
+pub async fn computed_at<'e>(db: impl SqliteExecutor<'e>, id: i64) -> sqlx::Result<Option<String>> {
+    sqlx::query_scalar("SELECT computed_at FROM payroll_periods WHERE id = ?")
+        .bind(id)
+        .fetch_one(db)
+        .await
+}
+
+/// Whether a period before `start` isn't posted yet.
+pub async fn earlier_unposted<'e>(db: impl SqliteExecutor<'e>, start: &str) -> sqlx::Result<bool> {
+    sqlx::query_scalar(
+        "SELECT EXISTS (SELECT 1 FROM payroll_periods \
+         WHERE period_start < ? AND status <> 'POSTED')",
+    )
+    .bind(start)
+    .fetch_one(db)
+    .await
+}
+
+/// When the latest period before `start` was posted.
+pub async fn last_posted_at_before<'e>(
+    db: impl SqliteExecutor<'e>,
+    start: &str,
+) -> sqlx::Result<Option<String>> {
+    sqlx::query_scalar(
+        "SELECT MAX(posted_at) FROM payroll_periods WHERE period_start < ? AND status = 'POSTED'",
+    )
+    .bind(start)
+    .fetch_one(db)
+    .await
+}
+
+/// Whether `date` falls in a posted period.
+pub async fn is_posted_date<'e>(db: impl SqliteExecutor<'e>, date: &str) -> sqlx::Result<bool> {
+    sqlx::query_scalar(
+        "SELECT EXISTS (SELECT 1 FROM payroll_periods \
+         WHERE status = 'POSTED' AND ? BETWEEN period_start AND period_end)",
+    )
+    .bind(date)
+    .fetch_one(db)
+    .await
+}
+
+/// Marks every attendance record in the period as locked by it. Returns how many.
+pub async fn lock_attendance(
+    conn: &mut SqliteConnection,
+    id: i64,
+    from: &str,
+    to: &str,
+) -> sqlx::Result<u64> {
+    Ok(sqlx::query(
+        "UPDATE attendance_records SET locked_by_period_id = ? \
+         WHERE work_date BETWEEN ? AND ? AND locked_by_period_id IS NULL",
+    )
+    .bind(id)
+    .bind(from)
+    .bind(to)
+    .execute(conn)
+    .await?
+    .rows_affected())
+}

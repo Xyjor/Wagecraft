@@ -291,3 +291,14 @@ pub async fn skipped<'e>(
     .fetch_all(db)
     .await
 }
+
+/// What the engine was given for each of the period's payslips.
+pub async fn inputs_for_period<'e>(
+    db: impl SqliteExecutor<'e>,
+    period_id: i64,
+) -> sqlx::Result<Vec<String>> {
+    sqlx::query_scalar("SELECT inputs_json FROM payslips WHERE payroll_period_id = ?")
+        .bind(period_id)
+        .fetch_all(db)
+        .await
+}

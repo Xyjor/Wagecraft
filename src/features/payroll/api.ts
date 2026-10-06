@@ -17,4 +17,10 @@ export const getRegister = (periodId: number) =>
   call<PayrollRegister>("payroll_register", { periodId });
 export const computePayroll = (periodId: number) =>
   call<PayrollRegister>("payroll_compute", { periodId });
+export const approvePayroll = (periodId: number) =>
+  call<PayrollRegister>("payroll_approve", { periodId });
+export const sendBackPayroll = (periodId: number, reason: string) =>
+  call<PayrollRegister>("payroll_send_back", { periodId, reason });
+export const postPayroll = (periodId: number) =>
+  call<PayrollRegister>("payroll_post", { periodId });
 export const getPayslip = (id: number) => call<PayslipDetail>("payslip_get", { id });

@@ -7,6 +7,7 @@ use crate::domain::attendance_calc::{self, DayFacts, HolidayKind, Shift};
 use crate::error::{AppError, FieldError};
 use crate::repositories::attendance::{self as repo, Manual};
 use crate::repositories::leave_requests as leave_repo;
+use crate::repositories::payroll_periods;
 use crate::services::auth::field;
 use crate::time;
 use chrono::{DateTime, Duration, NaiveDate, NaiveDateTime, NaiveTime, Utc};
@@ -199,7 +200,11 @@ pub async fn save(
     }
     let date = work_date.to_string();
     let before = repo::on_date(&mut tx, input.employee_id, &date).await?;
-    if before.as_ref().is_some_and(|r| r.locked) {
+    // A missing day in a posted period is an absence on a final payslip, so it can't be
+    // filled in either.
+    if before.as_ref().is_some_and(|r| r.locked)
+        || payroll_periods::is_posted_date(&mut *tx, &date).await?
+    {
         return Err(AppError::Conflict(LOCKED));
     }
     if leave_repo::full_day_leave_on(&mut tx, input.employee_id, &date, false).await? {

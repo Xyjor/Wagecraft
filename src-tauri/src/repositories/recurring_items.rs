@@ -176,3 +176,21 @@ pub async fn mark_applied(
         .await?;
     Ok(())
 }
+
+/// Takes `amount_cents` off a loan's balance, stopping at zero.
+pub async fn reduce_balance(
+    conn: &mut SqliteConnection,
+    id: i64,
+    amount_cents: i64,
+) -> sqlx::Result<()> {
+    sqlx::query(
+        "UPDATE recurring_items \
+         SET remaining_balance_cents = MAX(0, remaining_balance_cents - ?) \
+         WHERE id = ? AND kind = 'LOAN'",
+    )
+    .bind(amount_cents)
+    .bind(id)
+    .execute(conn)
+    .await?;
+    Ok(())
+}

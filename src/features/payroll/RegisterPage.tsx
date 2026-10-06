@@ -1,16 +1,23 @@
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useState, type FormEvent, type ReactNode } from "react";
 import { Link, useParams } from "react-router";
 import type { PayrollRegister } from "@/bindings/PayrollRegister";
 import type { PayslipDetail } from "@/bindings/PayslipDetail";
 import type { PayslipLine } from "@/bindings/PayslipLine";
 import type { RegisterRow } from "@/bindings/RegisterRow";
-import { FormAlert } from "@/components/form";
+import { Field, FormAlert } from "@/components/form";
 import { Badge, primaryButton, quietButton } from "@/components/ui";
 import { useSession } from "@/features/auth/session";
 import { formatDate } from "@/lib/dates";
 import type { AppError } from "@/lib/ipc";
 import { formatPesos } from "@/lib/money";
-import { computePayroll, getPayslip, getRegister } from "./api";
+import {
+  approvePayroll,
+  computePayroll,
+  getPayslip,
+  getRegister,
+  postPayroll,
+  sendBackPayroll,
+} from "./api";
 import { periodLabel, quantityText, STATUS_LABELS, STATUS_TONES } from "./periods";
 
 export function RegisterPage() {
@@ -46,11 +53,12 @@ function Register({ id }: { id: number }) {
     };
   }, [id]);
 
-  async function compute() {
+  /** Runs one step (compute, approve, post) and shows the register it returns. */
+  async function run(step: () => Promise<PayrollRegister>) {
     setAlert(undefined);
     setBusy(true);
     try {
-      setRegister(await computePayroll(id));
+      setRegister(await step());
       setOpen(null);
     } catch (e) {
       setAlert((e as AppError).message);
@@ -80,15 +88,45 @@ function Register({ id }: { id: number }) {
       <FormAlert message={alert} />
       {canCompute && (
         <div className="flex flex-wrap items-center gap-3">
-          <button type="button" className={primaryButton} disabled={busy} onClick={compute}>
+          <button
+            type="button"
+            className={period.status === "DRAFT" ? primaryButton : quietButton}
+            disabled={busy}
+            onClick={() => run(() => computePayroll(id))}
+          >
             {period.status === "DRAFT" ? "Compute payroll" : "Recompute"}
           </button>
           {period.status === "COMPUTED" && (
-            <span className="text-sm text-zinc-600 dark:text-zinc-400">
-              Fix attendance, leave or pay rates at the source, then recompute.
-            </span>
+            <>
+              <button
+                type="button"
+                className={primaryButton}
+                disabled={busy || rows.length === 0}
+                onClick={() => run(() => approvePayroll(id))}
+              >
+                Approve
+              </button>
+              <span className="text-sm text-zinc-600 dark:text-zinc-400">
+                Fix attendance, leave or pay rates at the source, then recompute. Approve when the
+                numbers are right.
+              </span>
+            </>
           )}
         </div>
+      )}
+      {period.status === "APPROVED" && (
+        <ApprovedActions
+          label={label}
+          busy={busy}
+          onPost={() => run(() => postPayroll(id))}
+          onSendBack={(reason) => run(() => sendBackPayroll(id, reason))}
+        />
+      )}
+      {period.status === "POSTED" && (
+        <p className="text-sm text-zinc-600 dark:text-zinc-400">
+          Posted. These payslips are final, staff can see them, and attendance for these days is
+          locked.
+        </p>
       )}
 
       {period.status === "DRAFT" ? (
@@ -156,6 +194,81 @@ function Register({ id }: { id: number }) {
           </ul>
         </section>
       )}
+    </div>
+  );
+}
+
+function ApprovedActions({
+  label,
+  busy,
+  onPost,
+  onSendBack,
+}: {
+  label: string;
+  busy: boolean;
+  onPost: () => Promise<void>;
+  onSendBack: (reason: string) => Promise<void>;
+}) {
+  const [step, setStep] = useState<"idle" | "post" | "back">("idle");
+  const [reasonError, setReasonError] = useState<string>();
+
+  async function sendBack(e: FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    const reason = String(new FormData(e.currentTarget).get("reason") ?? "").trim();
+    if (reason.length < 3 || reason.length > 200) {
+      setReasonError("Say why, in 3 to 200 characters");
+      return;
+    }
+    await onSendBack(reason);
+  }
+
+  if (step === "post") {
+    return (
+      <section
+        aria-label="Post this payroll"
+        className="space-y-3 rounded-md bg-amber-50 px-3 py-3 text-sm text-amber-900 dark:bg-amber-950 dark:text-amber-200"
+      >
+        <p>
+          Post the payroll for {label}? A backup is taken first. Then attendance for these days is
+          locked, loan balances go down, and staff can see their payslips. Posting can't be undone.
+        </p>
+        <div className="flex gap-2">
+          <button type="button" className={primaryButton} disabled={busy} onClick={onPost}>
+            Yes, post it
+          </button>
+          <button type="button" className={quietButton} onClick={() => setStep("idle")}>
+            Not yet
+          </button>
+        </div>
+      </section>
+    );
+  }
+  if (step === "back") {
+    return (
+      <form onSubmit={sendBack} noValidate aria-label="Send back" className="max-w-md space-y-3">
+        <Field name="reason" label="Reason" autoFocus error={reasonError} />
+        <div className="flex gap-2">
+          <button type="submit" className={primaryButton} disabled={busy}>
+            Send back
+          </button>
+          <button type="button" className={quietButton} onClick={() => setStep("idle")}>
+            Cancel
+          </button>
+        </div>
+      </form>
+    );
+  }
+  return (
+    <div className="flex flex-wrap items-center gap-3">
+      <button type="button" className={primaryButton} onClick={() => setStep("post")}>
+        Post payroll
+      </button>
+      <button type="button" className={quietButton} onClick={() => setStep("back")}>
+        Send back
+      </button>
+      <span className="text-sm text-zinc-600 dark:text-zinc-400">
+        Approved. Send it back if something needs fixing before it's posted.
+      </span>
     </div>
   );
 }

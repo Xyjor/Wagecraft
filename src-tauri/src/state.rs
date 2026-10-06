@@ -4,6 +4,7 @@ use crate::auth::session::{Auth, Refusal, Session};
 use crate::error::AppError;
 use crate::services;
 use chrono::Utc;
+use std::path::PathBuf;
 use std::time::Instant;
 
 /// Everything the commands share. Tauri hands it to each command as `State<AppState>`.
@@ -12,6 +13,8 @@ pub struct AppState {
     pub auth: Auth,
     /// Kiosk PIN lockouts, by employee number.
     pub kiosk: KioskLock,
+    /// Where automatic backups go: `backups` in the app data folder (plan §6.7).
+    pub backup_dir: PathBuf,
 }
 
 impl AppState {
@@ -56,6 +59,7 @@ mod tests {
             db,
             auth: Auth::new(Duration::from_secs(60)),
             kiosk: KioskLock::default(),
+            backup_dir: dir.path().join("backups"),
         };
         state.auth.sign_in(Session {
             user_id: id,
