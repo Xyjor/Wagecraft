@@ -15,6 +15,8 @@ pub struct ScopeEmployee {
     pub separation_date: Option<String>,
     pub pay_basis: Option<String>,
     pub rate_cents: Option<i64>,
+    /// From the rate in effect at the start of the period; false when there is none.
+    pub minimum_wage_earner: bool,
 }
 
 /// Archived employees are left out unless they have a separation date, since archiving
@@ -25,7 +27,8 @@ pub async fn in_scope<'e>(
     to: &str,
 ) -> sqlx::Result<Vec<ScopeEmployee>> {
     sqlx::query_as(
-        "SELECT e.id, e.hire_date, e.separation_date, c.pay_basis, c.rate_cents \
+        "SELECT e.id, e.hire_date, e.separation_date, c.pay_basis, c.rate_cents, \
+         COALESCE(c.minimum_wage_earner, 0) AS minimum_wage_earner \
          FROM employees e \
          LEFT JOIN compensations c ON c.employee_id = e.id AND c.effective_from <= ?1 \
               AND (c.effective_to IS NULL OR c.effective_to >= ?1) \

@@ -37,6 +37,7 @@ const first: Compensation = {
   effectiveFrom: "2025-01-01",
   effectiveTo: null,
   reason: "Hired",
+  minimumWageEarner: false,
   createdByName: "hr",
   createdAt: "2025-01-02T00:00:00Z",
 };
@@ -91,12 +92,50 @@ describe("CompensationTab", () => {
           rateCents: 2_600_000,
           effectiveFrom: "2026-03-01",
           reason: "Annual review",
+          minimumWageEarner: false,
         },
       }),
     );
     expect(await screen.findByText("₱26,000.00")).toBeTruthy();
     expect(screen.getByText("Feb 28, 2026")).toBeTruthy();
     expect(screen.getByText(/above the Driver range/)).toBeTruthy();
+  });
+
+  it("saves a rate for a minimum wage earner and marks it in the history", async () => {
+    call.mockImplementation(async (cmd: string, args?: Record<string, unknown>) => {
+      if (cmd === "employee_compensation_history") return history;
+      if (cmd === "position_list") return positions;
+      if (cmd === "employee_add_compensation") {
+        const input = args!.input as { minimumWageEarner: boolean };
+        const added = { ...first, id: 2, rateCents: 1_500_000, effectiveFrom: "2026-03-01" };
+        history = [{ ...added, minimumWageEarner: input.minimumWageEarner }, first];
+        return added;
+      }
+      return null;
+    });
+    render(<CompensationTab employee={maria} />);
+    const old = (await screen.findByText("₱20,000.00")).closest("tr")!;
+    expect(within(old).queryByText("Minimum wage earner")).toBeNull();
+    type("Rate (₱)", "15,000");
+    type("Starts on", "2026-03-01");
+    fireEvent.click(screen.getByRole("checkbox", { name: /Minimum wage earner/ }));
+    fireEvent.click(screen.getByRole("button", { name: "Save rate" }));
+
+    await waitFor(() =>
+      expect(call).toHaveBeenCalledWith("employee_add_compensation", {
+        id: 7,
+        input: expect.objectContaining({ rateCents: 1_500_000, minimumWageEarner: true }),
+      }),
+    );
+    const row = (await screen.findByText("₱15,000.00")).closest("tr")!;
+    expect(within(row).getByText("Minimum wage earner")).toBeTruthy();
+  });
+
+  it("starts the next rate with the current rate's minimum wage setting", async () => {
+    history = [{ ...first, minimumWageEarner: true }];
+    render(<CompensationTab employee={maria} />);
+    const box = await screen.findByRole("checkbox", { name: /Minimum wage earner/ });
+    expect((box as HTMLInputElement).checked).toBe(true);
   });
 
   it("asks for a pay-period start before saving", async () => {

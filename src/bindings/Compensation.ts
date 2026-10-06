@@ -6,6 +6,10 @@ export type Compensation = { id: number, employeeId: number, payBasis: string, r
  */
 effectiveTo: string | null, reason: string | null, 
 /**
+ * No tax is withheld while this rate is in effect (plan §7.5).
+ */
+minimumWageEarner: boolean, 
+/**
  * Who made the change, or empty if that user is gone.
  */
 createdByName: string | null, createdAt: string, };

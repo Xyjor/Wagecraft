@@ -87,7 +87,7 @@ pub async fn compute(
             } else {
                 Cutoff::Second
             },
-            minimum_wage_earner: false,
+            minimum_wage_earner: e.minimum_wage_earner,
             deductions: scheduled.deductions,
             minimum_net_cents: 0,
         };
@@ -616,6 +616,39 @@ mod tests {
             .expect("absent");
         assert_eq!(absent.quantity, "3");
         assert_eq!(absent.amount_cents, -344_828);
+    }
+
+    #[tokio::test]
+    async fn minimum_wage_earners_have_no_tax_withheld() {
+        let (_d, db, period) = db().await;
+        employee(&db, 1, "Santos", "2025-01-06", "MONTHLY", 2_500_000).await;
+        employee(&db, 2, "Reyes", "2025-01-06", "MONTHLY", 2_500_000).await;
+        full_days(&db, 1, &work_days_except(&[])).await;
+        full_days(&db, 2, &work_days_except(&[])).await;
+        sql(
+            &db,
+            "UPDATE compensations SET minimum_wage_earner = 1 WHERE employee_id = 2",
+        )
+        .await;
+
+        let reg = compute(&db, hr(), period, now()).await.expect("compute");
+        let taxes: Vec<(&str, i64)> = reg
+            .rows
+            .iter()
+            .map(|r| (r.employee_no.as_str(), r.tax_cents))
+            .collect();
+        // Same pay, so the same contributions; only the tax differs.
+        assert_eq!(
+            reg.rows[0].statutory_ee_cents,
+            reg.rows[1].statutory_ee_cents
+        );
+        assert_eq!(taxes[0], ("EMP-0002", 0));
+        assert!(taxes[1].1 > 0, "{taxes:?}");
+        assert_eq!(
+            reg.rows[0].warnings,
+            ["Minimum wage earner: no tax withheld on this payslip."]
+        );
+        assert!(reg.rows[1].warnings.is_empty());
     }
 
     #[tokio::test]

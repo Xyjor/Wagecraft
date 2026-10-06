@@ -88,6 +88,9 @@ const fn monthly(title: &'static str, min: i64, max: i64, weight: u32) -> Positi
     }
 }
 
+/// The NCR daily minimum wage the demo helpers start on.
+const NCR_MINIMUM_DAILY_CENTS: i64 = 69_500;
+
 const fn daily(title: &'static str, rate: i64, weight: u32) -> PositionPlan {
     PositionPlan {
         title,
@@ -543,6 +546,8 @@ pub(crate) async fn demo_company(
                 rate_cents,
                 effective_from: iso(from),
                 reason: Some(reason.into()),
+                // Helpers start on the NCR minimum wage; a raise takes them above it.
+                minimum_wage_earner: basis == "DAILY" && rate_cents <= NCR_MINIMUM_DAILY_CENTS,
             };
             compensation::add(db, SEED, employee.id, input, now).await?;
             summary.rates += 1;
@@ -618,6 +623,18 @@ mod tests {
         assert_eq!(summary.employees, 200);
         assert!(summary.rates >= 200, "{summary:?}");
         assert!((150..200).contains(&summary.kiosk_pins), "{summary:?}");
+        // Only rates at the minimum wage are marked, not the ₱750 forklift operators.
+        let mwe: Vec<(String, i64)> = sqlx::query_as(
+            "SELECT pay_basis, rate_cents FROM compensations WHERE minimum_wage_earner = 1",
+        )
+        .fetch_all(&db)
+        .await
+        .expect("mwe");
+        assert!(!mwe.is_empty());
+        assert!(
+            mwe.iter().all(|r| *r == ("DAILY".to_string(), 69_500)),
+            "{mwe:?}"
+        );
 
         // Plan §2.3: employee search returns in under 200 ms with 200 employees.
         let started = Instant::now();

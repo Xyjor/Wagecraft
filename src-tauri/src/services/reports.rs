@@ -194,6 +194,7 @@ mod tests {
             rate_cents: 2_500_050,
             effective_from: "2025-01-01".into(),
             reason: None,
+            minimum_wage_earner: false,
         };
         compensation::add(&db, hr(), maria, rate, now())
             .await
