@@ -35,6 +35,7 @@ pub fn run() {
                 db: pool,
                 auth: auth::session::Auth::new(IDLE_TIMEOUT),
                 kiosk: auth::kiosk_lock::KioskLock::default(),
+                backup_dir: dir.join("backups"),
             });
             Ok(())
         })
@@ -107,6 +108,9 @@ pub fn run() {
             commands::payroll::payroll_period_delete,
             commands::payroll::rule_pack_list,
             commands::payroll::payroll_compute,
+            commands::payroll::payroll_approve,
+            commands::payroll::payroll_send_back,
+            commands::payroll::payroll_post,
             commands::payroll::payroll_register,
             commands::payroll::payslip_get,
             commands::leave::leave_types_list,

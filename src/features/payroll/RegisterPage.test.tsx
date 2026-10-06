@@ -149,6 +149,13 @@ describe("RegisterPage", () => {
         return computed;
       }
       if (cmd === "payslip_get") return slip;
+      const to = (status: PayrollRegister["period"]["status"]) => {
+        current = { ...current, period: { ...current.period, status } };
+        return current;
+      };
+      if (cmd === "payroll_approve") return to("APPROVED");
+      if (cmd === "payroll_send_back") return to("COMPUTED");
+      if (cmd === "payroll_post") return to("POSTED");
       return undefined;
     });
   });
@@ -220,6 +227,62 @@ describe("RegisterPage", () => {
     fireEvent.click(await screen.findByRole("button", { name: "Compute payroll" }));
     expect((await screen.findByRole("alert")).textContent).toBe(
       "This pay period is approved or posted, so it can't be recomputed.",
+    );
+  });
+
+  it("approves a computed period, then posts it after confirming", async () => {
+    current = computed;
+    renderPage();
+    fireEvent.click(await screen.findByRole("button", { name: "Approve" }));
+    await waitFor(() => expect(call).toHaveBeenCalledWith("payroll_approve", { periodId: 4 }));
+    expect(await screen.findByText("Approved")).toBeTruthy();
+
+    fireEvent.click(screen.getByRole("button", { name: "Post payroll" }));
+    const confirm = screen.getByRole("region", { name: "Post this payroll" });
+    expect(within(confirm).getByText(/can't be undone/)).toBeTruthy();
+    fireEvent.click(within(confirm).getByRole("button", { name: "Not yet" }));
+    expect(call).not.toHaveBeenCalledWith("payroll_post", expect.anything());
+
+    fireEvent.click(screen.getByRole("button", { name: "Post payroll" }));
+    fireEvent.click(screen.getByRole("button", { name: "Yes, post it" }));
+    await waitFor(() => expect(call).toHaveBeenCalledWith("payroll_post", { periodId: 4 }));
+    expect(await screen.findByText(/Posted\. These payslips are final/)).toBeTruthy();
+    expect(screen.queryByRole("button", { name: /Approve|Post payroll|Send back/ })).toBeNull();
+  });
+
+  it("sends an approved period back with a reason", async () => {
+    current = { ...computed, period: { ...period, status: "APPROVED" } };
+    renderPage();
+    fireEvent.click(await screen.findByRole("button", { name: "Send back" }));
+    const form = screen.getByRole("form", { name: "Send back" });
+    fireEvent.click(within(form).getByRole("button", { name: "Send back" }));
+    expect(await within(form).findByText("Say why, in 3 to 200 characters")).toBeTruthy();
+    expect(call).not.toHaveBeenCalledWith("payroll_send_back", expect.anything());
+
+    fireEvent.change(within(form).getByLabelText("Reason"), {
+      target: { value: "Wrong OT for Santos" },
+    });
+    fireEvent.click(within(form).getByRole("button", { name: "Send back" }));
+    await waitFor(() =>
+      expect(call).toHaveBeenCalledWith("payroll_send_back", {
+        periodId: 4,
+        reason: "Wrong OT for Santos",
+      }),
+    );
+    expect(await screen.findByRole("button", { name: "Recompute" })).toBeTruthy();
+  });
+
+  it("shows why posting was refused", async () => {
+    current = { ...computed, period: { ...period, status: "APPROVED" } };
+    call.mockImplementation(async (cmd: string) => {
+      if (cmd === "payroll_register") return current;
+      throw { code: "CONFLICT", message: "Post the earlier pay periods first.", fields: [] };
+    });
+    renderPage();
+    fireEvent.click(await screen.findByRole("button", { name: "Post payroll" }));
+    fireEvent.click(screen.getByRole("button", { name: "Yes, post it" }));
+    expect((await screen.findByRole("alert")).textContent).toBe(
+      "Post the earlier pay periods first.",
     );
   });
 });

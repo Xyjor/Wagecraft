@@ -1,6 +1,7 @@
 pub mod accounts;
 pub mod attendance;
 pub mod auth;
+pub mod backups;
 pub mod compensation;
 pub mod employees;
 pub mod holidays;
@@ -10,6 +11,9 @@ pub mod leave_requests;
 pub mod org;
 pub mod overtime;
 pub mod payroll;
+pub mod payroll_approval;
+#[cfg(test)]
+pub(crate) mod payroll_fixtures;
 pub mod payslips;
 pub mod recurring_items;
 pub mod reports;
