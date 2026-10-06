@@ -1,7 +1,7 @@
 //! SQL for computing and reading payslips: the facts compute gathers for each employee,
 //! and the payslips it saves. No rules here: the payroll service decides.
 
-use crate::domain::payroll_period::{PayslipLine, SkippedEmployee};
+use crate::domain::payroll_period::{MyPayslip, PayslipLine, SkippedEmployee};
 use sqlx::{FromRow, SqliteConnection, SqliteExecutor};
 
 const NAME: &str = "e.employee_no, e.last_name || ', ' || e.first_name AS employee_name";
@@ -253,6 +253,38 @@ pub async fn by_id<'e>(db: impl SqliteExecutor<'e>, id: i64) -> sqlx::Result<Opt
         .bind(id)
         .fetch_optional(db)
         .await
+}
+
+/// The employee's payslips from posted periods, newest first.
+pub async fn posted_for_employee<'e>(
+    db: impl SqliteExecutor<'e>,
+    employee_id: i64,
+) -> sqlx::Result<Vec<MyPayslip>> {
+    sqlx::query_as(
+        "SELECT p.id, pp.period_start, pp.period_end, pp.pay_date, p.gross_cents, p.net_cents \
+         FROM payslips p JOIN payroll_periods pp ON pp.id = p.payroll_period_id \
+         WHERE p.employee_id = ? AND pp.status = 'POSTED' ORDER BY pp.period_start DESC",
+    )
+    .bind(employee_id)
+    .fetch_all(db)
+    .await
+}
+
+/// Whether payslip `id` is the employee's and its period is posted.
+pub async fn is_posted_for<'e>(
+    db: impl SqliteExecutor<'e>,
+    employee_id: i64,
+    id: i64,
+) -> sqlx::Result<bool> {
+    sqlx::query_scalar(
+        "SELECT EXISTS (SELECT 1 FROM payslips p \
+         JOIN payroll_periods pp ON pp.id = p.payroll_period_id \
+         WHERE p.id = ? AND p.employee_id = ? AND pp.status = 'POSTED')",
+    )
+    .bind(id)
+    .bind(employee_id)
+    .fetch_one(db)
+    .await
 }
 
 pub async fn lines<'e>(

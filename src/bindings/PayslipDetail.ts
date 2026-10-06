@@ -4,4 +4,4 @@ import type { PayslipLine } from "./PayslipLine";
 /**
  * One payslip, line by line.
  */
-export type PayslipDetail = { id: number, periodStart: string, periodEnd: string, employeeNo: string, employeeName: string, payBasis: "MONTHLY" | "DAILY", rateCents: number, lines: Array<PayslipLine>, grossCents: number, taxableCents: number, statutoryEeCents: number, taxCents: number, otherDeductionsCents: number, netCents: number, warnings: Array<string>, };
+export type PayslipDetail = { id: number, periodStart: string, periodEnd: string, payDate: string, employeeNo: string, employeeName: string, payBasis: "MONTHLY" | "DAILY", rateCents: number, lines: Array<PayslipLine>, grossCents: number, taxableCents: number, statutoryEeCents: number, taxCents: number, otherDeductionsCents: number, netCents: number, warnings: Array<string>, };

@@ -74,6 +74,7 @@ const slip: PayslipDetail = {
   id: 11,
   periodStart: "2026-10-16",
   periodEnd: "2026-10-31",
+  payDate: "2026-10-31",
   employeeNo: "EMP-0001",
   employeeName: "Santos, Ana",
   payBasis: "MONTHLY",
