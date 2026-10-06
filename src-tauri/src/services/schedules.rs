@@ -4,9 +4,9 @@
 use crate::audit::{self, Actor, Entry};
 use crate::domain::schedule::{ScheduleAssignment, ScheduleChangeInput};
 use crate::error::AppError;
-use crate::repositories::employees;
 use crate::repositories::leave_requests as leave_repo;
 use crate::repositories::schedules::{self as repo, NewAssignment};
+use crate::repositories::{employees, payroll_periods};
 use crate::services::auth::field;
 use crate::services::{leave_requests, overtime};
 use crate::time;
@@ -55,6 +55,7 @@ pub async fn change(
         None => errors.push(field("scheduleId", "Pick a schedule")),
     }
     let last_recorded = repo::last_recorded_day(&mut tx, employee_id).await?;
+    let posted_through = payroll_periods::posted_through(&mut *tx).await?;
     let from = parse_date(&input.effective_from);
     match from {
         None => errors.push(field("effectiveFrom", "Enter a date")),
@@ -64,6 +65,7 @@ pub async fn change(
                 &employee.hire_date,
                 &employee.separation_date,
                 last_recorded.as_deref(),
+                posted_through.as_deref(),
             ) {
                 errors.push(field("effectiveFrom", &problem));
             }
@@ -131,6 +133,7 @@ fn date_problem(
     hire_date: &str,
     separation_date: &Option<String>,
     last_recorded: Option<&str>,
+    posted_through: Option<&str>,
 ) -> Option<String> {
     if parse_date(hire_date).is_some_and(|hired| from < hired) {
         return Some("The move can't start before the hire date".into());
@@ -148,6 +151,14 @@ fn date_problem(
             ));
         }
     }
+    if let Some(day) = posted_through.and_then(parse_date) {
+        if from <= day {
+            return Some(format!(
+                "Payroll is already posted up to {}. The move has to start after that.",
+                show(day)
+            ));
+        }
+    }
     None
 }
 
@@ -155,6 +166,7 @@ fn date_problem(
 mod tests {
     use super::*;
     use crate::audit::test_support::actions;
+    use crate::services::payroll_fixtures::posted;
     use chrono::TimeZone;
 
     fn hr() -> Actor<'static> {
@@ -253,6 +265,26 @@ mod tests {
                 ("2026-10-12", Some("Office"))
             ]
         );
+    }
+
+    #[tokio::test]
+    async fn a_move_starts_after_the_last_posted_payroll() {
+        let (_d, db) = db().await;
+        posted(&db, "2026-10-01", "2026-10-15").await;
+        let e = change(&db, hr(), 1, to(2, "2026-10-15"), now())
+            .await
+            .unwrap_err();
+        assert_eq!(
+            field_errors(e),
+            [(
+                "effectiveFrom".to_string(),
+                "Payroll is already posted up to Oct 15, 2026. The move has to start after that."
+                    .to_string()
+            )]
+        );
+        change(&db, hr(), 1, to(2, "2026-10-16"), now())
+            .await
+            .expect("after the period");
     }
 
     #[tokio::test]

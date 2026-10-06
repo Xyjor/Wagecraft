@@ -185,6 +185,7 @@ pub async fn delete(
 mod tests {
     use super::*;
     use crate::audit::test_support as audit_rows;
+    use crate::services::payroll_fixtures::posted;
     use chrono::TimeZone;
 
     fn t0() -> DateTime<Utc> {
@@ -367,6 +368,35 @@ mod tests {
         assert_eq!(dates, ["2026-01-01", "2026-12-25"]);
         let err = list(&db, 1900).await.unwrap_err();
         assert_eq!(fields(err), ["year"]);
+    }
+
+    #[tokio::test]
+    async fn a_posted_period_locks_its_dates_even_without_attendance() {
+        let (_d, db) = db().await;
+        let h = create(
+            &db,
+            hr(),
+            day("2026-08-31", "National Heroes Day", "REGULAR"),
+            t0(),
+        )
+        .await
+        .expect("create");
+        posted(&db, "2026-08-16", "2026-08-31").await;
+
+        assert!(list(&db, 2026).await.expect("list")[0].locked);
+        let edit = day("2026-08-31", "Heroes Day", "REGULAR");
+        let r = update(&db, hr(), h.id, edit, t0()).await;
+        assert!(matches!(r, Err(AppError::Conflict(LOCKED))));
+        let r = delete(&db, hr(), h.id, t0()).await;
+        assert!(matches!(r, Err(AppError::Conflict(LOCKED))));
+        let new = day("2026-08-21", "Ninoy Aquino Day", "SPECIAL_NON_WORKING");
+        let r = create(&db, hr(), new, t0()).await;
+        assert!(matches!(r, Err(AppError::Conflict(LOCKED))));
+        // The day after the period is still open.
+        let after = day("2026-09-01", "Company Day", "SPECIAL_NON_WORKING");
+        create(&db, hr(), after, t0())
+            .await
+            .expect("after the period");
     }
 
     #[tokio::test]

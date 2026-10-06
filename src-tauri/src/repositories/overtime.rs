@@ -9,7 +9,9 @@ const REQUEST: &str = "SELECT o.id, o.employee_id, e.employee_no, \
     o.minutes, o.reason, o.status, f.username AS filed_by_username, \
     d.username AS decided_by_username, o.decided_at, o.decision_note, \
     EXISTS (SELECT 1 FROM attendance_records a WHERE a.employee_id = o.employee_id \
-            AND a.work_date = o.work_date AND a.locked_by_period_id IS NOT NULL) AS locked \
+            AND a.work_date = o.work_date AND a.locked_by_period_id IS NOT NULL) \
+    OR EXISTS (SELECT 1 FROM payroll_periods pp WHERE pp.status = 'POSTED' \
+            AND o.work_date BETWEEN pp.period_start AND pp.period_end) AS locked \
     FROM overtime_requests o \
     JOIN employees e ON e.id = o.employee_id \
     LEFT JOIN users f ON f.id = o.filed_by \
@@ -118,7 +120,8 @@ pub async fn employee_by_no(
         .await
 }
 
-/// Whether the employee's attendance on `work_date` is in a posted payroll period.
+/// Whether `work_date` is in a posted payroll period, or the employee's attendance on it is
+/// locked by one.
 pub async fn day_locked(
     conn: &mut SqliteConnection,
     employee_id: i64,
@@ -126,9 +129,12 @@ pub async fn day_locked(
 ) -> sqlx::Result<bool> {
     sqlx::query_scalar(
         "SELECT EXISTS (SELECT 1 FROM attendance_records WHERE employee_id = ? \
-         AND work_date = ? AND locked_by_period_id IS NOT NULL)",
+         AND work_date = ? AND locked_by_period_id IS NOT NULL) \
+         OR EXISTS (SELECT 1 FROM payroll_periods WHERE status = 'POSTED' \
+         AND ? BETWEEN period_start AND period_end)",
     )
     .bind(employee_id)
+    .bind(work_date)
     .bind(work_date)
     .fetch_one(conn)
     .await

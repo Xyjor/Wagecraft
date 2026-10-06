@@ -244,6 +244,13 @@ pub async fn is_posted_date<'e>(db: impl SqliteExecutor<'e>, date: &str) -> sqlx
     .await
 }
 
+/// The last day of the latest posted period, if any period is posted.
+pub async fn posted_through<'e>(db: impl SqliteExecutor<'e>) -> sqlx::Result<Option<String>> {
+    sqlx::query_scalar("SELECT MAX(period_end) FROM payroll_periods WHERE status = 'POSTED'")
+        .fetch_one(db)
+        .await
+}
+
 /// Marks every attendance record in the period as locked by it. Returns how many.
 pub async fn lock_attendance(
     conn: &mut SqliteConnection,

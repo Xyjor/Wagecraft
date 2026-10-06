@@ -470,6 +470,7 @@ pub(crate) async fn cancel_after_separation(
 mod tests {
     use super::*;
     use crate::audit::test_support as audit_rows;
+    use crate::services::payroll_fixtures::posted;
     use chrono::TimeZone;
 
     fn t0() -> DateTime<Utc> {
@@ -971,6 +972,37 @@ mod tests {
         assert!(matches!(d, Err(AppError::Conflict(LOCKED))));
         let c = cancel(&db, juan(), Some(1), false, r.id, t0()).await;
         assert!(matches!(c, Err(AppError::Conflict(LOCKED))));
+    }
+
+    #[tokio::test]
+    async fn a_posted_period_locks_its_days_even_without_attendance() {
+        let (_d, db) = db().await;
+        let r = file(
+            &db,
+            juan(),
+            Some(1),
+            ot("2026-10-07", "17:00", "20:00"),
+            today(),
+            t0(),
+        )
+        .await
+        .expect("file");
+        posted(&db, "2026-10-01", "2026-10-15").await;
+
+        let read = repo::by_id(&db, r.id).await.expect("read");
+        assert!(read.expect("row").locked);
+        let new = ot("2026-10-15", "17:00", "20:00");
+        let f = file(&db, juan(), Some(1), new, today(), t0()).await;
+        assert!(matches!(f, Err(AppError::Conflict(LOCKED))));
+        let d = decide(&db, hr(), None, r.id, true, None, t0()).await;
+        assert!(matches!(d, Err(AppError::Conflict(LOCKED))));
+        let c = cancel(&db, juan(), Some(1), false, r.id, t0()).await;
+        assert!(matches!(c, Err(AppError::Conflict(LOCKED))));
+        // The day after the period is still open.
+        let after = ot("2026-10-16", "17:00", "20:00");
+        file(&db, juan(), Some(1), after, today(), t0())
+            .await
+            .expect("after the period");
     }
 
     #[tokio::test]
