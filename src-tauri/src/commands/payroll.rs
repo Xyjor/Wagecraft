@@ -104,7 +104,7 @@ pub async fn payroll_post(
         &state.db,
         session.actor(),
         period_id,
-        &state.backup_dir,
+        &state.backup_dir().await?,
         local.naive_local(),
         local.date_naive(),
         Utc::now(),

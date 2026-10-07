@@ -18,6 +18,7 @@ import { MyPayslipsPage } from "@/features/payroll/MyPayslipsPage";
 import { PayrollPage } from "@/features/payroll/PayrollPage";
 import { RegisterPage } from "@/features/payroll/RegisterPage";
 import { RulePacksPage } from "@/features/payroll/RulePacksPage";
+import { SettingsPage } from "@/features/settings/SettingsPage";
 import { UsersPage } from "@/features/users/UsersPage";
 
 export const router = createBrowserRouter([
@@ -44,6 +45,7 @@ export const router = createBrowserRouter([
       { path: "holidays", element: <HolidaysPage /> },
       { path: "users", element: <UsersPage /> },
       { path: "backups", element: <BackupsPage /> },
+      { path: "settings", element: <SettingsPage /> },
     ],
   },
 ]);

@@ -60,10 +60,10 @@ function Backups() {
         </button>
       </div>
       <p className="max-w-prose text-sm text-zinc-600 dark:text-zinc-400">
-        Wagecraft backs up by itself once a day when it starts, and keeps the newest 14 daily
-        backups. It also backs up before posting payroll. Use <strong>Back up now</strong> to save a
-        copy to a USB drive or another folder, so a broken PC doesn&apos;t take your payroll with
-        it.
+        Wagecraft backs up by itself once a day when it starts, and keeps the newest daily backups
+        (14 unless changed in Settings, where you can also pick the folder). It also backs up before
+        posting payroll. Use <strong>Back up now</strong> to save a copy to a USB drive or another
+        folder, so a broken PC doesn&apos;t take your payroll with it.
       </p>
 
       <RestorePanel />

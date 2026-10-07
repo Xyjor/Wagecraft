@@ -73,7 +73,7 @@ pub async fn backup_restore(
     let done = restore::run(
         &state.db,
         &state.data_dir,
-        &state.backup_dir,
+        &state.backup_dir().await?,
         &path,
         db::newest_migration(),
         session.actor(),

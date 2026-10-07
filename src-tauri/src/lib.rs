@@ -11,11 +11,19 @@ mod services;
 mod state;
 mod time;
 
-use std::time::Duration;
 use tauri::Manager;
 
-/// Sign out after this long without activity (plan §6.1). Becomes a setting later.
-const IDLE_TIMEOUT: Duration = Duration::from_secs(15 * 60);
+/// The daily backup at app start, into the folder and with the count set in Settings.
+async fn daily_backup(
+    db: &sqlx::SqlitePool,
+    default_dir: &std::path::Path,
+) -> Result<(), error::AppError> {
+    let dir = services::settings::backup_dir(db, default_dir).await?;
+    let keep = services::settings::backup_keep(db).await?;
+    let local = chrono::Local::now().naive_local();
+    services::backups::daily(db, &dir, keep, local, chrono::Utc::now()).await?;
+    Ok(())
+}
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -36,23 +44,21 @@ pub fn run() {
             if let Err(e) = tauri::async_runtime::block_on(finished) {
                 log::error!("couldn't record the restore: {e}");
             }
-            let backup_dir = dir.join("backups");
-            let (db, daily_dir) = (pool.clone(), backup_dir.clone());
+            let default_backup_dir = dir.join("backups");
+            let idle_timeout =
+                tauri::async_runtime::block_on(services::settings::idle_timeout(&pool))?;
+            let (db, default_dir) = (pool.clone(), default_backup_dir.clone());
             tauri::async_runtime::spawn(async move {
-                let local = chrono::Local::now().naive_local();
-                let keep = services::backups::KEEP_DAILY;
-                let taken =
-                    services::backups::daily(&db, &daily_dir, keep, local, chrono::Utc::now());
                 // A failed daily backup must not stop the app; it tries again next start.
-                if let Err(e) = taken.await {
+                if let Err(e) = daily_backup(&db, &default_dir).await {
                     log::error!("daily backup failed: {e}");
                 }
             });
             app.manage(state::AppState {
                 db: pool,
-                auth: auth::session::Auth::new(IDLE_TIMEOUT),
+                auth: auth::session::Auth::new(idle_timeout),
                 kiosk: auth::kiosk_lock::KioskLock::default(),
-                backup_dir,
+                default_backup_dir,
                 data_dir: dir,
                 pending_restore: std::sync::Mutex::default(),
             });
@@ -157,6 +163,9 @@ pub fn run() {
             commands::backups::backup_create,
             commands::backups::backup_restore_choose,
             commands::backups::backup_restore,
+            commands::settings::settings_get,
+            commands::settings::settings_update,
+            commands::settings::settings_pick_backup_folder,
         ])
         .run(tauri::generate_context!())
         .expect("error while running Wagecraft");

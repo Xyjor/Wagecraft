@@ -19,4 +19,5 @@ pub mod recurring_items;
 pub mod reports;
 pub mod restore;
 pub mod schedules;
+pub mod settings;
 pub mod users;

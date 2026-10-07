@@ -14,8 +14,9 @@ pub struct AppState {
     pub auth: Auth,
     /// Kiosk PIN lockouts, by employee number.
     pub kiosk: KioskLock,
-    /// Where automatic backups go: `backups` in the app data folder (plan §6.7).
-    pub backup_dir: PathBuf,
+    /// `backups` in the app data folder: where backups go unless Settings names another
+    /// folder (plan §6.7). Use `backup_dir()` to get the folder in use.
+    pub default_backup_dir: PathBuf,
     /// The app data folder, which holds the database and the restore marker.
     pub data_dir: PathBuf,
     /// The backup Admin picked to restore, checked and waiting for them to type RESTORE.
@@ -24,6 +25,11 @@ pub struct AppState {
 }
 
 impl AppState {
+    /// The folder backups go to now: the one set in Settings, or the default.
+    pub async fn backup_dir(&self) -> Result<PathBuf, AppError> {
+        services::settings::backup_dir(&self.db, &self.default_backup_dir).await
+    }
+
     /// The first line of every command: checks sign-in, idle time and permission.
     /// When the idle timeout has just ended the session, it also audits that.
     pub async fn require(&self, p: Permission) -> Result<Session, AppError> {
@@ -65,7 +71,7 @@ mod tests {
             db,
             auth: Auth::new(Duration::from_secs(60)),
             kiosk: KioskLock::default(),
-            backup_dir: dir.path().join("backups"),
+            default_backup_dir: dir.path().join("backups"),
             data_dir: dir.path().to_path_buf(),
             pending_restore: Mutex::default(),
         };
