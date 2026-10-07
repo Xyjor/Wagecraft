@@ -4,6 +4,7 @@ import { describe, expect, it } from "vitest";
 import type { PayrollPeriod } from "@/bindings/PayrollPeriod";
 import type { RegisterReport } from "@/bindings/RegisterReport";
 import type { RegisterReportRow } from "@/bindings/RegisterReportRow";
+import { BROKEN_LOGO, PNG_LOGO, hasImage } from "@/test/logo";
 import { expectReadablePdf } from "@/test/pdf";
 import { registerFileName, registerStatusNote, renderRegisterPdf } from "./registerPdf";
 
@@ -33,7 +34,12 @@ const row = (no: string, name: string, gross: number, net: number): RegisterRepo
 
 const report: RegisterReport = {
   period,
-  companyName: "Acme Trading",
+  company: {
+    name: "Acme Trading",
+    address: "12 Rizal St, Makati",
+    tin: "123456789000",
+    logo: null,
+  },
   rows: [
     row("EMP-0002", "Reyes, Ana", 1_250_000, 1_140_805),
     row("EMP-0001", "Santos, Ana", 1_181_752, 1_072_557),
@@ -60,5 +66,23 @@ describe("register PDF", () => {
 
   it("renders a real PDF file", async () => {
     await expectReadablePdf(await renderRegisterPdf(report));
+  }, 20_000);
+
+  it("prints the company logo", async () => {
+    const bytes = await renderRegisterPdf({
+      ...report,
+      company: { ...report.company, logo: PNG_LOGO },
+    });
+    await expectReadablePdf(bytes);
+    expect(hasImage(bytes)).toBe(true);
+  }, 20_000);
+
+  it("still makes the PDF, without the logo, if the logo is damaged", async () => {
+    const bytes = await renderRegisterPdf({
+      ...report,
+      company: { ...report.company, logo: BROKEN_LOGO },
+    });
+    await expectReadablePdf(bytes);
+    expect(hasImage(bytes)).toBe(false);
   }, 20_000);
 });

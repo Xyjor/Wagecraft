@@ -33,7 +33,7 @@ const report: RegisterReport = {
     createdByName: "maria",
     createdAt: "2026-10-16T01:00:00Z",
   },
-  companyName: "Acme Trading",
+  company: { name: "Acme Trading", address: "", tin: "", logo: null },
   rows: [{ ...totals, employeeNo: "EMP-0001", employeeName: "Santos, Ana" }],
   totals,
 };

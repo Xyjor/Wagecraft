@@ -76,7 +76,7 @@ const slip: PayslipDetail = {
   periodEnd: "2026-10-31",
   payDate: "2026-10-31",
   employeeNo: "EMP-0001",
-  companyName: "Acme Trading",
+  company: { name: "Acme Trading", address: "", tin: "", logo: null },
   employeeName: "Santos, Ana",
   department: "Operations",
   position: "Driver",

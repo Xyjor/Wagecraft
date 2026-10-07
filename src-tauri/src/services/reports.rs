@@ -132,7 +132,7 @@ pub async fn register_report(db: &SqlitePool, period_id: i64) -> Result<Register
     );
     Ok(RegisterReport {
         period,
-        company_name: payslips::company_name(&mut *conn).await?,
+        company: payslips::company(&mut *conn).await?,
         rows,
         totals,
     })

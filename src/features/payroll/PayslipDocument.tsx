@@ -2,13 +2,14 @@ import { Document, Page, StyleSheet, Text, View } from "@react-pdf/renderer";
 import type { PayslipDetail } from "@/bindings/PayslipDetail";
 import type { PayslipLine } from "@/bindings/PayslipLine";
 import { formatDate } from "@/lib/dates";
+import { CompanyBlock } from "./CompanyBlock";
 import { formatAmount, payslipSections } from "./payslipPdf";
 import { periodLabel, quantityText } from "./periods";
 
 const styles = StyleSheet.create({
   page: { padding: 40, fontSize: 10, fontFamily: "Helvetica", color: "#18181b" },
   company: { fontSize: 16, fontFamily: "Helvetica-Bold" },
-  title: { fontSize: 11, color: "#52525b", marginBottom: 16 },
+  title: { fontSize: 11, color: "#52525b", marginTop: 8, marginBottom: 16 },
   header: { flexDirection: "row", justifyContent: "space-between", marginBottom: 16 },
   muted: { color: "#71717a" },
   bold: { fontFamily: "Helvetica-Bold" },
@@ -35,7 +36,7 @@ export function PayslipDocument({ slip }: { slip: PayslipDetail }) {
   return (
     <Document title={`Payslip ${slip.employeeNo} ${slip.periodStart}`}>
       <Page size="A4" style={styles.page}>
-        <Text style={styles.company}>{slip.companyName || "Payslip"}</Text>
+        <CompanyBlock company={slip.company} fallback="Payslip" nameStyle={styles.company} />
         <Text style={styles.title}>Payslip</Text>
         <View style={styles.header}>
           <View>

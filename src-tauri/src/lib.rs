@@ -166,6 +166,8 @@ pub fn run() {
             commands::settings::settings_get,
             commands::settings::settings_update,
             commands::settings::settings_pick_backup_folder,
+            commands::settings::settings_pick_logo,
+            commands::settings::settings_clear_logo,
         ])
         .run(tauri::generate_context!())
         .expect("error while running Wagecraft");

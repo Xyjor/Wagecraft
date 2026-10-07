@@ -2,12 +2,15 @@
 //! folder and count. Missing rows mean the defaults.
 
 use crate::audit::{self, Actor, Entry};
-use crate::domain::settings::{Settings, SettingsInput, DEFAULT_BACKUP_KEEP, DEFAULT_IDLE_MINUTES};
+use crate::domain::settings::{
+    Settings, SettingsInput, DEFAULT_BACKUP_KEEP, DEFAULT_IDLE_MINUTES, MAX_LOGO_BYTES,
+};
 use crate::domain::validation;
 use crate::error::AppError;
 use crate::services::auth::field;
+use base64::{engine::general_purpose::STANDARD as BASE64, Engine};
 use chrono::{DateTime, Utc};
-use serde_json::{Map, Value};
+use serde_json::{json, Map, Value};
 use sqlx::SqlitePool;
 use std::path::{Path, PathBuf};
 use std::time::Duration;
@@ -30,6 +33,7 @@ pub async fn load(db: &SqlitePool, default_backup_dir: &Path) -> Result<Settings
         company_name: get(COMPANY_NAME),
         company_address: get(COMPANY_ADDRESS),
         company_tin: get(COMPANY_TIN),
+        company_logo: Some(get(COMPANY_LOGO)).filter(|l| !l.is_empty()),
         idle_timeout_minutes: number(IDLE_TIMEOUT, DEFAULT_IDLE_MINUTES),
         backup_folder: get(BACKUP_FOLDER),
         default_backup_folder: default_backup_dir.display().to_string(),
@@ -40,6 +44,7 @@ pub async fn load(db: &SqlitePool, default_backup_dir: &Path) -> Result<Settings
 const COMPANY_NAME: &str = "company_name";
 const COMPANY_ADDRESS: &str = "company_address";
 const COMPANY_TIN: &str = "company_tin";
+const COMPANY_LOGO: &str = "company_logo";
 const IDLE_TIMEOUT: &str = "idle_timeout_minutes";
 const BACKUP_FOLDER: &str = "backup_folder";
 const BACKUP_KEEP_KEY: &str = "backup_keep";
@@ -100,6 +105,7 @@ pub async fn update(
         company_name: name.to_string(),
         company_address: address.to_string(),
         company_tin: tin.unwrap_or_default(),
+        company_logo: before.company_logo.clone(),
         idle_timeout_minutes: input.idle_timeout_minutes,
         backup_folder: folder.to_string(),
         default_backup_folder: before.default_backup_folder.clone(),
@@ -155,6 +161,83 @@ fn changes(before: &Settings, after: &Settings) -> (Map<String, Value>, Map<Stri
         }
     }
     (old, new)
+}
+
+/// A PNG or JPEG file as a `data:` URL the PDFs can draw, if it is one and small enough.
+pub fn logo_data_url(bytes: &[u8]) -> Result<String, AppError> {
+    let mime = if bytes.starts_with(b"\x89PNG\r\n\x1a\n") {
+        "image/png"
+    } else if bytes.starts_with(b"\xff\xd8\xff") {
+        "image/jpeg"
+    } else {
+        return Err(AppError::Conflict(
+            "Choose a PNG or JPEG image for the logo",
+        ));
+    };
+    if bytes.len() > MAX_LOGO_BYTES {
+        return Err(AppError::Conflict(
+            "That logo is over 200 KB. Save a smaller copy and try again",
+        ));
+    }
+    Ok(format!("data:{mime};base64,{}", BASE64.encode(bytes)))
+}
+
+/// Sets the company logo from an image file's bytes, audited as `settings.update`.
+pub async fn set_logo(
+    db: &SqlitePool,
+    actor: Actor<'_>,
+    bytes: &[u8],
+    default_backup_dir: &Path,
+    now: DateTime<Utc>,
+) -> Result<Settings, AppError> {
+    let logo = logo_data_url(bytes)?;
+    save_logo(db, actor, Some(logo), default_backup_dir, now).await
+}
+
+/// Removes the company logo. Nothing is written if there was none.
+pub async fn clear_logo(
+    db: &SqlitePool,
+    actor: Actor<'_>,
+    default_backup_dir: &Path,
+    now: DateTime<Utc>,
+) -> Result<Settings, AppError> {
+    save_logo(db, actor, None, default_backup_dir, now).await
+}
+
+/// Stores or removes the logo. The audit entry says only whether there is one: the image
+/// itself would swamp the log.
+async fn save_logo(
+    db: &SqlitePool,
+    actor: Actor<'_>,
+    logo: Option<String>,
+    default_backup_dir: &Path,
+    now: DateTime<Utc>,
+) -> Result<Settings, AppError> {
+    let before = load(db, default_backup_dir).await?;
+    if before.company_logo.is_none() && logo.is_none() {
+        return Ok(before);
+    }
+    let mut tx = db.begin().await?;
+    sqlx::query(
+        "INSERT INTO settings (key, value) VALUES (?, ?) \
+         ON CONFLICT(key) DO UPDATE SET value = excluded.value",
+    )
+    .bind(COMPANY_LOGO)
+    .bind(logo.clone().unwrap_or_default())
+    .execute(&mut *tx)
+    .await?;
+    let entry = Entry {
+        action: "settings.update",
+        entity: None,
+        before: Some(json!({ "companyLogo": before.company_logo.is_some() })),
+        after: Some(json!({ "companyLogo": logo.is_some() })),
+    };
+    audit::record(&mut tx, now, actor, entry).await?;
+    tx.commit().await?;
+    Ok(Settings {
+        company_logo: logo,
+        ..before
+    })
 }
 
 /// How long a session may sit idle before it ends.
@@ -250,6 +333,7 @@ mod tests {
                 company_name: String::new(),
                 company_address: String::new(),
                 company_tin: String::new(),
+                company_logo: None,
                 idle_timeout_minutes: 15,
                 backup_folder: String::new(),
                 default_backup_folder: default.display().to_string(),
@@ -402,5 +486,109 @@ mod tests {
         let mut i = input(tmp);
         i.idle_timeout_minutes = minutes;
         i
+    }
+
+    const PNG: &[u8] = b"\x89PNG\r\n\x1a\n";
+    const JPEG: &[u8] = b"\xff\xd8\xff\xe0";
+
+    #[test]
+    fn a_png_or_jpeg_becomes_a_data_url() {
+        assert_eq!(
+            logo_data_url(PNG).unwrap(),
+            "data:image/png;base64,iVBORw0KGgo="
+        );
+        assert_eq!(
+            logo_data_url(JPEG).unwrap(),
+            "data:image/jpeg;base64,/9j/4A=="
+        );
+    }
+
+    #[test]
+    fn other_files_and_big_images_are_refused() {
+        for bytes in [&b"GIF89a"[..], b"", b"\x89PN", b"%PDF-1.7"] {
+            assert!(
+                matches!(logo_data_url(bytes), Err(AppError::Conflict(_))),
+                "{bytes:?}"
+            );
+        }
+        let mut big = PNG.to_vec();
+        big.resize(MAX_LOGO_BYTES, 0);
+        assert!(logo_data_url(&big).is_ok(), "exactly the limit is fine");
+        big.push(0);
+        assert!(matches!(logo_data_url(&big), Err(AppError::Conflict(_))));
+    }
+
+    #[tokio::test]
+    async fn a_logo_can_be_set_kept_by_the_form_and_removed() {
+        let (tmp, db) = db().await;
+        let default = tmp.path().join("backups");
+
+        let set = set_logo(&db, admin(), PNG, &default, now()).await.unwrap();
+        assert_eq!(
+            set.company_logo.as_deref(),
+            Some("data:image/png;base64,iVBORw0KGgo=")
+        );
+        let saved = update(&db, admin(), input(tmp.path()), &default, now())
+            .await
+            .unwrap();
+        assert_eq!(
+            saved.company_logo, set.company_logo,
+            "saving the form keeps it"
+        );
+        assert_eq!(
+            load(&db, &default).await.unwrap().company_logo,
+            set.company_logo
+        );
+
+        let cleared = clear_logo(&db, admin(), &default, now()).await.unwrap();
+        assert_eq!(cleared.company_logo, None);
+        assert_eq!(load(&db, &default).await.unwrap().company_logo, None);
+    }
+
+    #[tokio::test]
+    async fn logo_changes_are_audited_without_the_image_itself() {
+        let (tmp, db) = db().await;
+        let default = tmp.path().join("backups");
+
+        set_logo(&db, admin(), PNG, &default, now()).await.unwrap();
+        set_logo(&db, admin(), JPEG, &default, now()).await.unwrap();
+        clear_logo(&db, admin(), &default, now()).await.unwrap();
+        clear_logo(&db, admin(), &default, now()).await.unwrap();
+
+        let rows = audit_rows::all(&db).await;
+        let logged: Vec<(String, Value, Value)> = rows
+            .iter()
+            .map(|r| {
+                (
+                    r.action.clone(),
+                    serde_json::from_str(r.before_json.as_deref().unwrap()).unwrap(),
+                    serde_json::from_str(r.after_json.as_deref().unwrap()).unwrap(),
+                )
+            })
+            .collect();
+        let logo = |v: bool| serde_json::json!({ "companyLogo": v });
+        assert_eq!(
+            logged,
+            [
+                ("settings.update".to_string(), logo(false), logo(true)),
+                ("settings.update".to_string(), logo(true), logo(true)),
+                ("settings.update".to_string(), logo(true), logo(false)),
+            ],
+            "removing a logo that isn't there writes nothing"
+        );
+    }
+
+    #[tokio::test]
+    async fn a_refused_logo_keeps_the_old_one() {
+        let (tmp, db) = db().await;
+        let default = tmp.path().join("backups");
+        set_logo(&db, admin(), PNG, &default, now()).await.unwrap();
+
+        assert!(set_logo(&db, admin(), b"GIF89a", &default, now())
+            .await
+            .is_err());
+
+        assert!(load(&db, &default).await.unwrap().company_logo.is_some());
+        assert_eq!(audit_rows::all(&db).await.len(), 1);
     }
 }

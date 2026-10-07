@@ -6,6 +6,22 @@ use ts_rs::TS;
 
 pub const DEFAULT_IDLE_MINUTES: i64 = 15;
 pub const DEFAULT_BACKUP_KEEP: i64 = 14;
+/// A logo is printed small; a bigger file would only slow every payslip down.
+pub const MAX_LOGO_BYTES: usize = 200 * 1024;
+
+/// The company as printed at the top of payslips and the payroll register.
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export)]
+pub struct CompanyHeader {
+    /// Empty until setup names the company.
+    pub name: String,
+    pub address: String,
+    /// Digits only, or empty.
+    pub tin: String,
+    /// A PNG or JPEG as a `data:` URL, or nothing.
+    pub logo: Option<String>,
+}
 
 /// What the Settings screen shows.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, TS)]
@@ -16,6 +32,8 @@ pub struct Settings {
     pub company_address: String,
     /// Digits only; the screen shows it grouped as 000-000-000-000.
     pub company_tin: String,
+    /// A PNG or JPEG as a `data:` URL. Set and removed on its own, not by saving the form.
+    pub company_logo: Option<String>,
     #[ts(type = "number")]
     pub idle_timeout_minutes: i64,
     /// Where daily backups go. Empty means the default folder.

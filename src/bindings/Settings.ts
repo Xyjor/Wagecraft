@@ -7,7 +7,11 @@ export type Settings = { companyName: string, companyAddress: string,
 /**
  * Digits only; the screen shows it grouped as 000-000-000-000.
  */
-companyTin: string, idleTimeoutMinutes: number, 
+companyTin: string, 
+/**
+ * A PNG or JPEG as a `data:` URL. Set and removed on its own, not by saving the form.
+ */
+companyLogo: string | null, idleTimeoutMinutes: number, 
 /**
  * Where daily backups go. Empty means the default folder.
  */

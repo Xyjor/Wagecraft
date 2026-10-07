@@ -25,11 +25,14 @@ const saved: Settings = {
   companyName: "Acme Trading",
   companyAddress: "12 Rizal St, Makati",
   companyTin: "123456789000",
+  companyLogo: null,
   idleTimeoutMinutes: 15,
   backupFolder: "",
   defaultBackupFolder: "C:\\Users\\ana\\AppData\\Wagecraft\\backups",
   backupKeep: 14,
 };
+
+const LOGO = "data:image/png;base64,iVBORw0KGgo=";
 
 function renderAs(who: Me = admin) {
   render(
@@ -49,6 +52,8 @@ beforeEach(() => {
     if (cmd === "settings_get") return saved;
     if (cmd === "settings_update") return { ...saved, ...(args?.input as object) };
     if (cmd === "settings_pick_backup_folder") return "E:\\Backups";
+    if (cmd === "settings_pick_logo") return { ...saved, companyLogo: LOGO };
+    if (cmd === "settings_clear_logo") return { ...saved, companyLogo: null };
     throw new Error(`unexpected ${cmd}`);
   });
 });
@@ -144,5 +149,81 @@ describe("SettingsPage", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "Use the default folder" }));
     expect(screen.getByText(saved.defaultBackupFolder)).toBeTruthy();
+  });
+
+  it("has no logo at first and adds one straight away", async () => {
+    renderAs();
+    await waitFor(() => expect(screen.getByText("No logo yet.")).toBeTruthy());
+    expect(screen.queryByRole("button", { name: "Remove logo" })).toBeNull();
+
+    fireEvent.click(screen.getByRole("button", { name: "Choose logo…" }));
+
+    await waitFor(() => expect(screen.getByRole("status").textContent).toBe("Logo saved."));
+    expect(call).toHaveBeenCalledWith("settings_pick_logo", undefined);
+    expect(screen.getByRole("img", { name: "Company logo" }).getAttribute("src")).toBe(LOGO);
+    expect(screen.queryByText("No logo yet.")).toBeNull();
+  });
+
+  it("removes the logo", async () => {
+    call.mockImplementation(async (cmd: string) => {
+      if (cmd === "settings_get") return { ...saved, companyLogo: LOGO };
+      if (cmd === "settings_clear_logo") return { ...saved, companyLogo: null };
+      throw new Error(`unexpected ${cmd}`);
+    });
+    renderAs();
+    await waitFor(() => expect(screen.getByRole("img", { name: "Company logo" })).toBeTruthy());
+
+    fireEvent.click(screen.getByRole("button", { name: "Remove logo" }));
+
+    await waitFor(() => expect(screen.getByRole("status").textContent).toBe("Logo removed."));
+    expect(screen.getByText("No logo yet.")).toBeTruthy();
+  });
+
+  it("keeps unsaved form edits when the logo changes", async () => {
+    renderAs();
+    await waitFor(() => expect(field("Company name").value).toBe("Acme Trading"));
+    fireEvent.change(field("Company name"), { target: { value: "Acme Trading Corp." } });
+
+    fireEvent.click(screen.getByRole("button", { name: "Choose logo…" }));
+
+    await waitFor(() => expect(screen.getByRole("status").textContent).toBe("Logo saved."));
+    expect(field("Company name").value).toBe("Acme Trading Corp.");
+  });
+
+  it("shows why a logo was refused and keeps the old state", async () => {
+    call.mockImplementation(async (cmd: string) => {
+      if (cmd === "settings_get") return saved;
+      if (cmd === "settings_pick_logo")
+        throw { code: "CONFLICT", message: "Choose a PNG or JPEG image for the logo", fields: [] };
+      throw new Error(`unexpected ${cmd}`);
+    });
+    renderAs();
+    await waitFor(() => expect(screen.getByText("No logo yet.")).toBeTruthy());
+
+    fireEvent.click(screen.getByRole("button", { name: "Choose logo…" }));
+
+    await waitFor(() =>
+      expect(screen.getByText("Choose a PNG or JPEG image for the logo")).toBeTruthy(),
+    );
+    expect(screen.getByText("No logo yet.")).toBeTruthy();
+  });
+
+  it("says nothing when the logo picker is cancelled", async () => {
+    call.mockImplementation(async (cmd: string) => {
+      if (cmd === "settings_get" || cmd === "settings_pick_logo") return saved;
+      throw new Error(`unexpected ${cmd}`);
+    });
+    renderAs();
+    await waitFor(() => expect(screen.getByText("No logo yet.")).toBeTruthy());
+
+    fireEvent.click(screen.getByRole("button", { name: "Choose logo…" }));
+
+    await waitFor(() => expect(call).toHaveBeenCalledWith("settings_pick_logo", undefined));
+    await waitFor(() =>
+      expect(
+        (screen.getByRole("button", { name: "Choose logo…" }) as HTMLButtonElement).disabled,
+      ).toBe(false),
+    );
+    expect(screen.queryByRole("status")).toBeNull();
   });
 });

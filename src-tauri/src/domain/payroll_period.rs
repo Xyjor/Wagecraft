@@ -1,6 +1,7 @@
 //! Payroll periods (plan §5.3, §6.5): the types the Payroll screen uses, and the rule for
 //! which days a semi-monthly cutoff covers.
 
+use crate::domain::settings::CompanyHeader;
 use chrono::{Datelike, Days, NaiveDate};
 use serde::{Deserialize, Serialize};
 use sqlx::FromRow;
@@ -198,8 +199,7 @@ pub struct PayrollRegister {
 #[ts(export)]
 pub struct RegisterReport {
     pub period: PayrollPeriod,
-    /// Empty until setup names the company.
-    pub company_name: String,
+    pub company: CompanyHeader,
     pub rows: Vec<RegisterReportRow>,
     /// Every column added up; the name is "Total" and the number is empty.
     pub totals: RegisterReportRow,
@@ -285,8 +285,8 @@ pub struct PayslipDetail {
     pub period_start: String,
     pub period_end: String,
     pub pay_date: String,
-    /// For the payslip header; empty until setup names the company.
-    pub company_name: String,
+    /// For the payslip header.
+    pub company: CompanyHeader,
     pub employee_no: String,
     pub employee_name: String,
     pub department: Option<String>,
