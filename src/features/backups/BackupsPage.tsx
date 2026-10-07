@@ -6,6 +6,7 @@ import { useSession } from "@/features/auth/session";
 import type { AppError } from "@/lib/ipc";
 import { backUpNow, listBackups } from "./api";
 import { formatBytes, kindLabel } from "./backups";
+import { RestorePanel } from "./RestorePanel";
 
 export function BackupsPage() {
   const { me } = useSession();
@@ -64,6 +65,8 @@ function Backups() {
         copy to a USB drive or another folder, so a broken PC doesn&apos;t take your payroll with
         it.
       </p>
+
+      <RestorePanel />
 
       <FormAlert message={alert} />
       {notice && (

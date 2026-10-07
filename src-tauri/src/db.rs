@@ -3,6 +3,9 @@ use sqlx::sqlite::{
 };
 use std::{path::Path, time::Duration};
 
+/// The database's file name in the app data folder.
+pub const DB_FILE: &str = "wagecraft.db";
+
 /// Opens (or creates) the Wagecraft database at `path` and applies any pending migrations.
 pub async fn open(path: &Path) -> anyhow::Result<SqlitePool> {
     let options = SqliteConnectOptions::new()
@@ -21,6 +24,17 @@ pub async fn open(path: &Path) -> anyhow::Result<SqlitePool> {
 
     sqlx::migrate!("./migrations").run(&pool).await?;
     Ok(pool)
+}
+
+/// The newest migration this build of the app has. A backup from a newer build can't be
+/// restored (plan §6.7).
+pub fn newest_migration() -> i64 {
+    sqlx::migrate!("./migrations")
+        .migrations
+        .iter()
+        .map(|m| m.version)
+        .max()
+        .unwrap_or(0)
 }
 
 #[cfg(test)]

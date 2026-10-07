@@ -23,3 +23,18 @@ pub struct BackupEntry {
     /// that isn't plugged in.
     pub on_disk: bool,
 }
+
+/// What a restore would put back, shown before Admin types RESTORE (plan §6.7).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export)]
+pub struct RestorePreview {
+    pub file_name: String,
+    /// When the file was last written, in UTC.
+    pub saved_at: Option<String>,
+    #[ts(type = "number")]
+    pub employee_count: i64,
+    /// The newest posted pay period's first and last day, if any.
+    pub last_posted_start: Option<String>,
+    pub last_posted_end: Option<String>,
+}

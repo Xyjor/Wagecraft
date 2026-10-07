@@ -1,6 +1,6 @@
 //! Database backups (plan §6.7, ADR-009). `VACUUM INTO` writes a clean, consistent copy
-//! while the app keeps running; a plain file copy is unsafe in WAL mode. Restore comes
-//! later.
+//! while the app keeps running; a plain file copy is unsafe in WAL mode. Restoring one is
+//! in `restore.rs`.
 
 use crate::audit::{self, Actor, Entry};
 use crate::domain::backup::BackupEntry;
