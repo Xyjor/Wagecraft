@@ -19,3 +19,11 @@ export function parsePesos(text: string): number | null {
   const centavos = Number((match[2] ?? "0").padEnd(2, "0"));
   return pesos * 100 + centavos;
 }
+
+/** A short amount for chart axes: "₱950", "₱450k", "₱6.3M". */
+export function compactPesos(cents: number): string {
+  // Each branch rounds once, straight from centavos, so ₱450,499.99 stays ₱450k.
+  if (Math.abs(cents) >= 100_000_000) return `₱${Math.round(cents / 10_000_000) / 10}M`;
+  if (Math.abs(cents) >= 100_000) return `₱${Math.round(cents / 100_000)}k`;
+  return `₱${Math.round(cents / 100)}`;
+}
