@@ -3,6 +3,7 @@
 import { describe, expect, it } from "vitest";
 import type { PayslipDetail } from "@/bindings/PayslipDetail";
 import type { PayslipLine } from "@/bindings/PayslipLine";
+import { BROKEN_LOGO, PNG_LOGO, hasImage } from "@/test/logo";
 import { expectReadablePdf } from "@/test/pdf";
 import { formatAmount, payslipFileName, payslipSections, renderPayslipPdf } from "./payslipPdf";
 
@@ -21,7 +22,12 @@ const slip: PayslipDetail = {
   periodStart: "2026-10-16",
   periodEnd: "2026-10-31",
   payDate: "2026-10-31",
-  companyName: "Acme Trading",
+  company: {
+    name: "Acme Trading",
+    address: "12 Rizal St, Makati",
+    tin: "123456789000",
+    logo: null,
+  },
   employeeNo: "EMP-0001",
   employeeName: "Santos, Ana",
   department: "Operations",
@@ -77,5 +83,20 @@ describe("payslip PDF", () => {
 
   it("renders a real PDF file", async () => {
     await expectReadablePdf(await renderPayslipPdf(slip));
+  }, 20_000);
+
+  it("prints the company logo", async () => {
+    const bytes = await renderPayslipPdf({ ...slip, company: { ...slip.company, logo: PNG_LOGO } });
+    await expectReadablePdf(bytes);
+    expect(hasImage(bytes)).toBe(true);
+  }, 20_000);
+
+  it("still makes the PDF, without the logo, if the logo is damaged", async () => {
+    const bytes = await renderPayslipPdf({
+      ...slip,
+      company: { ...slip.company, logo: BROKEN_LOGO },
+    });
+    await expectReadablePdf(bytes);
+    expect(hasImage(bytes)).toBe(false);
   }, 20_000);
 });

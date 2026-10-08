@@ -217,7 +217,7 @@ pub async fn payslip(db: &SqlitePool, id: i64) -> Result<PayslipDetail, AppError
         period_start: period.period_start,
         period_end: period.period_end,
         pay_date: period.pay_date,
-        company_name: repo::company_name(&mut *conn).await?,
+        company: repo::company(&mut *conn).await?,
         employee_no: p.employee_no,
         employee_name: p.employee_name,
         department: p.department,
@@ -478,6 +478,7 @@ fn text(d: NaiveDate) -> String {
 mod tests {
     use super::*;
     use crate::audit::test_support as audit_rows;
+    use crate::domain::settings::CompanyHeader;
     use crate::services::payroll_fixtures::*;
 
     fn amounts(p: &PayslipDetail) -> Vec<(String, i64)> {
@@ -713,6 +714,23 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn without_settings_the_payslip_company_is_blank_and_has_no_logo() {
+        let (_d, db, period) = db().await;
+        employee(&db, 1, "Santos", "2025-01-06", "MONTHLY", 2_500_000).await;
+        full_days(&db, 1, &work_days_except(&[])).await;
+        sql(
+            &db,
+            "INSERT INTO settings (key, value) VALUES ('company_logo', '')",
+        )
+        .await;
+        let reg = compute(&db, hr(), period, now()).await.expect("compute");
+
+        let slip = payslip(&db, reg.rows[0].payslip_id).await.expect("slip");
+
+        assert_eq!(slip.company, CompanyHeader::default());
+    }
+
+    #[tokio::test]
     async fn a_payslip_names_the_company_and_the_employee_s_department_and_position() {
         let (_d, db, period) = db().await;
         employee(&db, 1, "Santos", "2025-01-06", "MONTHLY", 2_500_000).await;
@@ -721,7 +739,9 @@ mod tests {
         full_days(&db, 2, &work_days_except(&[])).await;
         sql(
             &db,
-            "INSERT INTO settings (key, value) VALUES ('company_name', 'Acme Trading'); \
+            "INSERT INTO settings (key, value) VALUES ('company_name', 'Acme Trading'), \
+               ('company_address', '12 Rizal St, Makati'), ('company_tin', '123456789000'), \
+               ('company_logo', 'data:image/png;base64,iVBORw0KGgo='); \
              INSERT INTO departments (id, code, name) VALUES (5, 'OPS', 'Operations'); \
              INSERT INTO positions (id, department_id, title) VALUES (7, 5, 'Driver'); \
              UPDATE employees SET department_id = 5, position_id = 7 WHERE id = 1",
@@ -730,7 +750,15 @@ mod tests {
         let reg = compute(&db, hr(), period, now()).await.expect("compute");
 
         let santos = payslip(&db, reg.rows[1].payslip_id).await.expect("santos");
-        assert_eq!(santos.company_name, "Acme Trading");
+        assert_eq!(
+            santos.company,
+            CompanyHeader {
+                name: "Acme Trading".into(),
+                address: "12 Rizal St, Makati".into(),
+                tin: "123456789000".into(),
+                logo: Some("data:image/png;base64,iVBORw0KGgo=".into()),
+            }
+        );
         assert_eq!(santos.department.as_deref(), Some("Operations"));
         assert_eq!(santos.position.as_deref(), Some("Driver"));
         let reyes = payslip(&db, reg.rows[0].payslip_id).await.expect("reyes");

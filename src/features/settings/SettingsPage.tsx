@@ -7,7 +7,7 @@ import { fieldErrors } from "@/features/auth/validation";
 import { formValues, serverErrors } from "@/lib/formData";
 import { formatId } from "@/lib/govIds";
 import type { AppError } from "@/lib/ipc";
-import { getSettings, pickBackupFolder, saveSettings } from "./api";
+import { clearLogo, getSettings, pickBackupFolder, pickLogo, saveSettings } from "./api";
 import { settingsSchema } from "./schemas";
 
 export function SettingsPage() {
@@ -39,10 +39,20 @@ function SettingsLoader() {
         </p>
       )}
       {!settings && !alert && <p className="text-zinc-500">Loading settings…</p>}
-      {/* Keyed so a save re-fills the form with what Rust stored, such as the TIN grouped. */}
+      {settings && (
+        <LogoPanel
+          logo={settings.companyLogo}
+          onChanged={(s, message) => {
+            setSettings(s);
+            setNotice(message);
+          }}
+        />
+      )}
+      {/* Keyed so a save re-fills the form with what Rust stored, such as the TIN grouped.
+          The logo is left out of the key, so changing it keeps edits not yet saved. */}
       {settings && (
         <SettingsForm
-          key={JSON.stringify(settings)}
+          key={JSON.stringify({ ...settings, companyLogo: null })}
           saved={settings}
           onEdit={() => setNotice(undefined)}
           onSaved={(s) => {
@@ -173,6 +183,66 @@ function SettingsForm({
         {busy ? "Saving…" : "Save settings"}
       </button>
     </form>
+  );
+}
+
+/** The logo is saved as soon as it is chosen or removed, apart from the form. */
+function LogoPanel({
+  logo,
+  onChanged,
+}: {
+  logo: string | null;
+  onChanged: (s: Settings, message: string) => void;
+}) {
+  const [alert, setAlert] = useState<string>();
+  const [busy, setBusy] = useState(false);
+
+  async function change(action: () => Promise<Settings>, message: string) {
+    setAlert(undefined);
+    setBusy(true);
+    try {
+      const s = await action();
+      // Cancelling the picker returns the settings unchanged.
+      if (s.companyLogo !== logo) onChanged(s, message);
+    } catch (e) {
+      setAlert((e as AppError).message);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <Group
+      title="Company logo"
+      note="Printed on payslips and the payroll register. PNG or JPEG, up to 200 KB."
+    >
+      <FormAlert message={alert} />
+      {logo ? (
+        <img src={logo} alt="Company logo" className="max-h-16 max-w-48 object-contain" />
+      ) : (
+        <p className="text-sm text-zinc-500">No logo yet.</p>
+      )}
+      <div className="flex gap-2">
+        <button
+          type="button"
+          className={quiet}
+          disabled={busy}
+          onClick={() => change(pickLogo, "Logo saved.")}
+        >
+          Choose logo…
+        </button>
+        {logo && (
+          <button
+            type="button"
+            className={quiet}
+            disabled={busy}
+            onClick={() => change(clearLogo, "Logo removed.")}
+          >
+            Remove logo
+          </button>
+        )}
+      </div>
+    </Group>
   );
 }
 

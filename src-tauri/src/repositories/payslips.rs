@@ -2,6 +2,7 @@
 //! and the payslips it saves. No rules here: the payroll service decides.
 
 use crate::domain::payroll_period::{MyPayslip, PayslipLine, RegisterReportRow, SkippedEmployee};
+use crate::domain::settings::CompanyHeader;
 use sqlx::{FromRow, SqliteConnection, SqliteExecutor};
 
 const NAME: &str = "e.employee_no, e.last_name || ', ' || e.first_name AS employee_name";
@@ -371,11 +372,24 @@ pub async fn inputs_for_period<'e>(
         .await
 }
 
-/// The company name from setup, or empty if it was never set.
-pub async fn company_name<'e>(db: impl SqliteExecutor<'e>) -> sqlx::Result<String> {
-    let name: Option<String> =
-        sqlx::query_scalar("SELECT value FROM settings WHERE key = 'company_name'")
-            .fetch_optional(db)
-            .await?;
-    Ok(name.unwrap_or_default())
+/// The company as Settings has it, for the top of payslips and the register.
+pub async fn company<'e>(db: impl SqliteExecutor<'e>) -> sqlx::Result<CompanyHeader> {
+    let rows: Vec<(String, String)> = sqlx::query_as(
+        "SELECT key, value FROM settings \
+         WHERE key IN ('company_name', 'company_address', 'company_tin', 'company_logo')",
+    )
+    .fetch_all(db)
+    .await?;
+    let get = |key: &str| {
+        rows.iter()
+            .find(|(k, _)| k == key)
+            .map(|(_, v)| v.clone())
+            .unwrap_or_default()
+    };
+    Ok(CompanyHeader {
+        name: get("company_name"),
+        address: get("company_address"),
+        tin: get("company_tin"),
+        logo: Some(get("company_logo")).filter(|l| !l.is_empty()),
+    })
 }
