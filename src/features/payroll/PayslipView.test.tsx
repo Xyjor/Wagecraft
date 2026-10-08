@@ -49,6 +49,10 @@ beforeEach(() => {
 });
 afterEach(cleanup);
 
+// These tests draw a real PDF. The first one also loads the PDF library, which on a cold or
+// busy machine takes longer than Testing Library's default 1 second wait.
+const PDF_WAIT = { timeout: 15_000 };
+
 const download = () =>
   fireEvent.click(screen.getByRole("button", { name: "Download PDF of Oct payslip" }));
 
@@ -59,7 +63,11 @@ describe("PayslipView download", () => {
     download();
 
     expect(
-      await screen.findByText("Saved to C:\\Users\\ana\\payslip-EMP-0001-2026-10-01.pdf"),
+      await screen.findByText(
+        "Saved to C:\\Users\\ana\\payslip-EMP-0001-2026-10-01.pdf",
+        undefined,
+        PDF_WAIT,
+      ),
     ).toBeTruthy();
     const [cmd, args] = call.mock.calls[0];
     expect(cmd).toBe("export_save_pdf");
@@ -74,7 +82,7 @@ describe("PayslipView download", () => {
     download();
 
     const button = screen.getByRole("button", { name: "Download PDF of Oct payslip" });
-    await vi.waitFor(() => expect((button as HTMLButtonElement).disabled).toBe(false));
+    await vi.waitFor(() => expect((button as HTMLButtonElement).disabled).toBe(false), PDF_WAIT);
     expect(call).toHaveBeenCalledOnce();
     expect(screen.queryByText(/Saved to/)).toBeNull();
   }, 20_000);
@@ -88,6 +96,8 @@ describe("PayslipView download", () => {
     render(<PayslipView slip={slip} label="Oct payslip" />);
     download();
 
-    expect(await screen.findByText("That file couldn't be saved")).toBeTruthy();
+    expect(
+      await screen.findByText("That file couldn't be saved", undefined, PDF_WAIT),
+    ).toBeTruthy();
   }, 20_000);
 });

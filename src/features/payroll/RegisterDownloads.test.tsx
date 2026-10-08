@@ -44,6 +44,10 @@ beforeEach(() => {
 });
 afterEach(cleanup);
 
+// These tests draw a real PDF. The first one also loads the PDF library, which on a cold or
+// busy machine takes longer than Testing Library's default 1 second wait.
+const PDF_WAIT = { timeout: 15_000 };
+
 describe("RegisterDownloads", () => {
   it("saves the register as CSV", async () => {
     call.mockResolvedValue("C:\\Reports\\payroll-register-2026-10-16.csv");
@@ -51,7 +55,11 @@ describe("RegisterDownloads", () => {
     fireEvent.click(screen.getByRole("button", { name: "Download CSV" }));
 
     expect(
-      await screen.findByText("Saved to C:\\Reports\\payroll-register-2026-10-16.csv"),
+      await screen.findByText(
+        "Saved to C:\\Reports\\payroll-register-2026-10-16.csv",
+        undefined,
+        PDF_WAIT,
+      ),
     ).toBeTruthy();
     expect(call).toHaveBeenCalledWith("report_payroll_register_csv", { periodId: 7 });
   });
@@ -66,7 +74,11 @@ describe("RegisterDownloads", () => {
     fireEvent.click(screen.getByRole("button", { name: "Download PDF" }));
 
     expect(
-      await screen.findByText("Saved to C:\\Reports\\payroll-register-2026-10-16.pdf"),
+      await screen.findByText(
+        "Saved to C:\\Reports\\payroll-register-2026-10-16.pdf",
+        undefined,
+        PDF_WAIT,
+      ),
     ).toBeTruthy();
     expect(call).toHaveBeenCalledWith("report_payroll_register", { periodId: 7 });
     const save = call.mock.calls.find(([cmd]) => cmd === "export_save_pdf")!;
