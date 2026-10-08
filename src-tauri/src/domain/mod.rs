@@ -12,4 +12,5 @@ pub mod payroll;
 pub mod payroll_period;
 pub mod recurring_item;
 pub mod schedule;
+pub mod settings;
 pub mod validation;

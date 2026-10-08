@@ -11,9 +11,6 @@ use serde_json::json;
 use sqlx::SqlitePool;
 use std::path::{Path, PathBuf};
 
-/// How many daily backups to keep (plan §6.7). Becomes a setting later.
-pub const KEEP_DAILY: usize = 14;
-
 /// Nobody starts the daily backup; audit entries name the app instead.
 const SYSTEM: Actor<'static> = Actor {
     user_id: None,

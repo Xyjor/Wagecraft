@@ -7,6 +7,7 @@ pub mod org;
 pub mod overtime;
 pub mod payroll;
 pub mod reports;
+pub mod settings;
 pub mod system;
 pub mod users;
 

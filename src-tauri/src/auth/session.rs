@@ -29,15 +29,20 @@ impl Session {
 
 pub struct Auth {
     session: Mutex<Option<Session>>,
-    idle_timeout: Duration,
+    idle_timeout: Mutex<Duration>,
 }
 
 impl Auth {
     pub fn new(idle_timeout: Duration) -> Self {
         Self {
             session: Mutex::new(None),
-            idle_timeout,
+            idle_timeout: Mutex::new(idle_timeout),
         }
+    }
+
+    /// Admin changed the idle timeout in Settings. Applies from the next command on.
+    pub fn set_idle_timeout(&self, timeout: Duration) {
+        *self.idle_timeout.lock().expect("idle timeout lock") = timeout;
     }
 
     pub fn sign_in(&self, s: Session) {
@@ -59,9 +64,10 @@ impl Auth {
     /// Checks sign-in, idle time and permission, with the clock passed in so tests
     /// don't wait 15 minutes. An expired session is ended and handed back for auditing.
     pub fn check_at(&self, p: Permission, now: Instant) -> Result<Session, Refusal> {
+        let idle_timeout = *self.idle_timeout.lock().expect("idle timeout lock");
         let mut guard = self.session.lock().expect("session lock");
         let s = guard.as_mut().ok_or(Refusal::Unauthenticated)?;
-        if now.duration_since(s.last_activity) > self.idle_timeout {
+        if now.duration_since(s.last_activity) > idle_timeout {
             let ended = guard.take().expect("session checked above");
             return Err(Refusal::Expired(ended));
         }
@@ -127,6 +133,21 @@ mod tests {
         assert!(matches!(
             auth.require_at(Permission::EmployeeReadAll, t0),
             Err(AppError::Forbidden)
+        ));
+    }
+
+    #[test]
+    fn a_new_idle_timeout_applies_to_the_session_already_signed_in() {
+        let auth = Auth::new(IDLE);
+        let t0 = Instant::now();
+        auth.sign_in(staff(t0));
+
+        auth.set_idle_timeout(Duration::from_secs(5 * 60));
+
+        let six_minutes = t0 + Duration::from_secs(6 * 60);
+        assert!(matches!(
+            auth.require_at(Permission::SelfPayslip, six_minutes),
+            Err(AppError::SessionExpired)
         ));
     }
 
