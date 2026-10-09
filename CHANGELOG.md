@@ -39,3 +39,5 @@ Everything below is on `main` and goes out as 1.0.0, planned for Nov 1, 2026.
   and pending requests.
 - **App shell:** light, dark and system themes, and a Windows NSIS installer built by the
   `release` workflow.
+- **Documentation:** a user manual with screenshots, the manual test script for releases, and
+  the architecture decision records.
