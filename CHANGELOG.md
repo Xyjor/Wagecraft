@@ -6,7 +6,9 @@ What changed in each version of Wagecraft. The format follows
 
 ## [Unreleased]
 
-Everything below is on `main` and goes out as 1.0.0, planned for Nov 1, 2026.
+## [1.0.0] - 2026-10-09
+
+The first release.
 
 ### Added
 
@@ -48,3 +50,6 @@ Everything below is on `main` and goes out as 1.0.0, planned for Nov 1, 2026.
   five wrong passwords, a dependency audit in CI, and tests that keep every command inside the
   role matrix and the Tauri config locked down.
 - **License:** MIT.
+
+[Unreleased]: https://github.com/Xyjor/Wagecraft/compare/v1.0.0...HEAD
+[1.0.0]: https://github.com/Xyjor/Wagecraft/releases/tag/v1.0.0
