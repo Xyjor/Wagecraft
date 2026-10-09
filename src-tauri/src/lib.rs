@@ -5,6 +5,8 @@ mod db;
 mod domain;
 mod error;
 mod export;
+#[cfg(test)]
+mod release_checklist;
 mod repositories;
 pub mod seed;
 mod services;

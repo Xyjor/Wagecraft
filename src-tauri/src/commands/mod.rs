@@ -79,4 +79,65 @@ mod tests {
             .collect();
         assert!(missing.is_empty(), "not in generate_handler!: {missing:?}");
     }
+
+    /// Plan §8.3, the RBAC matrix: Staff reach only their own data, HR never reaches the
+    /// Admin-only areas, and every command names a permission this table knows. A new
+    /// permission or a looser `Role::allows` fails here until the matrix is updated.
+    #[test]
+    fn every_command_fits_the_role_matrix() {
+        use crate::auth::permissions::{Permission, Permission::*, Role};
+        const KNOWN: &[(&str, Permission)] = &[
+            ("UserManage", UserManage),
+            ("SettingsManage", SettingsManage),
+            ("BackupManage", BackupManage),
+            ("AuditRead", AuditRead),
+            ("OrgManage", OrgManage),
+            ("EmployeeReadAll", EmployeeReadAll),
+            ("EmployeeWrite", EmployeeWrite),
+            ("AttendanceReadAll", AttendanceReadAll),
+            ("AttendanceEdit", AttendanceEdit),
+            ("OvertimeDecide", OvertimeDecide),
+            ("LeaveDecide", LeaveDecide),
+            ("PayrollCompute", PayrollCompute),
+            ("PayrollApprove", PayrollApprove),
+            ("PayrollPost", PayrollPost),
+            ("PayslipReadAll", PayslipReadAll),
+            ("ReportExport", ReportExport),
+            ("SelfProfile", SelfProfile),
+            ("SelfAttendance", SelfAttendance),
+            ("SelfLeave", SelfLeave),
+            ("SelfPayslip", SelfPayslip),
+        ];
+        const STAFF_MAY: &[&str] = &["SelfProfile", "SelfAttendance", "SelfLeave", "SelfPayslip"];
+        const ADMIN_ONLY: &[&str] = &["UserManage", "SettingsManage", "BackupManage", "AuditRead"];
+
+        let mut checked = 0;
+        for (name, body) in commands() {
+            for chunk in body.split("Permission::").skip(1) {
+                let perm: String = chunk
+                    .chars()
+                    .take_while(|c| c.is_ascii_alphanumeric())
+                    .collect();
+                let Some((_, permission)) = KNOWN.iter().find(|(n, _)| *n == perm) else {
+                    panic!("{name} checks Permission::{perm}, which the matrix doesn't list");
+                };
+                assert!(
+                    Role::Admin.allows(*permission),
+                    "{name}: Admin can't {perm}"
+                );
+                assert_eq!(
+                    Role::Staff.allows(*permission),
+                    STAFF_MAY.contains(&perm.as_str()),
+                    "{name}: Staff and {perm}"
+                );
+                assert_eq!(
+                    Role::Hr.allows(*permission),
+                    !ADMIN_ONLY.contains(&perm.as_str()),
+                    "{name}: HR and {perm}"
+                );
+                checked += 1;
+            }
+        }
+        assert!(checked >= 50, "only {checked} permission checks found");
+    }
 }
