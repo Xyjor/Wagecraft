@@ -1,0 +1,51 @@
+# Builds the Windows installer. A pushed tag (v1.0.0) attaches it to a draft GitHub
+# Release; a manual run keeps it as a workflow artifact instead (plan §13.2).
+name: release
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  installer:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: lts/*, cache: pnpm }
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+        with: { workspaces: src-tauri }
+      - run: pnpm install --frozen-lockfile
+      - name: Check that the tag matches the app version
+        if: startsWith(github.ref, 'refs/tags/')
+        shell: bash
+        run: |
+          version="v$(node -p "require('./package.json').version")"
+          if [ "$version" != "$GITHUB_REF_NAME" ]; then
+            echo "Tag $GITHUB_REF_NAME does not match the app version $version. Run pnpm version:set first." >&2
+            exit 1
+          fi
+      - name: Build the installer and attach it to a draft release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tagName: v__VERSION__
+          releaseName: Wagecraft v__VERSION__
+          releaseBody: See CHANGELOG.md for what changed.
+          releaseDraft: true
+          prerelease: false
+      - name: Build the installer
+        if: "!startsWith(github.ref, 'refs/tags/')"
+        uses: tauri-apps/tauri-action@v0
+      - name: Keep the installer as a workflow artifact
+        if: "!startsWith(github.ref, 'refs/tags/')"
+        uses: actions/upload-artifact@v4
+        with:
+          name: wagecraft-installer
+          path: src-tauri/target/release/bundle/nsis/*.exe
+          if-no-files-found: error
