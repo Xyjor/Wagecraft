@@ -6,6 +6,7 @@ import type { EmployeePage } from "@/bindings/EmployeePage";
 import type { EmployeeQuery } from "@/bindings/EmployeeQuery";
 import type { EmployeeSort } from "@/bindings/EmployeeSort";
 import { FormAlert } from "@/components/form";
+import { Pager } from "@/components/Pager";
 import { Badge, primaryButton, quietButton } from "@/components/ui";
 import { useSession } from "@/features/auth/session";
 import { listDepartments } from "@/features/org/api";
@@ -225,7 +226,12 @@ function EmployeeList() {
               ))}
             </tbody>
           </table>
-          <Pager page={result} onPage={(page) => setQuery((q) => ({ ...q, page }))} />
+          <Pager
+            page={result.page}
+            pageSize={result.pageSize}
+            total={result.total}
+            onPage={(page) => setQuery((q) => ({ ...q, page }))}
+          />
         </>
       )}
     </section>
@@ -254,38 +260,6 @@ function SortHeader(props: {
   );
 }
 
-function Pager({ page, onPage }: { page: EmployeePage; onPage: (page: number) => void }) {
-  const from = page.total === 0 ? 0 : (page.page - 1) * page.pageSize + 1;
-  const to = Math.min(page.page * page.pageSize, page.total);
-  const last = Math.max(1, Math.ceil(page.total / page.pageSize));
-  return (
-    <div className="flex items-center justify-between text-sm text-zinc-600 dark:text-zinc-400">
-      <span>{page.total > 0 && `Showing ${from}–${to} of ${page.total}`}</span>
-      <div className="flex gap-1">
-        <button
-          type="button"
-          className={quietButton}
-          aria-label="Previous page"
-          disabled={page.page <= 1}
-          onClick={() => onPage(page.page - 1)}
-        >
-          Previous
-        </button>
-        <button
-          type="button"
-          className={quietButton}
-          aria-label="Next page"
-          disabled={page.page >= last}
-          onClick={() => onPage(page.page + 1)}
-        >
-          Next
-        </button>
-      </div>
-    </div>
-  );
-}
-
-/** True when the list is narrowed, so an empty result means "no match", not "none yet". */
 function isFiltered(q: EmployeeQuery): boolean {
   return (
     Boolean(q.search || q.departmentId || q.positionId || q.employmentStatus) ||

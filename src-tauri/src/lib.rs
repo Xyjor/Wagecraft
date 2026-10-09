@@ -168,6 +168,9 @@ pub fn run() {
             commands::settings::settings_pick_backup_folder,
             commands::dashboard::dashboard_team,
             commands::dashboard::dashboard_mine,
+            commands::audit::audit_list,
+            commands::audit::audit_filters,
+            commands::audit::audit_export_csv,
             commands::settings::settings_pick_logo,
             commands::settings::settings_clear_logo,
         ])

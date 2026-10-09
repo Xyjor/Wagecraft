@@ -20,6 +20,7 @@ import { RegisterPage } from "@/features/payroll/RegisterPage";
 import { RulePacksPage } from "@/features/payroll/RulePacksPage";
 import { SettingsPage } from "@/features/settings/SettingsPage";
 import { UsersPage } from "@/features/users/UsersPage";
+import { ActivityPage } from "@/features/audit/ActivityPage";
 
 export const router = createBrowserRouter([
   {
@@ -46,6 +47,7 @@ export const router = createBrowserRouter([
       { path: "users", element: <UsersPage /> },
       { path: "backups", element: <BackupsPage /> },
       { path: "settings", element: <SettingsPage /> },
+      { path: "activity", element: <ActivityPage /> },
     ],
   },
 ]);

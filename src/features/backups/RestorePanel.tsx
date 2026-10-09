@@ -2,7 +2,7 @@ import { useId, useState } from "react";
 import type { RestorePreview } from "@/bindings/RestorePreview";
 import { FormAlert } from "@/components/form";
 import { primaryButton as primary, quietButton as quiet } from "@/components/ui";
-import { formatDate } from "@/lib/dates";
+import { formatDate, formatWhen } from "@/lib/dates";
 import type { AppError } from "@/lib/ipc";
 import { chooseRestore, restoreBackup } from "./api";
 
@@ -107,8 +107,4 @@ export function RestorePanel() {
 function lastPosted(p: RestorePreview) {
   if (!p.lastPostedStart || !p.lastPostedEnd) return "No payroll posted yet";
   return `last posted payroll ${formatDate(p.lastPostedStart)} to ${formatDate(p.lastPostedEnd)}`;
-}
-
-function formatWhen(iso: string) {
-  return new Date(iso).toLocaleString("en-PH", { dateStyle: "medium", timeStyle: "short" });
 }
