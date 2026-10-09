@@ -1,6 +1,9 @@
-//! The Admin and HR dashboard (plan §6.9).
+//! The dashboards (plan §6.9): Admin and HR see the team, staff see their own.
 
-use crate::domain::dashboard::{DepartmentCount, PeriodCost, TeamDashboard, TodayCounts};
+use crate::domain::dashboard::{
+    CutoffSummary, DepartmentCount, MyDashboard, MyDay, PeriodCost, TeamDashboard, TodayCounts,
+};
+use crate::domain::payroll_period::cutoff;
 use crate::error::AppError;
 use crate::services::attendance;
 use chrono::{Datelike, NaiveDate};
@@ -88,10 +91,82 @@ pub async fn team(db: &SqlitePool, today: NaiveDate) -> Result<TeamDashboard, Ap
     })
 }
 
+/// One employee's own dashboard, as of `today` on the office clock.
+pub async fn mine(
+    db: &SqlitePool,
+    employee_id: i64,
+    today: NaiveDate,
+) -> Result<MyDashboard, AppError> {
+    let iso = today.to_string();
+    // Today reads the same as on HR's grid, schedule, holidays and leave included.
+    let row = attendance::day(db, &iso)
+        .await?
+        .into_iter()
+        .find(|r| r.employee_id == employee_id);
+    let today_row = match row {
+        Some(r) => MyDay {
+            date: iso.clone(),
+            status: r.status,
+            time_in: r.record.as_ref().and_then(|x| x.time_in.clone()),
+            time_out: r.record.as_ref().and_then(|x| x.time_out.clone()),
+            late_minutes: r.record.as_ref().map_or(0, |x| x.late_minutes),
+            holiday: r.holiday,
+            leave: r.leave,
+        },
+        None => MyDay {
+            date: iso.clone(),
+            ..MyDay::default()
+        },
+    };
+
+    let start = today
+        .with_day(if today.day() <= 15 { 1 } else { 16 })
+        .unwrap_or(today);
+    let end = cutoff(start).map_or(today, |(_, end)| end);
+    let (start, end) = (start.to_string(), end.to_string());
+    let (days_present, late_minutes, overtime_minutes, pending_leave, pending_overtime): (
+        i64,
+        i64,
+        i64,
+        i64,
+        i64,
+    ) = sqlx::query_as(
+        "SELECT \
+           (SELECT COUNT(*) FROM attendance_records WHERE employee_id = ?1 \
+              AND status = 'PRESENT' AND work_date BETWEEN ?2 AND ?3), \
+           (SELECT COALESCE(SUM(late_minutes), 0) FROM attendance_records \
+              WHERE employee_id = ?1 AND work_date BETWEEN ?2 AND ?3), \
+           (SELECT COALESCE(SUM(minutes), 0) FROM overtime_requests WHERE employee_id = ?1 \
+              AND status = 'APPROVED' AND work_date BETWEEN ?2 AND ?4), \
+           (SELECT COUNT(*) FROM leave_requests WHERE employee_id = ?1 \
+              AND status = 'PENDING'), \
+           (SELECT COUNT(*) FROM overtime_requests WHERE employee_id = ?1 \
+              AND status = 'PENDING')",
+    )
+    .bind(employee_id)
+    .bind(&start)
+    .bind(&iso)
+    .bind(&end)
+    .fetch_one(db)
+    .await?;
+
+    Ok(MyDashboard {
+        today: today_row,
+        cutoff: CutoffSummary {
+            period_start: start,
+            period_end: end,
+            days_present,
+            late_minutes,
+            overtime_minutes,
+        },
+        pending_leave,
+        pending_overtime,
+    })
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::domain::dashboard::{DepartmentCount, PeriodCost, TodayCounts};
     use crate::services::payroll_fixtures::{db, employee, posted, sql};
 
     fn oct_28() -> NaiveDate {
@@ -262,6 +337,144 @@ mod tests {
         assert_eq!(d.today, TodayCounts::default());
         assert!(d.by_department.is_empty());
         assert!(d.payroll_cost.is_empty());
+    }
+
+    /// Reyes (2) on Wed, Oct 28, 2026, in the Oct 16–31 cutoff, with Santos (1) as
+    /// someone else whose numbers must not leak in.
+    async fn my_db() -> (tempfile::TempDir, SqlitePool) {
+        let (dir, db, _) = db().await;
+        employee(&db, 1, "Santos", "2025-01-06", "MONTHLY", 2_500_000).await;
+        employee(&db, 2, "Reyes", "2025-01-06", "MONTHLY", 2_500_000).await;
+        sql(
+            &db,
+            "INSERT INTO attendance_records (employee_id, work_date, time_in, time_out, \
+               status, late_minutes, source) VALUES \
+               (2, '2026-10-15', '2026-10-15T08:30:00', '2026-10-15T17:00:00', 'PRESENT', \
+                30, 'CLOCK'), \
+               (2, '2026-10-16', '2026-10-16T08:10:00', '2026-10-16T17:00:00', 'PRESENT', \
+                10, 'CLOCK'), \
+               (2, '2026-10-19', '2026-10-19T08:00:00', '2026-10-19T17:00:00', 'PRESENT', \
+                0, 'CLOCK'), \
+               (2, '2026-10-20', NULL, NULL, 'ABSENT', 0, 'MANUAL'), \
+               (2, '2026-10-28', '2026-10-28T08:05:00', NULL, 'PRESENT', 5, 'CLOCK'), \
+               (1, '2026-10-19', '2026-10-19T09:00:00', '2026-10-19T17:00:00', 'PRESENT', \
+                60, 'CLOCK'); \
+             INSERT INTO overtime_requests (employee_id, work_date, start_at, end_at, \
+               minutes, reason, status) VALUES \
+               (2, '2026-10-15', '2026-10-15T17:00:00', '2026-10-15T19:00:00', 120, \
+                'Last cutoff', 'APPROVED'), \
+               (2, '2026-10-19', '2026-10-19T17:00:00', '2026-10-19T18:30:00', 90, \
+                'Stocktake', 'APPROVED'), \
+               (2, '2026-10-26', '2026-10-26T17:00:00', '2026-10-26T18:00:00', 60, \
+                'Stocktake', 'PENDING'), \
+               (2, '2026-10-27', '2026-10-27T17:00:00', '2026-10-27T18:00:00', 60, \
+                'Stocktake', 'REJECTED'), \
+               (1, '2026-10-19', '2026-10-19T17:00:00', '2026-10-19T19:00:00', 120, \
+                'Stocktake', 'APPROVED'); \
+             INSERT INTO leave_requests (employee_id, leave_type_id, start_date, end_date, \
+               halfdays, reason, status) VALUES \
+               (2, (SELECT id FROM leave_types WHERE code = 'VL'), '2026-11-03', \
+                '2026-11-03', 2, 'Errand', 'PENDING'), \
+               (2, (SELECT id FROM leave_types WHERE code = 'SL'), '2026-10-21', \
+                '2026-10-21', 2, 'Checkup', 'APPROVED'), \
+               (1, (SELECT id FROM leave_types WHERE code = 'VL'), '2026-11-04', \
+                '2026-11-04', 2, 'Errand', 'PENDING')",
+        )
+        .await;
+        (dir, db)
+    }
+
+    #[tokio::test]
+    async fn shows_my_day_so_far() {
+        let (_d, db) = my_db().await;
+
+        let d = mine(&db, 2, oct_28()).await.expect("dashboard");
+
+        assert_eq!(
+            d.today,
+            MyDay {
+                date: "2026-10-28".into(),
+                status: Some("PRESENT".into()),
+                time_in: Some("2026-10-28T08:05:00".into()),
+                time_out: None,
+                late_minutes: 5,
+                holiday: None,
+                leave: None,
+            }
+        );
+    }
+
+    #[tokio::test]
+    async fn a_work_day_without_a_clock_in_reads_as_not_in_yet() {
+        let (_d, db) = my_db().await;
+
+        let d = mine(&db, 1, oct_28()).await.expect("dashboard");
+
+        assert_eq!(d.today.status.as_deref(), Some("ABSENT"));
+        assert_eq!(d.today.time_in, None);
+    }
+
+    #[tokio::test]
+    async fn sums_only_my_own_cutoff_so_far() {
+        let (_d, db) = my_db().await;
+
+        let d = mine(&db, 2, oct_28()).await.expect("dashboard");
+
+        // Oct 16, 19 and 28 are in this cutoff; Oct 15 was the last one and the 20th
+        // was an absence. Santos's late hour and overtime are his own.
+        assert_eq!(
+            d.cutoff,
+            CutoffSummary {
+                period_start: "2026-10-16".into(),
+                period_end: "2026-10-31".into(),
+                days_present: 3,
+                late_minutes: 15,
+                overtime_minutes: 90,
+            }
+        );
+        assert_eq!((d.pending_leave, d.pending_overtime), (1, 1));
+    }
+
+    #[tokio::test]
+    async fn the_first_cutoff_runs_from_the_1st_to_the_15th() {
+        let (_d, db) = my_db().await;
+        let oct_15 = NaiveDate::from_ymd_opt(2026, 10, 15).unwrap();
+
+        let d = mine(&db, 2, oct_15).await.expect("dashboard");
+
+        assert_eq!(
+            d.cutoff,
+            CutoffSummary {
+                period_start: "2026-10-01".into(),
+                period_end: "2026-10-15".into(),
+                days_present: 1,
+                late_minutes: 30,
+                overtime_minutes: 120,
+            }
+        );
+    }
+
+    #[tokio::test]
+    async fn a_holiday_and_approved_leave_show_on_my_day() {
+        let (_d, db) = my_db().await;
+        sql(
+            &db,
+            "INSERT INTO holidays (date, name, type) VALUES \
+               ('2026-11-02', 'All Souls'' Day', 'SPECIAL_NON_WORKING'); \
+             UPDATE leave_requests SET status = 'APPROVED' WHERE employee_id = 2 \
+               AND start_date = '2026-11-03'",
+        )
+        .await;
+        let nov = |day| NaiveDate::from_ymd_opt(2026, 11, day).unwrap();
+
+        let all_souls = mine(&db, 2, nov(2)).await.expect("dashboard");
+        let errand = mine(&db, 2, nov(3)).await.expect("dashboard");
+
+        assert_eq!(all_souls.today.status.as_deref(), Some("HOLIDAY"));
+        assert_eq!(all_souls.today.holiday.as_deref(), Some("All Souls' Day"));
+        assert_eq!(errand.today.status.as_deref(), Some("ON_LEAVE"));
+        assert_eq!(errand.today.leave.as_deref(), Some("Vacation Leave"));
+        assert_eq!(errand.pending_leave, 0);
     }
 
     #[tokio::test]

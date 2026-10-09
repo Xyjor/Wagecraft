@@ -1,4 +1,4 @@
-import { lazy, Suspense, useEffect, useState, type ReactNode } from "react";
+import { lazy, Suspense, useEffect, useState } from "react";
 import { Link } from "react-router";
 import type { TeamDashboard as Summary } from "@/bindings/TeamDashboard";
 import { FormAlert } from "@/components/form";
@@ -6,7 +6,8 @@ import { periodLabel } from "@/features/payroll/periods";
 import type { AppError } from "@/lib/ipc";
 import { formatPesos } from "@/lib/money";
 import { getTeamDashboard } from "./api";
-import { NO_DEPARTMENT } from "./labels";
+import { NO_DEPARTMENT, plural } from "./labels";
+import { Panel, Tile } from "./parts";
 
 // Recharts is big, so the charts load after the numbers, like the PDF library does.
 const DepartmentChart = lazy(() =>
@@ -15,8 +16,6 @@ const DepartmentChart = lazy(() =>
 const PayrollCostChart = lazy(() =>
   import("./DashboardCharts").then((m) => ({ default: m.PayrollCostChart })),
 );
-
-const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`;
 
 /** Admin and HR's home page (plan §6.9): the team today, requests to review, two charts. */
 export function TeamDashboard() {
@@ -122,28 +121,5 @@ export function TeamDashboard() {
         </Panel>
       </div>
     </div>
-  );
-}
-
-function Tile({ label, value, children }: { label: string; value: number; children?: ReactNode }) {
-  return (
-    <div
-      role="group"
-      aria-label={label}
-      className="rounded-lg border border-zinc-200 p-4 dark:border-zinc-800"
-    >
-      <p className="text-sm text-zinc-600 dark:text-zinc-400">{label}</p>
-      <p className="text-3xl font-semibold tabular-nums">{value}</p>
-      {children && <p className="text-xs text-zinc-500">{children}</p>}
-    </div>
-  );
-}
-
-function Panel({ title, children }: { title: string; children: ReactNode }) {
-  return (
-    <section className="space-y-2 rounded-lg border border-zinc-200 p-4 dark:border-zinc-800">
-      <h2 className="text-sm font-semibold">{title}</h2>
-      {children}
-    </section>
   );
 }

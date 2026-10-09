@@ -64,3 +64,52 @@ pub struct PeriodCost {
     #[ts(type = "number")]
     pub cost_cents: i64,
 }
+
+/// A staff member's own dashboard (plan §6.9, staff column): today, this cutoff so far,
+/// and what they're still waiting on.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export)]
+pub struct MyDashboard {
+    pub today: MyDay,
+    pub cutoff: CutoffSummary,
+    /// Their own leave requests still waiting for HR.
+    #[ts(type = "number")]
+    pub pending_leave: i64,
+    /// Their own overtime requests still waiting for HR.
+    #[ts(type = "number")]
+    pub pending_overtime: i64,
+}
+
+/// How today stands for them, the same way HR's attendance grid shows it.
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export)]
+pub struct MyDay {
+    pub date: String,
+    /// `PRESENT`, `ABSENT`, `ON_LEAVE`, `REST_DAY` or `HOLIDAY`. `ABSENT` with no time in
+    /// means not clocked in yet. `None` when they have no schedule.
+    pub status: Option<String>,
+    pub time_in: Option<String>,
+    pub time_out: Option<String>,
+    #[ts(type = "number")]
+    pub late_minutes: i64,
+    pub holiday: Option<String>,
+    pub leave: Option<String>,
+}
+
+/// The semi-monthly cutoff that holds today, counted up to today.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, TS)]
+#[serde(rename_all = "camelCase")]
+#[ts(export)]
+pub struct CutoffSummary {
+    pub period_start: String,
+    pub period_end: String,
+    #[ts(type = "number")]
+    pub days_present: i64,
+    #[ts(type = "number")]
+    pub late_minutes: i64,
+    /// Approved overtime with a work date in the cutoff.
+    #[ts(type = "number")]
+    pub overtime_minutes: i64,
+}
