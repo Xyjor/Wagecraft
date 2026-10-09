@@ -6,6 +6,7 @@ import type { RegisterRow } from "@/bindings/RegisterRow";
 import { Field, FormAlert } from "@/components/form";
 import { Badge, primaryButton, quietButton } from "@/components/ui";
 import { useSession } from "@/features/auth/session";
+import { todayIso } from "@/features/attendance/format";
 import { formatDate } from "@/lib/dates";
 import type { AppError } from "@/lib/ipc";
 import { formatPesos } from "@/lib/money";
@@ -19,15 +20,15 @@ import {
 } from "./api";
 import { PayslipView } from "./PayslipView";
 import { RegisterDownloads } from "./RegisterDownloads";
-import { periodLabel, STATUS_LABELS, STATUS_TONES } from "./periods";
+import { cutoffStillRunning, periodLabel, STATUS_LABELS, STATUS_TONES } from "./periods";
 
-export function RegisterPage() {
+export function RegisterPage({ today = todayIso() }: { today?: string }) {
   const { me } = useSession();
   const id = Number(useParams().id);
   if (me.role === "STAFF") {
     return <p className="text-zinc-600 dark:text-zinc-400">Only Admin and HR can run payroll.</p>;
   }
-  return <Register key={id} id={id} />;
+  return <Register key={id} id={id} today={today} />;
 }
 
 const MONEY_COLUMNS: { key: keyof RegisterRow; label: string }[] = [
@@ -38,7 +39,7 @@ const MONEY_COLUMNS: { key: keyof RegisterRow; label: string }[] = [
   { key: "netCents", label: "Net pay" },
 ];
 
-function Register({ id }: { id: number }) {
+function Register({ id, today }: { id: number; today: string }) {
   const [register, setRegister] = useState<PayrollRegister | null>(null);
   const [alert, setAlert] = useState<string>();
   const [busy, setBusy] = useState(false);
@@ -114,6 +115,12 @@ function Register({ id }: { id: number }) {
             </>
           )}
         </div>
+      )}
+      {canCompute && cutoffStillRunning(period.periodEnd, today) && (
+        <p className="text-sm text-amber-700 dark:text-amber-300">
+          The cutoff runs until {formatDate(period.periodEnd)}. A payroll computed now only has the
+          attendance recorded so far, so recompute after that day.
+        </p>
       )}
       {period.status === "APPROVED" && (
         <ApprovedActions

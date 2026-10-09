@@ -108,3 +108,7 @@ for PCs without WebView2. It isn't code-signed, so Windows SmartScreen shows "Wi
 your PC" the first time: click **More info**, then **Run anyway**. For an installer without a
 tag, run the `release` workflow from the Actions tab and download the `wagecraft-installer`
 artifact.
+
+## License
+
+MIT, see [LICENSE](LICENSE).

@@ -23,6 +23,11 @@ export function cutoffOf(day: string): { month: string; cutoff: Cutoff } {
   return { month: day.slice(0, 7), cutoff: Number(day.slice(8, 10)) <= 15 ? 1 : 2 };
 }
 
+/** True until the cutoff's last day has passed; attendance for it is still coming in. */
+export function cutoffStillRunning(periodEnd: string, today: string): boolean {
+  return today <= periodEnd;
+}
+
 /** "Oct 16 – 31, 2026" */
 export function periodLabel(start: string, end: string): string {
   const [y, m, d] = start.split("-").map(Number);

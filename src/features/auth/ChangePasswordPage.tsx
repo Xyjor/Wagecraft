@@ -7,6 +7,18 @@ import { changePasswordSchema, fieldErrors } from "./validation";
 
 /** Shown right after sign-in when an Admin set this user's password for them. */
 export function ChangePasswordPage({ me, onDone }: { me: Me; onDone: (me: Me) => void }) {
+  return (
+    <AuthCard
+      title="Change your password"
+      intro="Your password was set for you by someone else. Pick your own before you continue."
+    >
+      <ChangePasswordForm me={me} onDone={onDone} />
+    </AuthCard>
+  );
+}
+
+/** The current, new and confirm fields. The Change password page uses it too. */
+export function ChangePasswordForm({ me, onDone }: { me: Me; onDone: (me: Me) => void }) {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [alert, setAlert] = useState<string>();
   const [busy, setBusy] = useState(false);
@@ -33,35 +45,30 @@ export function ChangePasswordPage({ me, onDone }: { me: Me; onDone: (me: Me) =>
   }
 
   return (
-    <AuthCard
-      title="Change your password"
-      intro="Your password was set for you by someone else. Pick your own before you continue."
-    >
-      <form onSubmit={submit} noValidate className="flex flex-col gap-4">
-        <FormAlert message={alert} />
-        <Field
-          name="currentPassword"
-          label="Current password"
-          type="password"
-          autoComplete="current-password"
-          error={errors.currentPassword}
-        />
-        <Field
-          name="newPassword"
-          label="New password"
-          type="password"
-          autoComplete="new-password"
-          error={errors.newPassword}
-        />
-        <Field
-          name="confirmPassword"
-          label="Confirm new password"
-          type="password"
-          autoComplete="new-password"
-          error={errors.confirmPassword}
-        />
-        <SubmitButton busy={busy}>Change password</SubmitButton>
-      </form>
-    </AuthCard>
+    <form onSubmit={submit} noValidate className="flex flex-col gap-4">
+      <FormAlert message={alert} />
+      <Field
+        name="currentPassword"
+        label="Current password"
+        type="password"
+        autoComplete="current-password"
+        error={errors.currentPassword}
+      />
+      <Field
+        name="newPassword"
+        label="New password"
+        type="password"
+        autoComplete="new-password"
+        error={errors.newPassword}
+      />
+      <Field
+        name="confirmPassword"
+        label="Confirm new password"
+        type="password"
+        autoComplete="new-password"
+        error={errors.confirmPassword}
+      />
+      <SubmitButton busy={busy}>Change password</SubmitButton>
+    </form>
   );
 }

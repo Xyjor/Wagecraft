@@ -294,3 +294,58 @@ describe("RegisterPage", () => {
     );
   });
 });
+
+describe("RegisterPage before the cutoff ends", () => {
+  const hint =
+    "The cutoff runs until Oct 31, 2026. A payroll computed now only has the attendance recorded so far, so recompute after that day.";
+
+  function renderOn(today: string) {
+    render(
+      <SessionContext.Provider value={{ me: hr, signOut: async () => {} }}>
+        <MemoryRouter initialEntries={["/payroll/4"]}>
+          <Routes>
+            <Route path="/payroll/:id" element={<RegisterPage today={today} />} />
+          </Routes>
+        </MemoryRouter>
+      </SessionContext.Provider>,
+    );
+  }
+
+  beforeEach(() => {
+    current = { period, rows: [], skipped: [] };
+    call.mockImplementation(async (cmd: string) =>
+      cmd === "payroll_register" ? current : undefined,
+    );
+  });
+
+  afterEach(() => {
+    cleanup();
+    call.mockReset();
+  });
+
+  it("warns that a payroll computed now misses the days still to come", async () => {
+    renderOn("2026-10-20");
+    await screen.findByRole("button", { name: "Compute payroll" });
+    expect(screen.getByText(hint)).toBeTruthy();
+  });
+
+  it("still warns on the cutoff's last day, and when recomputing", async () => {
+    current = computed;
+    renderOn("2026-10-31");
+    await screen.findByRole("button", { name: "Recompute" });
+    expect(screen.getByText(hint)).toBeTruthy();
+  });
+
+  it("stops warning once the cutoff has ended", async () => {
+    renderOn("2026-11-01");
+    await screen.findByRole("button", { name: "Compute payroll" });
+    expect(screen.queryByText(/The cutoff runs until/)).toBeNull();
+  });
+
+  it("does not warn on a period that can't be recomputed", async () => {
+    current = { ...computed, period: { ...period, status: "APPROVED" } };
+    renderOn("2026-10-20");
+    await screen.findByText("Santos, Ana");
+    expect(screen.queryByText(/The cutoff runs until/)).toBeNull();
+  });
+});
