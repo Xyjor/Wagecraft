@@ -24,12 +24,24 @@
   "bundle": {
     "active": true,
     "targets": ["nsis"],
+    "publisher": "Xyjor",
+    "copyright": "Copyright © 2026 Plue Truslow",
+    "shortDescription": "Payroll and HR for small Philippine businesses",
+    "longDescription": "Wagecraft keeps employee records, attendance, leave, overtime and semi-monthly payroll under Philippine rules on one office PC, with PDF payslips, reports and backups.",
     "icon": [
       "icons/32x32.png",
       "icons/128x128.png",
       "icons/128x128@2x.png",
       "icons/icon.icns",
       "icons/icon.ico"
-    ]
+    ],
+    "windows": {
+      "webviewInstallMode": { "type": "embedBootstrapper" },
+      "nsis": {
+        "installMode": "currentUser",
+        "languages": ["English"],
+        "displayLanguageSelector": false
+      }
+    }
   }
 }

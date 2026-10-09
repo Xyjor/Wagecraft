@@ -12,7 +12,8 @@
     "lint": "eslint .",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "test": "vitest"
+    "test": "vitest",
+    "version:set": "node scripts/set-version.mjs"
   },
   "dependencies": {
     "@react-pdf/renderer": "^4.9.0",

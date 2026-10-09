@@ -21,6 +21,22 @@ This is a training project; see [docs/wagecraft-plan.md](docs/wagecraft-plan.md)
 
 The database lives at `%APPDATA%\io.github.xyjor.wagecraft\wagecraft.db`.
 
+## Releases
+
+1. `pnpm version:set 1.0.0` sets the version in `package.json`, `src-tauri/Cargo.toml`,
+   `src-tauri/tauri.conf.json` and `Cargo.lock`. Date the version in `CHANGELOG.md`, then commit.
+2. `git tag v1.0.0 && git push origin v1.0.0`. The `release` workflow builds the NSIS installer on
+   Windows and attaches it to a draft GitHub Release named after the tag. It fails if the tag and
+   the app version disagree.
+3. Install it on a clean Windows PC and run the smoke test (first run, sign in, one payroll), then
+   publish the draft.
+
+The installer is per-user, so it needs no admin rights, and it brings the WebView2 bootstrapper
+for PCs without WebView2. It isn't code-signed, so Windows SmartScreen shows "Windows protected
+your PC" the first time: click **More info**, then **Run anyway**. For an installer without a
+tag, run the `release` workflow from the Actions tab and download the `wagecraft-installer`
+artifact.
+
 ## Layout
 
 - `src-tauri/src/` Rust: `db.rs` (open + migrate), `error.rs` (`AppError`), `commands/` (one file per area).
