@@ -6,8 +6,7 @@ leave and overtime, and payroll computes SSS, PhilHealth, Pag-IBIG and withholdi
 dated rule pack. Money is handled as integer centavos, every change is audited, and the database
 backs itself up.
 
-This is a training project. The full plan is in [docs/wagecraft-plan.md](docs/wagecraft-plan.md);
-version 1.0.0 is due on Nov 1, 2026.
+This is a training project. The full plan is in [docs/wagecraft-plan.md](docs/wagecraft-plan.md).
 
 ## Documentation
 
@@ -95,10 +94,12 @@ a new screen gets a feature folder with its page, its `api.ts` and its tests.
 ## Releases
 
 1. `pnpm version:set 1.0.0` sets the version in `package.json`, `src-tauri/Cargo.toml`,
-   `src-tauri/tauri.conf.json` and `Cargo.lock`. Date the version in `CHANGELOG.md`, then commit.
-2. `git tag v1.0.0 && git push origin v1.0.0`. The `release` workflow builds the NSIS installer on
-   Windows and attaches it to a draft GitHub Release named after the tag. It fails if the tag and
-   the app version disagree.
+   `src-tauri/tauri.conf.json` and `Cargo.lock`. Date the version in `CHANGELOG.md`, then commit
+   on a branch and open a pull request.
+2. After it merges, tag the merge commit on `main`, so the installer comes from a commit CI
+   checked: `git checkout main && git pull && git tag v1.0.0 && git push origin v1.0.0`. The
+   `release` workflow builds the NSIS installer on Windows and attaches it to a draft GitHub
+   Release named after the tag. It fails if the tag and the app version disagree.
 3. Install it on a clean Windows PC and run the [manual test script](docs/manual-test-script.md)
    and the manual half of the [release checklist](docs/release-checklist.md), then publish the
    draft.
