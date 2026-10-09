@@ -41,5 +41,8 @@ Everything below is on `main` and goes out as 1.0.0, planned for Nov 1, 2026.
   and pending requests.
 - **App shell:** light, dark and system themes, and a Windows NSIS installer built by the
   `release` workflow.
-- **Documentation:** a user manual with screenshots, the manual test script for releases, and
-  the architecture decision records.
+- **Documentation:** a user manual with screenshots, the manual test script for releases, the
+  release checklist, and the architecture decision records.
+- **Hardening:** a content security policy on the window, a sign-in hint about the lockout after
+  five wrong passwords, a dependency audit in CI, and tests that keep every command inside the
+  role matrix and the Tauri config locked down.

@@ -1,5 +1,10 @@
 name: ci
-on: [push, pull_request]
+# Once per change: pull requests run on their merge result, and main runs after each merge.
+# Pushes to other branches don't run on their own, which halves the runner minutes used.
+on:
+  push:
+    branches: [main]
+  pull_request:
 jobs:
   check:
     runs-on: windows-latest
@@ -22,4 +27,22 @@ jobs:
       - run: cargo clippy --all-targets -- -D warnings
         working-directory: src-tauri
       - run: cargo test
+        working-directory: src-tauri
+
+  # Dependency advisories (plan §8.2). Reads the lockfiles only, so it runs on Linux without
+  # the webview libraries. cargo-audit is cached in ~/.cargo/bin by rust-cache after the first run.
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: lts/*, cache: pnpm }
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+        with: { workspaces: src-tauri }
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm audit --audit-level high
+      - run: cargo install cargo-audit --locked
+      - run: cargo audit # ignore list and reasons are in src-tauri/.cargo/audit.toml
         working-directory: src-tauri

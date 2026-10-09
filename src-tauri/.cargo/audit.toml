@@ -1,0 +1,8 @@
+# Settings for `cargo audit` (run from this folder, where Cargo.lock lives).
+
+[advisories]
+# RUSTSEC-2023-0071 (rsa: Marvin timing attack) comes in through sqlx-mysql. Cargo.lock lists
+# sqlx-mysql because sqlx declares it as an optional dependency, but only the "sqlite" feature is
+# enabled, so the crate is never compiled into Wagecraft (`cargo tree -i rsa` prints nothing).
+# Remove this line if MySQL support is ever enabled or the advisory gets a fixed version.
+ignore = ["RUSTSEC-2023-0071"]

@@ -4,6 +4,10 @@ import { call, type AppError } from "@/lib/ipc";
 import { AuthCard, Field, FormAlert, SubmitButton } from "@/components/form";
 import { formValues } from "@/lib/formData";
 
+/** Matches the backend's rule (services/auth.rs): the fifth wrong password locks for 15 minutes. */
+const LOCKOUT_AFTER = 5;
+const LOCKOUT_HINT = "Five wrong passwords in a row lock the account for 15 minutes.";
+
 export function LoginPage({
   onSignedIn,
   onOpenKiosk,
@@ -16,15 +20,22 @@ export function LoginPage({
 }) {
   const [alert, setAlert] = useState<string>();
   const [busy, setBusy] = useState(false);
+  /** Wrong passwords in a row on this screen, so the hint below can explain the lockout. */
+  const [failures, setFailures] = useState(0);
 
   async function submit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const { username, password } = formValues(e.currentTarget);
     setBusy(true);
     try {
-      onSignedIn(await call<Me>("auth_login", { username, password }));
+      const me = await call<Me>("auth_login", { username, password });
+      setAlert(undefined);
+      setFailures(0);
+      onSignedIn(me);
     } catch (err) {
-      setAlert((err as AppError).message);
+      const { code, message } = err as AppError;
+      setAlert(message);
+      if (code === "INVALID_CREDENTIALS") setFailures((n) => n + 1);
       setBusy(false);
     }
   }
@@ -33,6 +44,9 @@ export function LoginPage({
     <AuthCard title="Sign in" intro={notice}>
       <form onSubmit={submit} className="flex flex-col gap-4">
         <FormAlert message={alert} />
+        {failures >= LOCKOUT_AFTER && (
+          <p className="text-sm text-zinc-600 dark:text-zinc-400">{LOCKOUT_HINT}</p>
+        )}
         <Field name="username" label="Username" autoComplete="username" />
         <Field name="password" label="Password" type="password" autoComplete="current-password" />
         <SubmitButton busy={busy}>Sign in</SubmitButton>

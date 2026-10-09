@@ -15,6 +15,7 @@ version 1.0.0 is due on Nov 1, 2026.
 | --------------------------------------------------- | ----------------------------------------------------------------------- |
 | [User manual](docs/user-manual.md)                  | Every screen, by role: Admin, HR, Staff and the time clock.             |
 | [Manual test script](docs/manual-test-script.md)    | The seven flows to run on the installer before each release.            |
+| [Release checklist](docs/release-checklist.md)      | The security and performance checks, and what proves each one.          |
 | [Architecture decision records](docs/adr/README.md) | Why the app is built the way it is, one decision per file.              |
 | [Changelog](CHANGELOG.md)                           | What each version changed.                                              |
 | [Plan](docs/wagecraft-plan.md)                      | Scope, data model, module designs, security checklist and the timeline. |
@@ -98,8 +99,9 @@ a new screen gets a feature folder with its page, its `api.ts` and its tests.
 2. `git tag v1.0.0 && git push origin v1.0.0`. The `release` workflow builds the NSIS installer on
    Windows and attaches it to a draft GitHub Release named after the tag. It fails if the tag and
    the app version disagree.
-3. Install it on a clean Windows PC and run the [manual test script](docs/manual-test-script.md),
-   then publish the draft.
+3. Install it on a clean Windows PC and run the [manual test script](docs/manual-test-script.md)
+   and the manual half of the [release checklist](docs/release-checklist.md), then publish the
+   draft.
 
 The installer is per-user, so it needs no admin rights, and it brings the WebView2 bootstrapper
 for PCs without WebView2. It isn't code-signed, so Windows SmartScreen shows "Windows protected
