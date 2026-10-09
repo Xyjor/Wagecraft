@@ -167,6 +167,7 @@ pub fn run() {
             commands::settings::settings_update,
             commands::settings::settings_pick_backup_folder,
             commands::dashboard::dashboard_team,
+            commands::dashboard::dashboard_mine,
             commands::settings::settings_pick_logo,
             commands::settings::settings_clear_logo,
         ])
