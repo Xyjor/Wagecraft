@@ -7,6 +7,7 @@ import type { AppError } from "@/lib/ipc";
 import { backUpNow, listBackups } from "./api";
 import { formatBytes, kindLabel } from "./backups";
 import { RestorePanel } from "./RestorePanel";
+import { formatWhen } from "@/lib/dates";
 
 export function BackupsPage() {
   const { me } = useSession();
@@ -110,8 +111,4 @@ function Backups() {
       )}
     </section>
   );
-}
-
-function formatWhen(iso: string) {
-  return new Date(iso).toLocaleString("en-PH", { dateStyle: "medium", timeStyle: "short" });
 }

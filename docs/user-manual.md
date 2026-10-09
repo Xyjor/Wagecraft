@@ -66,7 +66,7 @@ shows a short note instead, and the data never leaves the database.
 | Home, My profile, My attendance, My leave, My payslips          |  yes  | yes |  yes  |
 | Employees, Attendance, Overtime, Leave, Leave calendar, Payroll |  yes  | yes |       |
 | Organization, Holidays                                          |  yes  | yes |       |
-| Users, Backups, Settings                                        |  yes  |     |       |
+| Users, Backups, Settings, Activity                              |  yes  |     |       |
 
 Admin and HR users who are also on the payroll link their account to their employee record
 (section 4.4) so the My pages show their own data.
@@ -371,6 +371,20 @@ and everyone signs in again. Restoring is an Admin-only action, and the audit lo
 - **Security**: the idle minutes before a user is signed out.
 - **Daily backups**: the folder and how many daily backups to keep.
 
+### 5.4 Activity
+
+Activity is the audit log: every sign-in, failed sign-in and change, newest first, with who did
+it and when. Nothing here can be edited or deleted, by anyone. Filter by day, user, action (one
+action, or a whole area such as all payroll actions), and record, for example everything that
+happened to one employee. **View** on a row shows what changed, field by field, before and
+after. **Export CSV** saves the filtered list, and the export itself is logged.
+
+![Activity](screenshots/activity.png)
+
+The log records what happens through Wagecraft. It can't see changes made to the database file
+by other programs, which is one more reason to keep the PC's user accounts to the people who
+run payroll.
+
 ## 6. Where the data lives
 
 Everything is in one SQLite file on this PC:
@@ -386,5 +400,4 @@ Wagecraft does not use the network. Nothing is sent anywhere.
 - One PC, one company. There is no server and no second PC.
 - Pay is semi-monthly only.
 - The rule pack is fixed at PH-2026 until an update brings a new one.
-- The audit log is kept for every sign-in and change, but there is no screen to browse it yet.
 - Users change their password only when an Admin resets it.

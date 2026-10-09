@@ -1,4 +1,5 @@
 pub mod attendance;
+pub mod audit;
 pub mod compensation;
 pub mod employees;
 pub mod holidays;

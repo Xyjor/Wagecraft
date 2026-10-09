@@ -32,6 +32,8 @@ Everything below is on `main` and goes out as 1.0.0, planned for Nov 1, 2026.
 - **Payslips and reports:** My payslips for staff once a payroll is posted, payslip PDFs with the
   company logo, address and TIN, the payroll register as PDF and CSV, and a read-only rule pack
   viewer.
+- **Activity log:** Admin can browse every recorded sign-in and change, filter it by day, user,
+  action and record, see what changed field by field, and export the list as CSV.
 - **Backups and settings:** daily and manual backups, restore, and the Settings screen for the
   company details, logo, idle timeout and backup folder.
 - **Dashboards:** Admin and HR see the team today, requests to review, employees by department

@@ -2,6 +2,7 @@
 
 pub mod attendance;
 pub mod attendance_calc;
+pub mod audit;
 pub mod backup;
 pub mod compensation;
 pub mod dashboard;

@@ -14,6 +14,7 @@ import { formValues, serverErrors } from "@/lib/formData";
 import type { AppError } from "@/lib/ipc";
 import { createUser, listUsers, resetPassword, setActive, setRole } from "./api";
 import { newUserSchema, temporaryPasswordSchema } from "./schemas";
+import { formatWhen } from "@/lib/dates";
 
 const ROLE_OPTIONS = [
   { value: "ADMIN", label: "Admin" },
@@ -176,7 +177,7 @@ function UserRow({ user: u, isMe, resetting, ...on }: RowProps) {
             {u.mustChangePassword && <Badge tone="muted">Must change password</Badge>}
           </div>
         </td>
-        <td className="py-2 text-zinc-600 dark:text-zinc-400">{formatWhen(u.lastLoginAt)}</td>
+        <td className="py-2 text-zinc-600 dark:text-zinc-400">{lastSeen(u.lastLoginAt)}</td>
         <td className="py-2">
           <div className="flex justify-end gap-1">
             <button
@@ -333,7 +334,6 @@ function ResetPasswordForm({
   );
 }
 
-function formatWhen(iso: string | null): string {
-  if (!iso) return "Never";
-  return new Date(iso).toLocaleString("en-PH", { dateStyle: "medium", timeStyle: "short" });
+function lastSeen(iso: string | null): string {
+  return iso ? formatWhen(iso) : "Never";
 }
