@@ -3,6 +3,7 @@ pub mod attendance;
 pub mod auth;
 pub mod backups;
 pub mod compensation;
+pub mod dashboard;
 pub mod employees;
 pub mod holidays;
 pub mod kiosk;

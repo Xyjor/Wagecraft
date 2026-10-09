@@ -4,6 +4,7 @@ pub mod attendance;
 pub mod attendance_calc;
 pub mod backup;
 pub mod compensation;
+pub mod dashboard;
 pub mod employee;
 pub mod leave;
 pub mod org;
