@@ -49,7 +49,8 @@ A few rules protect accounts:
 - When an Admin creates your account or resets your password, you get a temporary password. The
   first time you sign in with it, Wagecraft asks you to choose your own before it shows anything
   else.
-- To change your password later, ask an Admin to reset it. There is no change-password link yet.
+- To change your password later, click **Change password** at the top right, next to your
+  username. It asks for your current password and the new one twice.
 
 ### Light and dark
 
@@ -297,7 +298,8 @@ Open the period to reach the register:
 
 1. **Compute payroll** works out every current employee's payslip from their attendance, approved
    leave and overtime, holidays, pay rate and pay items, under the period's rule pack. The status
-   becomes **Computed**. The register lists each employee's gross pay, contributions, tax, other
+   becomes **Computed**. If the cutoff hasn't ended yet, a note reminds you that the payroll only
+   has the attendance recorded so far; recompute after the cutoff's last day. The register lists each employee's gross pay, contributions, tax, other
    deductions and net pay; **View** opens the payslip. Employees with no rate for the period are
    listed under **Not in this payroll** with the reason.
 
@@ -400,4 +402,3 @@ Wagecraft does not use the network. Nothing is sent anywhere.
 - One PC, one company. There is no server and no second PC.
 - Pay is semi-monthly only.
 - The rule pack is fixed at PH-2026 until an update brings a new one.
-- Users change their password only when an Admin resets it.

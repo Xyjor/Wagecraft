@@ -1,5 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { cutoffOf, periodEnd, periodLabel, periodStart, quantityText } from "./periods";
+import {
+  cutoffOf,
+  cutoffStillRunning,
+  periodEnd,
+  periodLabel,
+  periodStart,
+  quantityText,
+} from "./periods";
 
 describe("pay periods", () => {
   it("starts the first cutoff on the 1st and the second on the 16th", () => {
@@ -18,6 +25,12 @@ describe("pay periods", () => {
   it("finds the cutoff a day falls in", () => {
     expect(cutoffOf("2026-10-15")).toEqual({ month: "2026-10", cutoff: 1 });
     expect(cutoffOf("2026-10-16")).toEqual({ month: "2026-10", cutoff: 2 });
+  });
+
+  it("knows the cutoff is still running until its last day has passed", () => {
+    expect(cutoffStillRunning("2026-10-31", "2026-10-20")).toBe(true);
+    expect(cutoffStillRunning("2026-10-31", "2026-10-31")).toBe(true);
+    expect(cutoffStillRunning("2026-10-31", "2026-11-01")).toBe(false);
   });
 
   it("names a period by its days", () => {

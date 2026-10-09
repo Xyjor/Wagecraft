@@ -3,6 +3,7 @@ name = "wagecraft"
 version = "0.1.0"
 description = "Philippine payroll desktop app"
 authors = ["Plue Truslow"]
+license = "MIT"
 edition = "2021"
 # `pnpm tauri dev` and `cargo run` start the app; the seed tool is `--bin seed`.
 default-run = "wagecraft"

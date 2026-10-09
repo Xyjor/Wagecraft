@@ -22,3 +22,9 @@ const KINDS: Record<BackupEntry["kind"], string> = {
 };
 
 export const kindLabel = (kind: BackupEntry["kind"]) => KINDS[kind];
+
+/** "C:\\backups\\wagecraft.db" → the folder, with its trailing separator, and the file name. */
+export function splitPath(path: string): { folder: string; name: string } {
+  const cut = Math.max(path.lastIndexOf("\\"), path.lastIndexOf("/")) + 1;
+  return { folder: path.slice(0, cut), name: path.slice(cut) };
+}

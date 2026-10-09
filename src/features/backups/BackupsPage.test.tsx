@@ -79,7 +79,8 @@ describe("BackupsPage", () => {
     const manual = await screen.findByRole("row", { name: /Manual/ });
     expect(within(manual).getByText("1.2 MB")).toBeTruthy();
     expect(within(manual).getByText("ana")).toBeTruthy();
-    expect(within(manual).getByText("E:\\wagecraft-backup-2.db")).toBeTruthy();
+    expect(within(manual).getByText("wagecraft-backup-2.db")).toBeTruthy();
+    expect(within(manual).getByText("E:\\")).toBeTruthy();
     const daily = screen.getByRole("row", { name: /Daily/ });
     expect(within(daily).getByText("Automatic")).toBeTruthy();
   });

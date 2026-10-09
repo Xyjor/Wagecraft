@@ -5,7 +5,7 @@ import { Badge, primaryButton as primary } from "@/components/ui";
 import { useSession } from "@/features/auth/session";
 import type { AppError } from "@/lib/ipc";
 import { backUpNow, listBackups } from "./api";
-import { formatBytes, kindLabel } from "./backups";
+import { formatBytes, kindLabel, splitPath } from "./backups";
 import { RestorePanel } from "./RestorePanel";
 import { formatWhen } from "@/lib/dates";
 
@@ -82,30 +82,38 @@ function Backups() {
         <table className="w-full text-left text-sm">
           <thead className="border-b border-zinc-200 text-zinc-500 dark:border-zinc-800">
             <tr>
-              <th className="py-2 font-medium">Kind</th>
-              <th className="py-2 font-medium">Taken</th>
-              <th className="py-2 font-medium">By</th>
-              <th className="py-2 text-right font-medium">Size</th>
-              <th className="py-2 pl-4 font-medium">File</th>
+              <th className="py-2 pr-4 font-medium whitespace-nowrap">Kind</th>
+              <th className="py-2 pr-4 font-medium whitespace-nowrap">Taken</th>
+              <th className="py-2 pr-4 font-medium whitespace-nowrap">By</th>
+              <th className="py-2 pr-4 text-right font-medium whitespace-nowrap">Size</th>
+              <th className="w-full py-2 font-medium">File</th>
             </tr>
           </thead>
           <tbody>
-            {backups.map((b) => (
-              <tr key={b.id} className="border-b border-zinc-100 dark:border-zinc-900">
-                <th scope="row" className="py-2 font-normal">
-                  {kindLabel(b.kind)}
-                </th>
-                <td className="py-2">{formatWhen(b.createdAt)}</td>
-                <td className="py-2 text-zinc-600 dark:text-zinc-400">
-                  {b.createdByName ?? "Automatic"}
-                </td>
-                <td className="py-2 text-right tabular-nums">{formatBytes(b.sizeBytes)}</td>
-                <td className="py-2 pl-4">
-                  <span className="font-mono text-xs break-all">{b.path}</span>{" "}
-                  {!b.onDisk && <Badge tone="bad">File missing</Badge>}
-                </td>
-              </tr>
-            ))}
+            {backups.map((b) => {
+              const { folder, name } = splitPath(b.path);
+              return (
+                <tr key={b.id} className="border-b border-zinc-100 dark:border-zinc-900">
+                  <th scope="row" className="py-2 pr-4 font-normal whitespace-nowrap">
+                    {kindLabel(b.kind)}
+                  </th>
+                  <td className="py-2 pr-4 whitespace-nowrap">{formatWhen(b.createdAt)}</td>
+                  <td className="py-2 pr-4 whitespace-nowrap text-zinc-600 dark:text-zinc-400">
+                    {b.createdByName ?? "Automatic"}
+                  </td>
+                  <td className="py-2 pr-4 text-right tabular-nums whitespace-nowrap">
+                    {formatBytes(b.sizeBytes)}
+                  </td>
+                  <td className="py-2">
+                    <span className="font-mono text-xs">
+                      <span className="break-all text-zinc-500">{folder}</span>
+                      <span className="whitespace-nowrap">{name}</span>
+                    </span>{" "}
+                    {!b.onDisk && <Badge tone="bad">File missing</Badge>}
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       )}
