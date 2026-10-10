@@ -6,6 +6,14 @@ What changed in each version of Wagecraft. The format follows
 
 ## [Unreleased]
 
+### Fixed
+
+- Download PDF (the payroll register and payslips) failed in the installed app: the content
+  security policy refused the PDF library's WebAssembly layout engine. `script-src` now allows
+  `'wasm-unsafe-eval'`, which permits only that; `eval` and outside scripts stay blocked.
+- The manual test script now sets a work schedule before Juan clocks in (leave can't be filed
+  without one), names the first-time PIN button correctly, and posts a cutoff that has ended.
+
 ## [1.0.0] - 2026-10-09
 
 The first release.

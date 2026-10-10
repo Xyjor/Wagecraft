@@ -18,6 +18,8 @@ fn the_webview_gets_only_core_permissions() {
 }
 
 /// CSP: scripts only from the app itself, connections only to Tauri's IPC, no asset protocol.
+/// `'wasm-unsafe-eval'` lets those scripts compile the WebAssembly they carry (the PDF
+/// library's layout engine); it allows no `eval` and no outside script.
 #[test]
 fn the_window_has_a_content_security_policy() {
     let conf = parse(include_str!("../tauri.conf.json"));
@@ -39,7 +41,7 @@ fn the_window_has_a_content_security_policy() {
             .clone()
     };
     assert_eq!(sources("default-src"), ["'self'"]);
-    assert_eq!(sources("script-src"), ["'self'"]);
+    assert_eq!(sources("script-src"), ["'self'", "'wasm-unsafe-eval'"]);
     assert_eq!(sources("connect-src"), ["ipc:", "http://ipc.localhost"]);
     assert_eq!(sources("object-src"), ["'none'"]);
     for (name, values) in &directives {
