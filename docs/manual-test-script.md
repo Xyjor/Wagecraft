@@ -39,16 +39,17 @@ folder and repeat 1.2 to 1.5 with the right password.
 
 Sign in as `admin` (Admin has every HR permission).
 
-| Step | Do this                                                                                                                                                | Expect                                                                                     |
-| ---- | ------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------ |
-| 2.1  | Organization, **Add department**: code `OPS`, name `Operations`.                                                                                       | Operations appears in the Departments table as Active.                                     |
-| 2.2  | **Add position**: title `Driver`, department Operations, salary range 15,000 to 20,000.                                                                | Driver appears in the Positions table with its range.                                      |
-| 2.3  | Employees, **Add employee**: number `EMP-0001`, first name `Juan`, last name `Dela Cruz`, status Regular, hire date two years ago, Operations, Driver. | After saving, Juan's profile opens.                                                        |
-| 2.4  | Compensation tab: basis Monthly, rate `18000`, starts on the 1st of this month, reason `Starting rate`.                                                | The rate appears with the Current badge.                                                   |
-| 2.5  | Compensation tab again: rate `25000`, starts on the 1st of next month, reason `Test`.                                                                  | Saved, with the note "₱25,000.00 is above the Driver range, which tops out at ₱20,000.00." |
-| 2.6  | Kiosk PIN tab: PIN `1234` twice, **Replace PIN**.                                                                                                      | The tab confirms the PIN is set.                                                           |
-| 2.7  | Sign-in account tab, **Create a Staff account**: username `juan`, temporary password `temporary1`.                                                     | The tab shows the account, role Staff, status Active.                                      |
-| 2.8  | Users.                                                                                                                                                 | `juan` is listed as Staff with "Must change password", employee EMP-0001 Juan Dela Cruz.   |
+| Step | Do this                                                                                                                                                                         | Expect                                                                                      |
+| ---- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------- |
+| 2.1  | Organization, **Add department**: code `OPS`, name `Operations`.                                                                                                                | Operations appears in the Departments table as Active.                                      |
+| 2.2  | **Add position**: title `Driver`, department Operations, salary range 15,000 to 20,000.                                                                                         | Driver appears in the Positions table with its range.                                       |
+| 2.2b | **Add schedule**: name `Day shift`, keep 8:00 to 17:00, Monday to Friday.                                                                                                       | Day shift appears in the Work schedules table.                                              |
+| 2.3  | Employees, **Add employee**: number `EMP-0001`, first name `Juan`, last name `Dela Cruz`, status Regular, hire date two years ago, Operations, Driver, work schedule Day shift. | After saving, Juan's profile opens. Leave and lateness need the schedule, so don't skip it. |
+| 2.4  | Compensation tab: basis Monthly, rate `18000`, starts on the 1st of this month, reason `Starting rate`.                                                                         | The rate appears with the Current badge.                                                    |
+| 2.5  | Compensation tab again: rate `25000`, starts on the 1st of next month, reason `Test`.                                                                                           | Saved, with the note "₱25,000.00 is above the Driver range, which tops out at ₱20,000.00."  |
+| 2.6  | Kiosk PIN tab: PIN `1234` twice, **Set PIN**.                                                                                                                                   | "PIN saved" shows, and the button now reads **Replace PIN**.                                |
+| 2.7  | Sign-in account tab, **Create a Staff account**: username `juan`, temporary password `temporary1`.                                                                              | The tab shows the account, role Staff, status Active.                                       |
+| 2.8  | Users.                                                                                                                                                                          | `juan` is listed as Staff with "Must change password", employee EMP-0001 Juan Dela Cruz.    |
 
 ## Flow 3: the time clock, then the record
 
@@ -80,7 +81,9 @@ Sign in as `admin` (Admin has every HR permission).
 
 ## Flow 5: a payroll from period to payslip
 
-As `admin`. Use the cutoff that contains today.
+As `admin`. Use the cutoff that contains today for 5.1 to 5.6. Wagecraft refuses to post a
+cutoff that hasn't ended, so run 5.7 to 5.9 on the day after the cutoff ends, or run the whole
+flow on the last day of a cutoff.
 
 | Step | Do this                                                                                                                  | Expect                                                                                                                         |
 | ---- | ------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------ |
