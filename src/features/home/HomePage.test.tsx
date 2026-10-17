@@ -88,6 +88,16 @@ describe("HomePage", () => {
     }
   });
 
+  it("shows Admin the setup checklist, and never asks for it as HR", async () => {
+    renderAs({ ...hr, role: "HR" });
+    await waitFor(() => expect(call).toHaveBeenCalledWith("dashboard_team", undefined));
+    expect(call).not.toHaveBeenCalledWith("settings_get", undefined);
+    cleanup();
+
+    renderAs({ ...hr, role: "ADMIN" });
+    await waitFor(() => expect(call).toHaveBeenCalledWith("settings_get", undefined));
+  });
+
   it("shows Staff their own dashboard, never the team's numbers", async () => {
     renderAs({ ...hr, role: "STAFF", employeeId: 5 });
 
