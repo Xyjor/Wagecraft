@@ -14,7 +14,7 @@ export function MyProfilePage() {
   const { me } = useSession();
   if (me.employeeId === null) {
     return (
-      <p className="text-zinc-600 dark:text-zinc-400">
+      <p className="text-ink-muted">
         Your account isn't linked to an employee record. HR can link it from your employee profile.
       </p>
     );
@@ -36,7 +36,7 @@ function MyProfile() {
   return (
     <div className="space-y-4">
       <ProfileView employee={employee} />
-      <p className="max-w-3xl text-sm text-zinc-500">
+      <p className="max-w-3xl text-sm text-ink-faint">
         Something wrong or out of date? Ask HR to update it.
       </p>
     </div>

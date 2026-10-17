@@ -14,6 +14,8 @@ import { formatDate } from "@/lib/dates";
 import type { AppError } from "@/lib/ipc";
 import { exportMasterlist, listEmployees } from "./api";
 import { listName, STATUS_LABELS } from "./format";
+import { StatusMessage } from "@/components/Notice";
+import { PageHeader } from "@/components/PageHeader";
 
 const PAGE_SIZE = 25;
 const SEARCH_DELAY_MS = 250;
@@ -33,11 +35,7 @@ const FIRST_PAGE: EmployeeQuery = {
 export function EmployeesPage() {
   const { me } = useSession();
   if (me.role === "STAFF") {
-    return (
-      <p className="text-zinc-600 dark:text-zinc-400">
-        Only Admin and HR can see the employee list.
-      </p>
-    );
+    return <p className="text-ink-muted">Only Admin and HR can see the employee list.</p>;
   }
   return <EmployeeList />;
 }
@@ -101,28 +99,26 @@ function EmployeeList() {
 
   return (
     <section className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold tracking-tight">Employees</h1>
-        <div className="flex gap-2">
-          <button
-            type="button"
-            className={secondaryButton}
-            disabled={exporting}
-            onClick={exportCsv}
-          >
-            Export CSV
-          </button>
-          <Link to="/employees/new" className={primaryButton}>
-            Add employee
-          </Link>
-        </div>
-      </div>
+      <PageHeader
+        title="Employees"
+        actions={
+          <>
+            <button
+              type="button"
+              className={secondaryButton}
+              disabled={exporting}
+              onClick={exportCsv}
+            >
+              Export CSV
+            </button>
+            <Link to="/employees/new" className={primaryButton}>
+              Add employee
+            </Link>
+          </>
+        }
+      />
       <FormAlert message={alert} />
-      {exportNote && (
-        <p role="status" className="text-sm text-emerald-700 dark:text-emerald-300">
-          {exportNote}
-        </p>
-      )}
+      <StatusMessage>{exportNote}</StatusMessage>
 
       <div className="flex flex-wrap items-end gap-3">
         <label className="flex flex-col gap-1 text-sm">
@@ -182,20 +178,20 @@ function EmployeeList() {
       {result && (
         <>
           <table className="w-full text-left text-sm">
-            <thead className="border-b border-zinc-200 text-zinc-500 dark:border-zinc-800">
+            <thead className="border-b border-rule-strong bg-sunken text-xs text-ink-muted">
               <tr>
                 <SortHeader label="Employee no." sort="employeeNo" query={query} onSort={sortBy} />
                 <SortHeader label="Name" sort="name" query={query} onSort={sortBy} />
                 <SortHeader label="Department" sort="department" query={query} onSort={sortBy} />
-                <th className="py-2 font-medium">Position</th>
-                <th className="py-2 font-medium">Status</th>
+                <th className="px-3 py-2 font-medium">Position</th>
+                <th className="px-3 py-2 font-medium">Status</th>
                 <SortHeader label="Hire date" sort="hireDate" query={query} onSort={sortBy} />
               </tr>
             </thead>
             <tbody>
               {result.items.length === 0 && (
                 <tr>
-                  <td colSpan={6} className="py-3 text-zinc-500">
+                  <td colSpan={6} className="px-3 py-3 text-ink-muted">
                     {isFiltered(query)
                       ? "No employees match these filters."
                       : "No employees yet. Use Add employee to start the list."}
@@ -203,22 +199,22 @@ function EmployeeList() {
                 </tr>
               )}
               {result.items.map((e) => (
-                <tr key={e.id} className="border-b border-zinc-100 dark:border-zinc-900">
-                  <td className="py-2 tabular-nums">{e.employeeNo}</td>
-                  <td className="py-2">
+                <tr key={e.id} className="border-b border-rule hover:bg-sunken/60">
+                  <td className="px-3 py-2 tabular-nums">{e.employeeNo}</td>
+                  <td className="px-3 py-2">
                     <Link to={`/employees/${e.id}`} className="font-medium hover:underline">
                       {listName(e)}
                     </Link>
                   </td>
-                  <td className="py-2">{e.departmentName}</td>
-                  <td className="py-2">{e.positionTitle}</td>
-                  <td className="py-2">
+                  <td className="px-3 py-2">{e.departmentName}</td>
+                  <td className="px-3 py-2">{e.positionTitle}</td>
+                  <td className="px-3 py-2">
                     <div className="flex gap-1">
                       <span>{STATUS_LABELS[e.employmentStatus] ?? e.employmentStatus}</span>
                       {e.archived && <Badge tone="muted">Archived</Badge>}
                     </div>
                   </td>
-                  <td className="py-2 tabular-nums">{formatDate(e.hireDate)}</td>
+                  <td className="px-3 py-2 tabular-nums">{formatDate(e.hireDate)}</td>
                 </tr>
               ))}
             </tbody>
@@ -244,12 +240,8 @@ function SortHeader(props: {
   const active = props.query.sort === props.sort;
   const direction = props.query.descending ? "descending" : "ascending";
   return (
-    <th className="py-2 font-medium" aria-sort={active ? direction : undefined}>
-      <button
-        type="button"
-        onClick={() => props.onSort(props.sort)}
-        className="hover:text-zinc-900 dark:hover:text-zinc-100"
-      >
+    <th className="px-3 py-2 font-medium" aria-sort={active ? direction : undefined}>
+      <button type="button" onClick={() => props.onSort(props.sort)} className="hover:text-ink">
         {props.label}
         {active && <span aria-hidden="true">{props.query.descending ? " ↓" : " ↑"}</span>}
       </button>

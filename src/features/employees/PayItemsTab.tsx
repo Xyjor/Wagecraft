@@ -60,45 +60,51 @@ export function PayItemsTab({ employee }: { employee: Employee }) {
 
   return (
     <div className="space-y-6">
-      <p className="max-w-prose text-sm text-zinc-600 dark:text-zinc-400">
+      <p className="max-w-prose text-sm text-ink-muted">
         Payroll adds these on every cutoff they apply to. Deductions come off after contributions
         and tax: loans first, oldest first. If net pay can't cover one, the rest carries over to the
         next pay period.
       </p>
       <FormAlert message={alert} />
       {items.length === 0 ? (
-        <p className="text-sm text-zinc-500">No allowances or deductions yet.</p>
+        <p className="text-sm text-ink-faint">No allowances or deductions yet.</p>
       ) : (
         <table className="w-full text-left text-sm">
-          <thead className="border-b border-zinc-200 text-zinc-500 dark:border-zinc-800">
+          <thead className="border-b border-rule-strong bg-sunken text-xs text-ink-muted">
             <tr>
-              <th className="py-2 font-medium">Item</th>
-              <th className="py-2 font-medium">Cutoffs</th>
-              <th className="py-2 text-right font-medium">Per cutoff</th>
-              <th className="py-2 text-right font-medium">Still owed</th>
-              <th className="py-2 pl-6 font-medium">Runs</th>
-              <th className="py-2 font-medium">
+              <th className="px-3 py-2 font-medium">Item</th>
+              <th className="px-3 py-2 font-medium">Cutoffs</th>
+              <th className="border-l border-rule/70 px-3 py-2 text-right font-medium">
+                Per cutoff
+              </th>
+              <th className="border-l border-rule/70 px-3 py-2 text-right font-medium">
+                Still owed
+              </th>
+              <th className="py-2 pr-3 pl-6 font-medium">Runs</th>
+              <th className="px-3 py-2 font-medium">
                 <span className="sr-only">Actions</span>
               </th>
             </tr>
           </thead>
           <tbody>
             {items.map((i) => (
-              <tr key={i.id} className="border-b border-zinc-100 align-top dark:border-zinc-900">
-                <td className="py-2">
+              <tr key={i.id} className="border-b border-rule align-top hover:bg-sunken/60">
+                <td className="px-3 py-2">
                   <div className="font-medium">{i.label}</div>
                   <div className="flex gap-1 pt-0.5">
                     <Badge tone="muted">{KIND_LABELS[i.kind] ?? i.kind}</Badge>
                     {i.taxable && <Badge tone="muted">Taxable</Badge>}
                   </div>
                 </td>
-                <td className="py-2">{SCHEDULE_LABELS[i.schedule] ?? i.schedule}</td>
-                <td className="py-2 text-right tabular-nums">{formatPesos(i.amountCents)}</td>
-                <td className="py-2 text-right tabular-nums">
+                <td className="px-3 py-2">{SCHEDULE_LABELS[i.schedule] ?? i.schedule}</td>
+                <td className="border-l border-rule/70 px-3 py-2 text-right tabular-nums">
+                  {formatPesos(i.amountCents)}
+                </td>
+                <td className="border-l border-rule/70 px-3 py-2 text-right tabular-nums">
                   {i.remainingBalanceCents === null ? "" : formatPesos(i.remainingBalanceCents)}
                 </td>
-                <td className="py-2 pl-6">{runs(i)}</td>
-                <td className="py-2">
+                <td className="py-2 pr-3 pl-6">{runs(i)}</td>
+                <td className="px-3 py-2">
                   {editable && (
                     <div className="flex items-center justify-end gap-1">
                       {confirming === i.id ? (
@@ -262,7 +268,7 @@ function ItemForm({
           </label>
         )}
       </div>
-      {errors.taxable && <p className="text-sm text-red-600 dark:text-red-400">{errors.taxable}</p>}
+      {errors.taxable && <p className="text-sm text-danger">{errors.taxable}</p>}
       <div className="flex gap-2">
         <button type="submit" disabled={busy} className={primaryButton}>
           {editing ? "Save changes" : "Add item"}

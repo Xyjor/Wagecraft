@@ -50,6 +50,7 @@ export function EmployeeProfilePage() {
     <ProfileView
       employee={e}
       alert={alert}
+      crumbs={[{ label: "Employees", to: "/employees" }]}
       actions={
         <>
           {!archived && (

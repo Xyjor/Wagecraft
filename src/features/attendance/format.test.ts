@@ -1,5 +1,13 @@
 import { describe, expect, it } from "vitest";
-import { formatClock, formatMinutes, monthRange, shiftDate, thisMonth, todayIso } from "./format";
+import {
+  formatClock,
+  formatMinutes,
+  minutesInk,
+  monthRange,
+  shiftDate,
+  thisMonth,
+  todayIso,
+} from "./format";
 
 describe("attendance format", () => {
   it("shows local times on a 12-hour clock", () => {
@@ -29,5 +37,12 @@ describe("attendance format", () => {
     expect(shiftDate("2026-10-31", 1)).toBe("2026-11-01");
     expect(shiftDate("2026-01-01", -1)).toBe("2025-12-31");
     expect(shiftDate("2028-02-28", 1)).toBe("2028-02-29");
+  });
+});
+
+describe("minutesInk", () => {
+  it("writes late and undertime minutes in red ink, and nothing for none", () => {
+    expect(minutesInk(15)).toBe("text-danger");
+    expect(minutesInk(0)).toBe("");
   });
 });

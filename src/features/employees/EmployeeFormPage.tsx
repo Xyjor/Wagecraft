@@ -5,6 +5,7 @@ import type { Employee } from "@/bindings/Employee";
 import type { Position } from "@/bindings/Position";
 import type { WorkSchedule } from "@/bindings/WorkSchedule";
 import { Field, FormAlert, SelectField } from "@/components/form";
+import { PageHeader } from "@/components/PageHeader";
 import { primaryButton, quietButton } from "@/components/ui";
 import { listDepartments, listPositions, listSchedules } from "@/features/org/api";
 import { scheduleHours, workDaysLabel } from "@/features/org/format";
@@ -94,7 +95,13 @@ function EmployeeForm({ departments, positions, schedules, employee }: Loaded) {
 
   return (
     <form onSubmit={submit} noValidate className="max-w-3xl space-y-8">
-      <h1 className="text-2xl font-semibold tracking-tight">{title}</h1>
+      <PageHeader
+        title={title}
+        crumbs={[
+          { label: "Employees", to: "/employees" },
+          ...(e ? [{ label: fullName(e), to: `/employees/${e.id}` }] : []),
+        ]}
+      />
       <FormAlert message={alert} />
 
       <Section title="Name and number">
@@ -319,7 +326,7 @@ function CurrentSchedule({ id, schedule }: { id: number | null; schedule?: WorkS
           ? `${schedule.name} · ${scheduleHours(schedule)}, ${workDaysLabel(schedule.workDays)}`
           : "No schedule"}
       </span>
-      <span className="text-xs text-zinc-500">
+      <span className="text-xs text-ink-faint">
         To change it from a date, use the Schedule tab on the profile.
       </span>
       <input type="hidden" name="scheduleId" value={id === null ? "" : String(id)} />
