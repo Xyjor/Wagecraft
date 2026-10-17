@@ -9,7 +9,7 @@ import { Notice, RoleNote } from "@/components/Notice";
 import { PageHeader } from "@/components/PageHeader";
 import { EmptyState, Loading } from "@/components/states";
 import * as T from "@/components/table";
-import { Badge, primaryButton, quietButton, secondaryButton } from "@/components/ui";
+import { primaryButton, quietButton, secondaryButton } from "@/components/ui";
 import { useSession } from "@/features/auth/session";
 import { todayIso } from "@/features/attendance/format";
 import { formatDate } from "@/lib/dates";
@@ -24,7 +24,8 @@ import {
 } from "./api";
 import { PayslipView } from "./PayslipView";
 import { RegisterDownloads } from "./RegisterDownloads";
-import { cutoffStillRunning, periodLabel, STATUS_LABELS, STATUS_TONES } from "./periods";
+import { PayrollSteps } from "./PayrollSteps";
+import { cutoffStillRunning, periodLabel } from "./periods";
 
 export function RegisterPage({ today = todayIso() }: { today?: string }) {
   const { me } = useSession();
@@ -91,9 +92,9 @@ function Register({ id, today }: { id: number; today: string }) {
       <PageHeader
         title={`Payroll for ${label}`}
         crumbs={[{ label: "Payroll", to: "/payroll" }]}
-        meta={<Badge tone={STATUS_TONES[period.status]}>{STATUS_LABELS[period.status]}</Badge>}
         description={`Pay date ${formatDate(period.payDate)}. Rule pack ${period.rulePackCode}.`}
       />
+      <PayrollSteps status={period.status} />
       <FormAlert message={alert} />
       {canCompute && (
         <div className="flex flex-wrap items-center gap-3">
@@ -106,20 +107,14 @@ function Register({ id, today }: { id: number; today: string }) {
             {period.status === "DRAFT" ? "Compute payroll" : "Recompute"}
           </button>
           {period.status === "COMPUTED" && (
-            <>
-              <button
-                type="button"
-                className={primaryButton}
-                disabled={busy || rows.length === 0}
-                onClick={() => run(() => approvePayroll(id))}
-              >
-                Approve
-              </button>
-              <span className="text-sm text-ink-muted">
-                Fix attendance, leave or pay rates at the source, then recompute. Approve when the
-                numbers are right.
-              </span>
-            </>
+            <button
+              type="button"
+              className={primaryButton}
+              disabled={busy || rows.length === 0}
+              onClick={() => run(() => approvePayroll(id))}
+            >
+              Approve
+            </button>
           )}
         </div>
       )}
@@ -136,12 +131,6 @@ function Register({ id, today }: { id: number; today: string }) {
           onPost={() => run(() => postPayroll(id))}
           onSendBack={(reason) => run(() => sendBackPayroll(id, reason))}
         />
-      )}
-      {period.status === "POSTED" && (
-        <p className="text-sm text-ink-muted">
-          Posted. These payslips are final, staff can see them, and attendance for these days is
-          locked.
-        </p>
       )}
 
       {period.status !== "DRAFT" && rows.length > 0 && <RegisterDownloads periodId={id} />}
@@ -275,9 +264,6 @@ function ApprovedActions({
       <button type="button" className={secondaryButton} onClick={() => setStep("back")}>
         Send back
       </button>
-      <span className="text-sm text-ink-muted">
-        Approved. Send it back if something needs fixing before it's posted.
-      </span>
     </div>
   );
 }

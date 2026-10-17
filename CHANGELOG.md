@@ -26,6 +26,11 @@ What changed in each version of Wagecraft. The format follows
 - The employee and attendance screens use the ledger look, with page headers and breadcrumbs
   (Employees › name › Edit). Late and undertime minutes show in red ink.
 
+### Added
+
+- Each pay period shows its steps (Draft, Computed, Approved, Posted), marks where it is, and
+  says what to do next.
+
 ### Fixed
 
 - The sign-in, setup, time clock and forced password-change screens now follow the Light, Dark or
