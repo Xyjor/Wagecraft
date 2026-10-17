@@ -33,6 +33,9 @@ What changed in each version of Wagecraft. The format follows
 - A "Finish setting up" checklist on the Admin dashboard: company address and TIN, departments
   and positions, a work schedule, this year's holidays, employees, and the first pay period. It
   goes away once everything is done, or when hidden.
+- Help: the user manual is built into the app, with its screenshots, showing only the sections for
+  your role. The ? at the top of every screen opens the part about that screen, and Help is at the
+  foot of the sidebar. It works offline.
 
 ### Fixed
 

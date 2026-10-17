@@ -36,6 +36,14 @@ describe("Sidebar", () => {
     expect(screen.queryByRole("link", { name: "Settings" })).toBeNull();
   });
 
+  it("offers Help to every role", () => {
+    for (const role of ["STAFF", "HR", "ADMIN"] as const) {
+      renderSidebar(role);
+      expect(screen.getByRole("link", { name: "Help" }).getAttribute("href")).toBe("/help");
+      cleanup();
+    }
+  });
+
   it("shows Admin the Admin group", () => {
     renderSidebar("ADMIN");
 
