@@ -6,7 +6,7 @@ import { describe, expect, it } from "vitest";
 const LIMITS: Record<string, number> = {
   "/src/components/": 0,
   "/src/app/": 0,
-  "/src/features/": 464,
+  "/src/features/": 396,
 };
 
 const RAW =

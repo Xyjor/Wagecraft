@@ -5,7 +5,11 @@ import type { PendingItem } from "@/bindings/PendingItem";
 import type { PeriodChecks } from "@/bindings/PeriodChecks";
 import type { RulePackSummary } from "@/bindings/RulePackSummary";
 import { Field, FormAlert, SelectField } from "@/components/form";
-import { Badge, primaryButton, quietButton } from "@/components/ui";
+import { formCardClass } from "@/components/Card";
+import { Notice, RoleNote } from "@/components/Notice";
+import { PageHeader } from "@/components/PageHeader";
+import * as T from "@/components/table";
+import { Badge, primaryButton, quietButton, secondaryButton } from "@/components/ui";
 import { todayIso } from "@/features/attendance/format";
 import { useSession } from "@/features/auth/session";
 import { formatDate } from "@/lib/dates";
@@ -25,7 +29,7 @@ import {
 export function PayrollPage({ today }: { today?: string }) {
   const { me } = useSession();
   if (me.role === "STAFF") {
-    return <p className="text-zinc-600 dark:text-zinc-400">Only Admin and HR can run payroll.</p>;
+    return <RoleNote>Only Admin and HR can run payroll.</RoleNote>;
   }
   return <Payroll today={today ?? todayIso()} />;
 }
@@ -63,16 +67,15 @@ function Payroll({ today }: { today: string }) {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-2xl font-semibold tracking-tight">Payroll</h1>
-        <Link to="/payroll/rules" className={quietButton}>
-          Rule packs
-        </Link>
-      </div>
-      <p className="max-w-prose text-sm text-zinc-600 dark:text-zinc-400">
-        Each pay period is one semi-monthly cutoff: the 1st to the 15th, or the 16th to the end of
-        the month. Create the period, then compute, approve and post it.
-      </p>
+      <PageHeader
+        title="Payroll"
+        description="Each pay period is one semi-monthly cutoff: the 1st to the 15th, or the 16th to the end of the month. Create the period, then compute, approve and post it."
+        actions={
+          <Link to="/payroll/rules" className={secondaryButton}>
+            Rule packs
+          </Link>
+        }
+      />
       <FormAlert message={alert} />
 
       {creating ? (
@@ -91,41 +94,42 @@ function Payroll({ today }: { today: string }) {
       )}
 
       {periods && (
-        <table className="w-full text-left text-sm">
-          <thead className="border-b border-zinc-200 text-zinc-500 dark:border-zinc-800">
+        <table className={T.table}>
+          <thead className={T.thead}>
             <tr>
-              <th className="py-2 font-medium">Period</th>
-              <th className="py-2 font-medium">Pay date</th>
-              <th className="py-2 font-medium">Rule pack</th>
-              <th className="py-2 font-medium">Status</th>
-              <th className="py-2 font-medium">
+              <th className={T.th}>Period</th>
+              <th className={T.th}>Pay date</th>
+              <th className={T.th}>Rule pack</th>
+              <th className={T.th}>Status</th>
+              <th className={T.th}>
                 <span className="sr-only">Actions</span>
               </th>
             </tr>
           </thead>
           <tbody>
             {periods.length === 0 && (
-              <tr>
-                <td colSpan={5} className="py-3 text-zinc-500">
-                  No pay periods yet.
-                </td>
-              </tr>
+              <T.EmptyRow colSpan={5}>
+                No pay periods yet. Create the first one with New pay period.
+              </T.EmptyRow>
             )}
             {periods.map((p) => {
               const label = periodLabel(p.periodStart, p.periodEnd);
               return (
-                <tr key={p.id} className="border-b border-zinc-100 dark:border-zinc-900">
-                  <td className="py-2 font-medium tabular-nums">
-                    <Link to={`/payroll/${p.id}`} className="underline-offset-2 hover:underline">
+                <tr key={p.id} className={T.row}>
+                  <td className={`${T.td} font-medium tabular-nums`}>
+                    <Link
+                      to={`/payroll/${p.id}`}
+                      className="text-accent underline-offset-2 hover:underline"
+                    >
                       {label}
                     </Link>
                   </td>
-                  <td className="py-2 tabular-nums">{formatDate(p.payDate)}</td>
-                  <td className="py-2">{p.rulePackCode}</td>
-                  <td className="py-2">
+                  <td className={`${T.td} tabular-nums`}>{formatDate(p.payDate)}</td>
+                  <td className={T.td}>{p.rulePackCode}</td>
+                  <td className={T.td}>
                     <Badge tone={STATUS_TONES[p.status]}>{STATUS_LABELS[p.status]}</Badge>
                   </td>
-                  <td className="py-2">
+                  <td className={T.td}>
                     <div className="flex items-center justify-end gap-1">
                       {p.status !== "DRAFT" ? null : confirming === p.id ? (
                         <>
@@ -239,12 +243,7 @@ function PeriodForm({
   }
 
   return (
-    <form
-      onSubmit={submit}
-      noValidate
-      aria-label="New pay period"
-      className="grid max-w-md gap-4 rounded-lg border border-zinc-200 p-4 dark:border-zinc-800"
-    >
+    <form onSubmit={submit} noValidate aria-label="New pay period" className={formCardClass}>
       <FormAlert message={alert} />
       <Field
         name="month"
@@ -321,10 +320,7 @@ function Warnings({ checks }: { checks: PeriodChecks }) {
   ].filter((g) => g.items.length > 0);
 
   return (
-    <section
-      aria-label="Unfinished work in this period"
-      className="space-y-2 rounded-md bg-amber-50 px-3 py-2 text-sm text-amber-900 dark:bg-amber-950 dark:text-amber-200"
-    >
+    <Notice label="Unfinished work in this period" tone={groups.length === 0 ? "info" : "warn"}>
       {groups.length === 0 ? (
         <p>No pending leave, overtime or missing time-outs in this period.</p>
       ) : (
@@ -347,6 +343,6 @@ function Warnings({ checks }: { checks: PeriodChecks }) {
           ))}
         </>
       )}
-    </section>
+    </Notice>
   );
 }

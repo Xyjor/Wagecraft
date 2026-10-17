@@ -1,15 +1,19 @@
 import { useEffect, useState, type FormEvent } from "react";
-import { Link, useParams } from "react-router";
+import { useParams } from "react-router";
 import type { PayrollRegister } from "@/bindings/PayrollRegister";
 import type { PayslipDetail } from "@/bindings/PayslipDetail";
 import type { RegisterRow } from "@/bindings/RegisterRow";
 import { Field, FormAlert } from "@/components/form";
-import { Badge, primaryButton, quietButton } from "@/components/ui";
+import { Money } from "@/components/Money";
+import { Notice, RoleNote } from "@/components/Notice";
+import { PageHeader } from "@/components/PageHeader";
+import { EmptyState, Loading } from "@/components/states";
+import * as T from "@/components/table";
+import { Badge, primaryButton, quietButton, secondaryButton } from "@/components/ui";
 import { useSession } from "@/features/auth/session";
 import { todayIso } from "@/features/attendance/format";
 import { formatDate } from "@/lib/dates";
 import type { AppError } from "@/lib/ipc";
-import { formatPesos } from "@/lib/money";
 import {
   approvePayroll,
   computePayroll,
@@ -26,18 +30,24 @@ export function RegisterPage({ today = todayIso() }: { today?: string }) {
   const { me } = useSession();
   const id = Number(useParams().id);
   if (me.role === "STAFF") {
-    return <p className="text-zinc-600 dark:text-zinc-400">Only Admin and HR can run payroll.</p>;
+    return <RoleNote>Only Admin and HR can run payroll.</RoleNote>;
   }
   return <Register key={id} id={id} today={today} />;
 }
 
-const MONEY_COLUMNS: { key: keyof RegisterRow; label: string }[] = [
+// Deductions are written in red ink, as on a paper register.
+const MONEY_COLUMNS: { key: keyof RegisterRow; label: string; ink?: string }[] = [
   { key: "grossCents", label: "Gross" },
-  { key: "statutoryEeCents", label: "Contributions" },
-  { key: "taxCents", label: "Tax" },
-  { key: "otherDeductionsCents", label: "Other deductions" },
-  { key: "netCents", label: "Net pay" },
+  { key: "statutoryEeCents", label: "Contributions", ink: "text-danger" },
+  { key: "taxCents", label: "Tax", ink: "text-danger" },
+  { key: "otherDeductionsCents", label: "Other deductions", ink: "text-danger" },
+  { key: "netCents", label: "Net pay", ink: "font-semibold" },
 ];
+
+/** Zeros stay faint so the red ink only marks real deductions. */
+function inkFor(c: (typeof MONEY_COLUMNS)[number], cents: number) {
+  return cents === 0 ? "text-ink-faint" : (c.ink ?? "");
+}
 
 function Register({ id, today }: { id: number; today: string }) {
   const [register, setRegister] = useState<PayrollRegister | null>(null);
@@ -69,7 +79,8 @@ function Register({ id, today }: { id: number; today: string }) {
     }
   }
 
-  if (!register) return <FormAlert message={alert} />;
+  if (!register)
+    return alert ? <FormAlert message={alert} /> : <Loading label="Loading the payroll…" />;
   const { period, rows, skipped } = register;
   const label = periodLabel(period.periodStart, period.periodEnd);
   const canCompute = period.status === "DRAFT" || period.status === "COMPUTED";
@@ -77,22 +88,18 @@ function Register({ id, today }: { id: number; today: string }) {
 
   return (
     <div className="space-y-6">
-      <Link to="/payroll" className={quietButton}>
-        ← All pay periods
-      </Link>
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-2xl font-semibold tracking-tight">Payroll for {label}</h1>
-        <Badge tone={STATUS_TONES[period.status]}>{STATUS_LABELS[period.status]}</Badge>
-      </div>
-      <p className="text-sm text-zinc-600 dark:text-zinc-400">
-        Pay date {formatDate(period.payDate)} · Rule pack {period.rulePackCode}
-      </p>
+      <PageHeader
+        title={`Payroll for ${label}`}
+        crumbs={[{ label: "Payroll", to: "/payroll" }]}
+        meta={<Badge tone={STATUS_TONES[period.status]}>{STATUS_LABELS[period.status]}</Badge>}
+        description={`Pay date ${formatDate(period.payDate)}. Rule pack ${period.rulePackCode}.`}
+      />
       <FormAlert message={alert} />
       {canCompute && (
         <div className="flex flex-wrap items-center gap-3">
           <button
             type="button"
-            className={period.status === "DRAFT" ? primaryButton : quietButton}
+            className={period.status === "DRAFT" ? primaryButton : secondaryButton}
             disabled={busy}
             onClick={() => run(() => computePayroll(id))}
           >
@@ -108,7 +115,7 @@ function Register({ id, today }: { id: number; today: string }) {
               >
                 Approve
               </button>
-              <span className="text-sm text-zinc-600 dark:text-zinc-400">
+              <span className="text-sm text-ink-muted">
                 Fix attendance, leave or pay rates at the source, then recompute. Approve when the
                 numbers are right.
               </span>
@@ -117,7 +124,7 @@ function Register({ id, today }: { id: number; today: string }) {
         </div>
       )}
       {canCompute && cutoffStillRunning(period.periodEnd, today) && (
-        <p className="text-sm text-amber-700 dark:text-amber-300">
+        <p className="text-sm text-warn">
           The cutoff runs until {formatDate(period.periodEnd)}. A payroll computed now only has the
           attendance recorded so far, so recompute after that day.
         </p>
@@ -131,7 +138,7 @@ function Register({ id, today }: { id: number; today: string }) {
         />
       )}
       {period.status === "POSTED" && (
-        <p className="text-sm text-zinc-600 dark:text-zinc-400">
+        <p className="text-sm text-ink-muted">
           Posted. These payslips are final, staff can see them, and attendance for these days is
           locked.
         </p>
@@ -140,29 +147,27 @@ function Register({ id, today }: { id: number; today: string }) {
       {period.status !== "DRAFT" && rows.length > 0 && <RegisterDownloads periodId={id} />}
 
       {period.status === "DRAFT" ? (
-        <p className="text-zinc-500">Not computed yet.</p>
+        <EmptyState message="Not computed yet." />
       ) : (
-        <table className="w-full text-left text-sm">
-          <thead className="border-b border-zinc-200 text-zinc-500 dark:border-zinc-800">
+        <table className={T.table}>
+          <thead className={T.thead}>
             <tr>
-              <th className="py-2 font-medium">Employee</th>
+              <th className={T.th}>Employee</th>
               {MONEY_COLUMNS.map((c) => (
-                <th key={c.key} className="py-2 text-right font-medium">
+                <th key={c.key} className={`${T.th} ${T.num}`}>
                   {c.label}
                 </th>
               ))}
-              <th className="py-2 font-medium">
+              <th className={T.th}>
                 <span className="sr-only">Actions</span>
               </th>
             </tr>
           </thead>
           <tbody>
             {rows.length === 0 && (
-              <tr>
-                <td colSpan={7} className="py-3 text-zinc-500">
-                  No payslips. Check that employees have a pay rate and a schedule.
-                </td>
-              </tr>
+              <T.EmptyRow colSpan={7}>
+                No payslips. Check that employees have a pay rate and a schedule.
+              </T.EmptyRow>
             )}
             {rows.map((r) => (
               <RegisterLine
@@ -174,12 +179,12 @@ function Register({ id, today }: { id: number; today: string }) {
             ))}
           </tbody>
           {rows.length > 0 && (
-            <tfoot className="border-t border-zinc-300 font-medium dark:border-zinc-700">
-              <tr>
-                <td className="py-2">Total ({rows.length})</td>
+            <tfoot>
+              <tr className={T.totalRow}>
+                <td className={T.td}>Total ({rows.length})</td>
                 {MONEY_COLUMNS.map((c) => (
-                  <td key={c.key} className="py-2 text-right tabular-nums">
-                    {formatPesos(total(c.key))}
+                  <td key={c.key} className={`${T.td} ${T.num} ${inkFor(c, total(c.key))}`}>
+                    <Money cents={total(c.key)} />
                   </td>
                 ))}
                 <td />
@@ -190,10 +195,7 @@ function Register({ id, today }: { id: number; today: string }) {
       )}
 
       {skipped.length > 0 && (
-        <section
-          aria-label="Not in this payroll"
-          className="space-y-1 rounded-md bg-amber-50 px-3 py-2 text-sm text-amber-900 dark:bg-amber-950 dark:text-amber-200"
-        >
+        <Notice tone="warn" label="Not in this payroll">
           <p className="font-medium">Not in this payroll</p>
           <ul className="list-disc pl-5">
             {skipped.map((s) => (
@@ -202,7 +204,7 @@ function Register({ id, today }: { id: number; today: string }) {
               </li>
             ))}
           </ul>
-        </section>
+        </Notice>
       )}
     </div>
   );
@@ -234,10 +236,7 @@ function ApprovedActions({
 
   if (step === "post") {
     return (
-      <section
-        aria-label="Post this payroll"
-        className="space-y-3 rounded-md bg-amber-50 px-3 py-3 text-sm text-amber-900 dark:bg-amber-950 dark:text-amber-200"
-      >
+      <Notice tone="warn" label="Post this payroll">
         <p>
           Post the payroll for {label}? A backup is taken first. Then attendance for these days is
           locked, loan balances go down, and staff can see their payslips. Posting can't be undone.
@@ -250,7 +249,7 @@ function ApprovedActions({
             Not yet
           </button>
         </div>
-      </section>
+      </Notice>
     );
   }
   if (step === "back") {
@@ -273,10 +272,10 @@ function ApprovedActions({
       <button type="button" className={primaryButton} onClick={() => setStep("post")}>
         Post payroll
       </button>
-      <button type="button" className={quietButton} onClick={() => setStep("back")}>
+      <button type="button" className={secondaryButton} onClick={() => setStep("back")}>
         Send back
       </button>
-      <span className="text-sm text-zinc-600 dark:text-zinc-400">
+      <span className="text-sm text-ink-muted">
         Approved. Send it back if something needs fixing before it's posted.
       </span>
     </div>
@@ -294,22 +293,22 @@ function RegisterLine({
 }) {
   return (
     <>
-      <tr className="border-b border-zinc-100 align-top dark:border-zinc-900">
-        <td className="py-2">
+      <tr className={`${T.row} align-top`}>
+        <td className={T.td}>
           <div className="font-medium">{row.employeeName}</div>
-          <div className="text-xs text-zinc-500">{row.employeeNo}</div>
+          <div className="text-xs text-ink-faint">{row.employeeNo}</div>
           {row.warnings.map((w) => (
-            <div key={w} className="text-xs text-amber-700 dark:text-amber-300">
+            <div key={w} className="text-xs text-warn">
               {w}
             </div>
           ))}
         </td>
         {MONEY_COLUMNS.map((c) => (
-          <td key={c.key} className="py-2 text-right tabular-nums">
-            {formatPesos(row[c.key] as number)}
+          <td key={c.key} className={`${T.td} ${T.num} ${inkFor(c, row[c.key] as number)}`}>
+            <Money cents={row[c.key] as number} />
           </td>
         ))}
-        <td className="py-2 text-right">
+        <td className={`${T.td} text-right`}>
           <button
             type="button"
             className={quietButton}
@@ -323,7 +322,7 @@ function RegisterLine({
       </tr>
       {open && (
         <tr>
-          <td colSpan={7} className="pb-4">
+          <td colSpan={7} className="bg-sunken/50 px-3 pt-1 pb-4">
             <Payslip id={row.payslipId} name={row.employeeName} />
           </td>
         </tr>

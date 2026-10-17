@@ -132,7 +132,7 @@ describe("MyPayslipsPage", () => {
     await waitFor(() => expect(call).toHaveBeenCalledWith("payslip_my_get", { id: 11 }));
     const view = await screen.findByRole("region", { name: "Payslip for Oct 1 – 15, 2026" });
     expect(within(view).getByText("Absences")).toBeTruthy();
-    expect(within(view).getByText("-₱1,149.43")).toBeTruthy();
+    expect(within(view).getByText("(₱1,149.43)")).toBeTruthy();
     expect(within(view).getByText("Net pay")).toBeTruthy();
     expect(within(view).getByText("SSS (employer)")).toBeTruthy();
   });

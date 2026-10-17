@@ -1,4 +1,4 @@
-import { cleanup, render, screen, waitFor, within } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { MemoryRouter } from "react-router";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { TeamDashboard as Summary } from "@/bindings/TeamDashboard";
@@ -121,5 +121,31 @@ describe("TeamDashboard", () => {
     );
 
     expect((await screen.findByRole("alert")).textContent).toContain("Database is locked");
+  });
+
+  it("loads again on Retry", async () => {
+    call.mockRejectedValueOnce({ code: "INTERNAL", message: "Database is locked", fields: [] });
+    call.mockResolvedValue(summary);
+    render(
+      <MemoryRouter>
+        <TeamDashboard />
+      </MemoryRouter>,
+    );
+
+    fireEvent.click(await screen.findByRole("button", { name: "Retry" }));
+
+    await waitFor(() => expect(tile("Employees").textContent).toContain("42"));
+    expect(screen.queryByRole("alert")).toBeNull();
+  });
+
+  it("puts late arrivals in red ink only when there are some", async () => {
+    show();
+    await waitFor(() => expect(tile("Late").textContent).toContain("4"));
+    expect(tile("Late").className).toContain("text-danger");
+    cleanup();
+
+    show({ ...summary, today: { ...summary.today, late: 0 } });
+    await waitFor(() => expect(tile("Late").textContent).toContain("0"));
+    expect(tile("Late").className).not.toContain("text-danger");
   });
 });
