@@ -18,3 +18,4 @@ ADR that supersedes the old one; the old file stays as history. The first eleven
 | [0010](0010-pdf-templates-in-react-file-writing-in-rust.md)                  | PDF templates in React; file writing in Rust                           |
 | [0011](0011-react-typescript-tanstack-query-shadcn-ui.md)                    | React + TypeScript + TanStack Query + shadcn/ui                        |
 | [0012](0012-plain-react-data-loading-and-forms-tailwind-without-shadcn.md)   | Plain React data loading and forms; Tailwind without shadcn/ui         |
+| [0013](0013-ledger-design-tokens.md)                                         | Ledger design tokens, with a palette bridge for existing pages         |

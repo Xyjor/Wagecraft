@@ -1,11 +1,162 @@
 @import "tailwindcss";
 
-/* Dark mode follows the `dark` class that useTheme puts on <html>. */
+/* Dark mode follows the `dark` class that the theme store (src/lib/useTheme.ts) and
+   public/theme-boot.js put on <html>. */
 @custom-variant dark (&:where(.dark, .dark *));
 
-html {
-  color-scheme: light;
+/*
+ * Ledger: the look of a green columnar accounting pad. See docs/adr/0013-ledger-design-tokens.md.
+ *
+ * Two layers:
+ * 1. Semantic tokens (--wc-*), set per theme on :root and .dark and exposed to Tailwind below as
+ *    bg-canvas, text-ink, border-rule, bg-accent and so on. New code uses only these.
+ * 2. A bridge: the zinc, emerald, sky and red palettes are recoloured so the pages that still use
+ *    raw palette classes pick up the ledger look. "zinc" now means "ledger neutral". These steps
+ *    are fixed values and never change under .dark, because the pages already pair them with
+ *    dark: variants. src/test/palette.test.ts stops the raw classes from growing back.
+ */
+
+:root {
+  --wc-canvas: #f5f7f2;
+  --wc-surface: #ffffff;
+  --wc-sunken: #eef2eb;
+  --wc-ink: #1b2420;
+  --wc-ink-muted: #4f5d55;
+  --wc-ink-faint: #66736b;
+  --wc-rule: #d5dfd4;
+  --wc-rule-strong: #a9b8ab;
+  --wc-field: #7d8f84;
+  --wc-accent: #1f6b55;
+  --wc-accent-hover: #185645;
+  --wc-accent-ink: #ffffff;
+  --wc-accent-soft: #e3efe8;
+  --wc-danger: #b3261e;
+  --wc-danger-soft: #fbeae8;
+  --wc-warn: #92400e;
+  --wc-warn-soft: #fffbeb;
+  --wc-warn-rule: #fcd34d;
+  --wc-sidebar: #173d33;
+  --wc-sidebar-active: #24564a;
+  --wc-sidebar-ink: #cfe0d7;
+  --wc-chart: #1a7f5e;
+  /* The bridge's one theme-aware step: muted text has to pass 4.5:1 on the canvas in both themes. */
+  --wc-zinc-500: #66736b;
 }
-html.dark {
-  color-scheme: dark;
+
+.dark {
+  --wc-canvas: #0f1714;
+  --wc-surface: #16211c;
+  --wc-sunken: #1b2823;
+  --wc-ink: #e4ece6;
+  --wc-ink-muted: #a9b9af;
+  --wc-ink-faint: #8d9c93;
+  --wc-rule: #27362f;
+  --wc-rule-strong: #3a4c43;
+  --wc-field: #5f7468;
+  --wc-accent: #5db592;
+  --wc-accent-hover: #79c4a8;
+  --wc-accent-ink: #0b1a14;
+  --wc-accent-soft: #1a3329;
+  --wc-danger: #f28b82;
+  --wc-danger-soft: #3a1714;
+  --wc-warn: #e5b75a;
+  --wc-warn-soft: #2e2410;
+  --wc-warn-rule: #92400e;
+  --wc-sidebar: #0b1411;
+  --wc-sidebar-active: #1c3a30;
+  --wc-sidebar-ink: #b9cec3;
+  --wc-chart: #3fa57e;
+  --wc-zinc-500: #8d9c93;
+}
+
+@theme inline {
+  --font-sans: "IBM Plex Sans Variable", "Segoe UI", system-ui, sans-serif;
+
+  --color-canvas: var(--wc-canvas);
+  --color-surface: var(--wc-surface);
+  --color-sunken: var(--wc-sunken);
+  --color-ink: var(--wc-ink);
+  --color-ink-muted: var(--wc-ink-muted);
+  --color-ink-faint: var(--wc-ink-faint);
+  --color-rule: var(--wc-rule);
+  --color-rule-strong: var(--wc-rule-strong);
+  --color-field: var(--wc-field);
+  --color-accent: var(--wc-accent);
+  --color-accent-hover: var(--wc-accent-hover);
+  --color-accent-ink: var(--wc-accent-ink);
+  --color-accent-soft: var(--wc-accent-soft);
+  --color-danger: var(--wc-danger);
+  --color-danger-soft: var(--wc-danger-soft);
+  --color-warn: var(--wc-warn);
+  --color-warn-soft: var(--wc-warn-soft);
+  --color-warn-rule: var(--wc-warn-rule);
+  --color-sidebar: var(--wc-sidebar);
+  --color-sidebar-active: var(--wc-sidebar-active);
+  --color-sidebar-ink: var(--wc-sidebar-ink);
+  --color-chart: var(--wc-chart);
+  --color-focus: var(--wc-accent);
+
+  --color-zinc-500: var(--wc-zinc-500);
+}
+
+@theme {
+  /* Ledger neutrals: Tailwind's zinc lightness steps turned toward ledger green (hue 160). */
+  --color-zinc-50: #f5f7f2;
+  --color-zinc-100: #e6ece4;
+  --color-zinc-200: #d5dfd4;
+  --color-zinc-300: oklch(87.1% 0.014 160);
+  --color-zinc-400: oklch(70.5% 0.022 160);
+  --color-zinc-600: oklch(44.2% 0.025 160);
+  --color-zinc-700: oklch(37% 0.022 160);
+  --color-zinc-800: #27362f;
+  --color-zinc-900: #16211c;
+  --color-zinc-950: #0f1714;
+
+  /* Success and approval: ledger green. */
+  --color-emerald-50: #e3efe8;
+  --color-emerald-200: #b7d6c6;
+  --color-emerald-300: #8fcbb1;
+  --color-emerald-400: #5db592;
+  --color-emerald-700: #1f6b55;
+  --color-emerald-800: #185645;
+  --color-emerald-900: #123f33;
+  --color-emerald-950: #1a3329;
+
+  /* Focus rings, "today" and the old chart colour: the accent. */
+  --color-sky-400: #5db592;
+  --color-sky-500: #1f6b55;
+  --color-sky-600: #1a7f5e;
+  --color-sky-700: #185645;
+
+  /* Red ink. */
+  --color-red-50: #fbeae8;
+  --color-red-300: #f5aaa3;
+  --color-red-400: #f28b82;
+  --color-red-500: #c8372d;
+  --color-red-600: #b3261e;
+  --color-red-700: #b3261e;
+  --color-red-950: #3a1714;
+}
+
+@layer base {
+  html {
+    color-scheme: light;
+    background-color: var(--wc-canvas);
+    color: var(--wc-ink);
+    accent-color: var(--wc-accent);
+    caret-color: var(--wc-accent);
+  }
+  html.dark {
+    color-scheme: dark;
+  }
+  ::selection {
+    background-color: var(--wc-accent-soft);
+    color: var(--wc-ink);
+  }
+  table {
+    font-variant-numeric: tabular-nums;
+  }
+  * {
+    scrollbar-color: var(--wc-rule-strong) transparent;
+  }
 }

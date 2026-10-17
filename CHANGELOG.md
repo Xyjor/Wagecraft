@@ -6,6 +6,17 @@ What changed in each version of Wagecraft. The format follows
 
 ## [Unreleased]
 
+### Changed
+
+- New "Ledger" look, part 1: green-tinted neutrals, ledger green for success and focus, red ink for
+  errors, and the IBM Plex Sans typeface bundled with the app. See
+  [ADR-013](docs/adr/0013-ledger-design-tokens.md).
+
+### Fixed
+
+- The sign-in, setup, time clock and forced password-change screens now follow the Light, Dark or
+  System choice, and the app no longer flashes white before dark mode applies.
+
 ## [1.0.1] - 2026-10-17
 
 ### Fixed
