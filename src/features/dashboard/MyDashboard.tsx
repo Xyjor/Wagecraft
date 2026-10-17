@@ -62,7 +62,7 @@ export function MyDashboard() {
       </Panel>
 
       <Panel title={`This cutoff, ${periodLabel(cutoff.periodStart, cutoff.periodEnd)}`}>
-        <TileStrip columns="grid-cols-3">
+        <TileStrip columns="grid-cols-3" inPanel>
           <Tile label="Days present" value={cutoff.daysPresent} />
           <Tile
             label="Late"

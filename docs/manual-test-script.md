@@ -21,16 +21,19 @@ Use the names and values below exactly, so the expected results match.
 
 ## Flow 1: first run, Admin, sign in and out
 
-| Step | Do this                                                                 | Expect                                                                                   |
-| ---- | ----------------------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
-| 1.1  | Run the installer.                                                      | SmartScreen may warn (More info, Run anyway). Install finishes without asking for admin. |
-| 1.2  | Start Wagecraft.                                                        | The **Set up Wagecraft** screen opens.                                                   |
-| 1.3  | Type company `Test Co`, username `admin`, password `admin` and confirm. | The form refuses: "Use at least 10 characters".                                          |
-| 1.4  | Change the password to `correct horse` twice, press **Create Admin**.   | You are signed in. The sidebar shows Home through Settings.                              |
-| 1.5  | Press **Sign out**.                                                     | The **Sign in** screen opens.                                                            |
-| 1.6  | Sign in as `admin` with the wrong password five times.                  | Each try says the username or password is wrong. Nothing says the account is locked.     |
-| 1.7  | Sign in with the right password straight away.                          | Still refused with the same message (the account is locked for 15 minutes).              |
-| 1.8  | Close Wagecraft and start it again.                                     | The Sign in screen opens, not the setup wizard.                                          |
+| Step | Do this                                                                 | Expect                                                                                                                                                                        |
+| ---- | ----------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1.1  | Run the installer.                                                      | SmartScreen may warn (More info, Run anyway). Install finishes without asking for admin.                                                                                      |
+| 1.2  | Start Wagecraft.                                                        | The **Set up Wagecraft** screen opens.                                                                                                                                        |
+| 1.3  | Type company `Test Co`, username `admin`, password `admin` and confirm. | The form refuses: "Use at least 10 characters".                                                                                                                               |
+| 1.4  | Change the password to `correct horse` twice, press **Create Admin**.   | You are signed in. The sidebar shows Home, then Me, People, Time and leave, Payroll and Admin, with Help at the foot. The dashboard shows **Finish setting up**, 0 of 6 done. |
+| 1.5  | Click **admin** at the top right, then **Sign out**.                    | The **Sign in** screen opens.                                                                                                                                                 |
+| 1.6  | Sign in as `admin` with the wrong password five times.                  | Each try says the username or password is wrong. Nothing says the account is locked.                                                                                          |
+| 1.7  | Sign in with the right password straight away.                          | Still refused with the same message (the account is locked for 15 minutes).                                                                                                   |
+| 1.8  | Close Wagecraft and start it again.                                     | The Sign in screen opens, not the setup wizard.                                                                                                                               |
+| 1.9  | Sign in. Click **admin**, choose **Dark**. Sign out.                    | The app turns dark, and the Sign in screen stays dark.                                                                                                                        |
+| 1.10 | Restart Wagecraft.                                                      | It opens dark straight away, with no white flash.                                                                                                                             |
+| 1.11 | Sign in, open **Settings**, press the **?** at the top right.           | Help opens at **5.3 Settings**. Switch back to **Light** or **System** if you like.                                                                                           |
 
 Step 1.7 locks the account, so wait 15 minutes before flow 2, or on a test PC remove the app data
 folder and repeat 1.2 to 1.5 with the right password.
@@ -53,17 +56,17 @@ Sign in as `admin` (Admin has every HR permission).
 
 ## Flow 3: the time clock, then the record
 
-| Step | Do this                                                    | Expect                                                                                            |
-| ---- | ---------------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
-| 3.1  | Sign out. On the Sign in screen press **Clock in or out**. | The **Time clock** screen shows today's date and a running clock.                                 |
-| 3.2  | Employee no. `EMP-0001`, PIN `0000`, **Time in**.          | Refused: "Wrong employee number or PIN".                                                          |
-| 3.3  | PIN `1234`, **Time in**.                                   | "Time in recorded, Juan." with the time.                                                          |
-| 3.4  | **Time in** again with the same PIN.                       | Refused: "You already clocked in for this shift."                                                 |
-| 3.5  | Wait a minute, then **Time out** with the same PIN.        | "Time out recorded, Juan."                                                                        |
-| 3.6  | **Back to sign in**, sign in as `juan` with `temporary1`.  | The **Change password** screen opens first.                                                       |
-| 3.7  | Set the password `juan passphrase 1`.                      | Juan is signed in. The sidebar shows only Home, My profile, My attendance, My leave, My payslips. |
-| 3.8  | Open **My attendance**.                                    | Today's row shows the time in and time out from steps 3.3 and 3.5.                                |
-| 3.9  | Open **My profile**.                                       | Juan's details are shown and nothing on the page can be edited.                                   |
+| Step | Do this                                                    | Expect                                                                                                                                                            |
+| ---- | ---------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 3.1  | Sign out. On the Sign in screen press **Clock in or out**. | The **Time clock** screen shows today's date and a running clock.                                                                                                 |
+| 3.2  | Employee no. `EMP-0001`, PIN `0000`, **Time in**.          | Refused: "Wrong employee number or PIN".                                                                                                                          |
+| 3.3  | PIN `1234`, **Time in**.                                   | "Time in recorded, Juan." with the time.                                                                                                                          |
+| 3.4  | **Time in** again with the same PIN.                       | Refused: "You already clocked in for this shift."                                                                                                                 |
+| 3.5  | Wait a minute, then **Time out** with the same PIN.        | "Time out recorded, Juan."                                                                                                                                        |
+| 3.6  | **Back to sign in**, sign in as `juan` with `temporary1`.  | The **Change password** screen opens first.                                                                                                                       |
+| 3.7  | Set the password `juan passphrase 1`.                      | Juan is signed in. The sidebar shows only Home, the Me group (My profile, My attendance, My leave, My payslips) and Help. Help shows sections 1, 2, 3 and 7 only. |
+| 3.8  | Open **My attendance**.                                    | Today's row shows the time in and time out from steps 3.3 and 3.5.                                                                                                |
+| 3.9  | Open **My profile**.                                       | Juan's details are shown and nothing on the page can be edited.                                                                                                   |
 
 ## Flow 4: leave, approval, balance and attendance
 
@@ -88,9 +91,9 @@ flow on the last day of a cutoff.
 | Step | Do this                                                                                                                  | Expect                                                                                                                         |
 | ---- | ------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------ |
 | 5.1  | Payroll, **New pay period**: this month, the cutoff that contains today, pay date five days after it, rule pack PH-2026. | The period appears as Draft. A panel lists unfinished work (pending leave, overtime, missing time-outs) or says there is none. |
-| 5.2  | Open the period, press **Compute payroll**.                                                                              | The status becomes Computed and the register lists Juan with gross, contributions, tax and net pay.                            |
+| 5.2  | Open the period, press **Compute payroll**.                                                                              | The steps band marks Computed and the register lists Juan with gross, contributions, tax and net pay.                          |
 | 5.3  | Press **View** on Juan's row.                                                                                            | The payslip shows the earnings, SSS, PhilHealth, Pag-IBIG, the employer contributions and the net pay.                         |
-| 5.4  | Press **Approve**.                                                                                                       | Status Approved. **Post payroll** and **Send back** appear.                                                                    |
+| 5.4  | Press **Approve**.                                                                                                       | The steps band marks Approved. **Post payroll** and **Send back** appear.                                                      |
 | 5.5  | Press **Send back**, reason `Checking`, confirm.                                                                         | Status back to Computed.                                                                                                       |
 | 5.6  | **Approve** again. Then **Download CSV** and **Download PDF**.                                                           | Status Approved. Both downloads save a file you can open; the PDF shows the company name.                                      |
 | 5.7  | Press **Post payroll**, read the warning, press **Yes, post it**.                                                        | Status Posted. The page says attendance for these days is locked. Backups lists a new **Before posting payroll** backup.       |

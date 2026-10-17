@@ -3,7 +3,7 @@ import type { Department } from "@/bindings/Department";
 import type { Position } from "@/bindings/Position";
 import type { WorkSchedule } from "@/bindings/WorkSchedule";
 import { Field, FormAlert, SelectField } from "@/components/form";
-import { ActiveBadge, primaryButton, quietButton } from "@/components/ui";
+import { ActiveBadge, primaryButton, quietButton, secondaryButton } from "@/components/ui";
 import { useSession } from "@/features/auth/session";
 import { formValues, serverErrors } from "@/lib/formData";
 import type { AppError } from "@/lib/ipc";
@@ -92,7 +92,7 @@ function Organization() {
             Departments
           </h2>
           {deptForm === null && (
-            <button type="button" className={primaryButton} onClick={() => setDeptForm("new")}>
+            <button type="button" className={secondaryButton} onClick={() => setDeptForm("new")}>
               Add department
             </button>
           )}
@@ -152,7 +152,7 @@ function Organization() {
             Positions
           </h2>
           {posForm === null && (
-            <button type="button" className={primaryButton} onClick={() => setPosForm("new")}>
+            <button type="button" className={secondaryButton} onClick={() => setPosForm("new")}>
               Add position
             </button>
           )}
@@ -215,7 +215,7 @@ function Organization() {
             Work schedules
           </h2>
           {schedForm === null && (
-            <button type="button" className={primaryButton} onClick={() => setSchedForm("new")}>
+            <button type="button" className={secondaryButton} onClick={() => setSchedForm("new")}>
               Add schedule
             </button>
           )}

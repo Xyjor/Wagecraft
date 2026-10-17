@@ -6,48 +6,52 @@ What changed in each version of Wagecraft. The format follows
 
 ## [Unreleased]
 
-### Changed
+## [1.1.0] - 2026-10-17
 
-- New "Ledger" look, part 1: green-tinted neutrals, ledger green for success and focus, red ink for
-  errors, and the IBM Plex Sans typeface bundled with the app. See
-  [ADR-013](docs/adr/0013-ledger-design-tokens.md).
-- The sidebar is grouped (Me, People, Time and leave, Payroll, Admin), with icons, and collapses to
-  an icon rail; the choice is remembered. A section stays highlighted on its detail pages.
-- The theme switch, Change password and Sign out moved into an account menu under your name at
-  the top right.
-- The window can't be made smaller than 1024 × 640.
-- Buttons, form fields, badges and the sign-in card use the Ledger colours: ledger green for the
-  main action on each screen, outlined buttons for second actions, and a status badge per payroll
-  step (draft amber, approved green, posted solid green).
-- The dashboard and payroll screens use the ledger look. Late arrivals show in red ink and people
-  not clocked in show in amber. The charts follow Light and Dark. The payroll register has ruled
-  money columns with deductions in red and a double rule above the totals. Negative amounts show
-  as (₱1,149.43) on screen. A dashboard that fails to load offers Retry.
-- The employee and attendance screens use the ledger look, with page headers and breadcrumbs
-  (Employees › name › Edit). Late and undertime minutes show in red ink.
-- Every other screen uses the ledger look too: ruled tables, square-cornered boxes, page
-  headers closed by a double rule, the dashboard's figures in one ruled strip, and the register's
-  net pay set off by a double rule.
-- Payslip and payroll register PDFs use the ledger look: a green rule under the company, ruled
-  lines, double rules above totals, and net pay on a green band. Negative amounts show in
-  parentheses and red ink, so they still read when printed in black and white.
+A new look, and help inside the app.
 
 ### Added
 
+- **Help.** The user manual is built into the app, with its screenshots, and shows only the
+  sections for your role. The **?** at the top of every screen opens the part about that screen,
+  and Help is at the foot of the sidebar. It works offline.
+- **Payroll steps.** Each pay period shows Draft, Computed, Approved and Posted, marks where it
+  is, and says what to do next, with the buttons for it underneath.
+- **Finish setting up.** A checklist on the Admin dashboard for a new company: company address and
+  TIN, departments and positions, a work schedule, this year's holidays, employees, and the first
+  pay period. It ticks itself off and goes away once everything is done, or when hidden.
 - A "Skip to content" link for keyboard users, shown when it has focus.
-- Each pay period shows its steps (Draft, Computed, Approved, Posted), marks where it is, and
-  says what to do next.
-- A "Finish setting up" checklist on the Admin dashboard: company address and TIN, departments
-  and positions, a work schedule, this year's holidays, employees, and the first pay period. It
-  goes away once everything is done, or when hidden.
-- Help: the user manual is built into the app, with its screenshots, showing only the sections for
-  your role. The ? at the top of every screen opens the part about that screen, and Help is at the
-  foot of the sidebar. It works offline.
+
+### Changed
+
+- **The "Ledger" look**, after a green columnar accounting pad. It has a ledger-green sidebar,
+  grey-green paper, ruled tables, square-cornered boxes, and page headers closed by a double rule.
+  Deductions are in red ink, and a double rule sits above totals and before net pay. It ships
+  with the IBM Plex Sans typeface. Light and Dark are both designed. See
+  [ADR-013](docs/adr/0013-ledger-design-tokens.md) and [DESIGN.md](DESIGN.md).
+- **Negative amounts** show as (₱1,149.43) in red on screen and in the PDFs, so they still read
+  when printed in black and white.
+- **Sidebar.** It is grouped into Me, People, Time and leave, Payroll and Admin, with icons. It
+  collapses to icons, and the choice is remembered. A section stays highlighted on its detail
+  pages.
+- **Account menu.** The Light/Dark/System switch, Change password and Sign out are now in a
+  menu under your name at the top right.
+- **Dashboard.** The figures sit in one ruled strip. Late arrivals show in red and people not
+  clocked in show in amber, only when there are some. The charts follow Light and Dark. A
+  dashboard that fails to load offers **Retry**.
+- **Page headers.** Pages have breadcrumbs back to their list, for example Employees › Bea
+  Torres › Edit. On the register, Download CSV and Download PDF are in the header.
+- **Payslip and register PDFs** have a green rule under the company, ruled lines, double rules
+  above totals and net pay on a green band.
+- **Window size.** The window can't be made smaller than 1024 × 640.
 
 ### Fixed
 
-- The sign-in, setup, time clock and forced password-change screens now follow the Light, Dark or
+- The sign-in, setup, time clock and forced password-change screens follow the Light, Dark or
   System choice, and the app no longer flashes white before dark mode applies.
+- Muted text and the faint table text meet the WCAG AA contrast minimum in both themes.
+- The user manual no longer says Wagecraft ships with the 2026 holidays; a new install starts with
+  none.
 
 ## [1.0.1] - 2026-10-17
 
@@ -104,6 +108,7 @@ The first release.
   role matrix and the Tauri config locked down.
 - **License:** MIT.
 
-[Unreleased]: https://github.com/Xyjor/Wagecraft/compare/v1.0.1...HEAD
+[Unreleased]: https://github.com/Xyjor/Wagecraft/compare/v1.1.0...HEAD
+[1.1.0]: https://github.com/Xyjor/Wagecraft/compare/v1.0.1...v1.1.0
 [1.0.1]: https://github.com/Xyjor/Wagecraft/compare/v1.0.0...v1.0.1
 [1.0.0]: https://github.com/Xyjor/Wagecraft/releases/tag/v1.0.0

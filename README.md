@@ -67,6 +67,12 @@ the same `Forbidden` as a hidden button would.
   shared form and layout pieces, `lib/` IPC, money, dates and theme helpers. Pages load data with
   a `call()` wrapper around Tauri's `invoke`, and forms validate with zod before the round trip.
   `src/bindings/` holds TypeScript types generated from the Rust types by ts-rs; don't edit them.
+- **Look**: the "Ledger" design. Colours are tokens in `src/index.css` (`bg-surface`, `text-ink`,
+  `border-rule`, `text-danger`…), never raw Tailwind palette classes; a test fails on those. The
+  system is written up in [DESIGN.md](DESIGN.md) and [ADR-013](docs/adr/0013-ledger-design-tokens.md).
+- **Help**: the in-app Help page bundles `docs/user-manual.md` and `docs/screenshots/`, so edit
+  the manual there. `src/features/help/manual.test.ts` fails if a heading a screen's **?** links to,
+  or a screenshot the manual shows, goes missing.
 - **PDFs**: payslips and the payroll register are React documents rendered with
   `@react-pdf/renderer`; Rust only writes the file where the user chose.
 - **Tests**: Rust unit tests per service against a temporary SQLite file, 20 hand-worked payroll

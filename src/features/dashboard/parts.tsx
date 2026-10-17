@@ -10,14 +10,20 @@ const TILE_TONES = {
  * A ruled band of figures, like the totals strip across the top of a ledger page. Tiles sit
  * in it as cells, divided by column rules and closed by a double rule.
  */
-export function TileStrip({ columns, children }: { columns: string; children: ReactNode }) {
-  return (
-    <div
-      className={`grid divide-x divide-rule rounded-sm border border-b-[3px] border-double border-rule-strong bg-surface ${columns}`}
-    >
-      {children}
-    </div>
-  );
+export function TileStrip({
+  columns,
+  inPanel = false,
+  children,
+}: {
+  columns: string;
+  /** Inside a Panel, which already draws the box: the cells run to its edges. */
+  inPanel?: boolean;
+  children: ReactNode;
+}) {
+  const box = inPanel
+    ? "-mx-4 -mb-4 border-t border-rule"
+    : "rounded-sm border border-b-[3px] border-double border-rule-strong bg-surface";
+  return <div className={`grid divide-x divide-rule ${box} ${columns}`}>{children}</div>;
 }
 
 /** One number with its label; a group, so tests and screen readers find it by name. */

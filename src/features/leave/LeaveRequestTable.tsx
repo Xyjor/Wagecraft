@@ -53,8 +53,8 @@ export function LeaveRequestTable({
               {r.leaveTypeName}
               {!r.isPaid && <div className="text-ink-faint">Unpaid</div>}
             </td>
-            <td className="px-3 py-2">{leaveDates(r)}</td>
-            <td className="px-3 py-2 tabular-nums">{formatDays(r.halfdays)}</td>
+            <td className="px-3 py-2 whitespace-nowrap">{leaveDates(r)}</td>
+            <td className="px-3 py-2 whitespace-nowrap tabular-nums">{formatDays(r.halfdays)}</td>
             <td className="px-3 py-2">{r.reason}</td>
             <td className="px-3 py-2">
               <Badge tone={STATUS_TONES[r.status]}>{STATUS_LABELS[r.status]}</Badge>
