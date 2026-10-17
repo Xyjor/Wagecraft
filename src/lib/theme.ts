@@ -10,6 +10,11 @@ export function resolveTheme(theme: Theme, prefersDark: boolean): "light" | "dar
   return theme === "DARK" ? "dark" : "light";
 }
 
+/** Puts the `dark` class on <html> when the resolved theme is dark. */
+export function applyTheme(theme: Theme, prefersDark: boolean) {
+  document.documentElement.classList.toggle("dark", resolveTheme(theme, prefersDark) === "dark");
+}
+
 /** Reads a saved value, falling back to SYSTEM for anything unknown. */
 export function loadTheme(saved: string | null): Theme {
   return THEMES.find((t) => t === saved) ?? "SYSTEM";
