@@ -243,7 +243,12 @@ describe("RegisterPage", () => {
     renderPage();
     fireEvent.click(await screen.findByRole("button", { name: "Approve" }));
     await waitFor(() => expect(call).toHaveBeenCalledWith("payroll_approve", { periodId: 4 }));
-    expect(await screen.findByText("Approved")).toBeTruthy();
+    // The steps list all four statuses at once, so wait for the Approved step's own action.
+    await screen.findByRole("button", { name: "Post payroll" });
+    const steps = screen.getByRole("list", { name: "Payroll steps" });
+    expect(within(steps).getByText("Approved").closest("li")!.getAttribute("aria-current")).toBe(
+      "step",
+    );
 
     fireEvent.click(screen.getByRole("button", { name: "Post payroll" }));
     const confirm = screen.getByRole("region", { name: "Post this payroll" });
