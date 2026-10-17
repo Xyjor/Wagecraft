@@ -35,7 +35,7 @@ export function Sidebar() {
   return (
     <nav
       aria-label="Main"
-      className={`flex shrink-0 flex-col border-r border-sidebar-ink/10 bg-sidebar text-sidebar-ink transition-[width] duration-200 ease-out ${
+      className={`flex shrink-0 flex-col border-r border-sidebar-ink/10 bg-sidebar text-sidebar-ink transition-[width] duration-200 ease-out motion-reduce:transition-none ${
         collapsed ? "w-14" : "w-60"
       }`}
     >

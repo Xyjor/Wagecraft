@@ -44,7 +44,7 @@ export function PayrollSteps({ status }: { status: Status }) {
                     ? "border-accent bg-accent text-accent-ink"
                     : current
                       ? "border-accent bg-accent-soft text-accent ring-2 ring-accent/25"
-                      : "border-rule-strong bg-surface text-ink-faint"
+                      : "border-field bg-surface text-ink-faint"
                 }`}
               >
                 {done ? <Check className="size-3.5" strokeWidth={2.5} /> : i + 1}

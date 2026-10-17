@@ -99,7 +99,7 @@ export function HelpPage() {
               <li key={c.slug}>
                 <a
                   href={`#${c.slug}`}
-                  className="-ml-px block border-l border-transparent pl-3 font-medium text-ink hover:border-accent hover:text-accent"
+                  className="-ml-px block rounded-sm border-l border-transparent pl-3 font-medium text-ink outline-none hover:border-accent hover:text-accent focus-visible:ring-2 focus-visible:ring-focus"
                 >
                   {c.heading}
                 </a>
@@ -109,7 +109,7 @@ export function HelpPage() {
                       <li key={sub.slug}>
                         <a
                           href={`#${sub.slug}`}
-                          className="-ml-px block border-l border-transparent py-0.5 pl-5 text-ink-muted hover:border-accent hover:text-accent"
+                          className="-ml-px block rounded-sm border-l border-transparent py-0.5 pl-5 text-ink-muted outline-none hover:border-accent hover:text-accent focus-visible:ring-2 focus-visible:ring-focus"
                         >
                           {sub.heading}
                         </a>

@@ -116,7 +116,7 @@ export function SetupChecklist({ year }: { year: number }) {
         title={`${doneCount} of ${steps.length} done`}
       >
         <div
-          className="h-full rounded-full bg-accent transition-[width] duration-300 ease-out"
+          className="h-full rounded-full bg-accent transition-[width] duration-300 ease-out motion-reduce:transition-none"
           style={{ width: `${(doneCount / steps.length) * 100}%` }}
         />
       </div>
@@ -126,7 +126,7 @@ export function SetupChecklist({ year }: { year: number }) {
             <span
               aria-hidden="true"
               className={`mt-0.5 grid size-5 shrink-0 place-items-center rounded-full border ${
-                s.done ? "border-accent bg-accent text-accent-ink" : "border-rule-strong bg-surface"
+                s.done ? "border-accent bg-accent text-accent-ink" : "border-field bg-surface"
               }`}
             >
               {s.done && <Check className="size-3" strokeWidth={3} />}
