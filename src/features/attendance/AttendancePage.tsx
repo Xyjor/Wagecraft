@@ -204,7 +204,7 @@ function Attendance() {
         </div>
         {rows && (
           <table className="w-full text-left text-sm">
-            <thead className="border-b border-rule-strong bg-sunken text-xs text-ink-muted">
+            <thead className="border-b border-rule-strong bg-sunken text-xs whitespace-nowrap text-ink-muted">
               <tr>
                 <th className="px-3 py-2 font-medium">Employee</th>
                 <th className="px-3 py-2 font-medium">Department</th>
@@ -232,8 +232,8 @@ function Attendance() {
                 return (
                   <tr key={row.employeeId} className="border-b border-rule hover:bg-sunken/60">
                     <td className="px-3 py-2">
-                      <span className="font-medium">{row.employeeName}</span>{" "}
-                      <span className="text-ink-faint">{row.employeeNo}</span>
+                      <div className="font-medium">{row.employeeName}</div>
+                      <div className="text-xs text-ink-faint">{row.employeeNo}</div>
                     </td>
                     <td className="px-3 py-2">{row.departmentName}</td>
                     <td className="space-x-1 px-3 py-2">
@@ -242,8 +242,12 @@ function Attendance() {
                       {r?.needsReview && <Badge tone="muted">Needs review</Badge>}
                       {r?.source === "MANUAL" && <Badge tone="muted">Corrected</Badge>}
                     </td>
-                    <td className="px-3 py-2 tabular-nums">{formatClock(r?.timeIn)}</td>
-                    <td className="px-3 py-2 tabular-nums">{formatClock(r?.timeOut)}</td>
+                    <td className="px-3 py-2 whitespace-nowrap tabular-nums">
+                      {formatClock(r?.timeIn)}
+                    </td>
+                    <td className="px-3 py-2 whitespace-nowrap tabular-nums">
+                      {formatClock(r?.timeOut)}
+                    </td>
                     <td className={`px-3 py-2 tabular-nums ${minutesInk(r?.lateMinutes ?? 0)}`}>
                       {formatMinutes(r?.lateMinutes ?? 0)}
                     </td>

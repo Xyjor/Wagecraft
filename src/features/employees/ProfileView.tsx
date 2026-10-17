@@ -33,7 +33,7 @@ export function ProfileView({
   const role = [e.positionTitle, e.departmentName].filter(Boolean).join(", ");
 
   return (
-    <article className="max-w-3xl space-y-6">
+    <article className="max-w-5xl space-y-6">
       <PageHeader
         title={fullName(e)}
         crumbs={crumbs}
@@ -50,7 +50,11 @@ export function ProfileView({
       />
       <FormAlert message={alert} />
 
-      <div role="tablist" aria-label="Profile sections" className="flex gap-1 border-b border-rule">
+      <div
+        role="tablist"
+        aria-label="Profile sections"
+        className="flex overflow-x-auto overflow-y-hidden border-b border-rule"
+      >
         {tabs.map((t) => (
           <button
             key={t}
@@ -58,7 +62,7 @@ export function ProfileView({
             role="tab"
             aria-selected={tab === t}
             onClick={() => setTab(t)}
-            className="-mb-px border-b-2 border-transparent px-3 py-2 text-sm text-ink-muted hover:text-ink aria-selected:border-accent aria-selected:font-medium aria-selected:text-ink"
+            className="-mb-px border-b-2 border-transparent px-2 py-2 text-sm whitespace-nowrap text-ink-muted hover:text-ink aria-selected:border-accent aria-selected:font-medium aria-selected:text-ink"
           >
             {t}
           </button>

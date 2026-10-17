@@ -93,7 +93,9 @@ describe("TeamDashboard", () => {
   it("gives each chart a table of its numbers", async () => {
     show();
 
-    const depts = await screen.findByRole("table", { name: "Employees by department" });
+    // Wait on cheap text first: a repeated role query over the whole page is slow under load.
+    await screen.findByText("No department");
+    const depts = screen.getByRole("table", { name: "Employees by department" });
     const rows = within(depts)
       .getAllByRole("row")
       .map((r) => r.textContent);

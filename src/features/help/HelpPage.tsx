@@ -92,7 +92,10 @@ export function HelpPage() {
             </Markdown>
           ))}
         </article>
-        <nav aria-label="Contents" className="sticky top-0 hidden w-56 shrink-0 text-sm lg:block">
+        <nav
+          aria-label="Contents"
+          className="sticky top-0 hidden max-h-[calc(100vh-7rem)] w-56 shrink-0 overflow-y-auto pb-4 text-sm lg:block"
+        >
           <p className="mb-2 font-semibold">Contents</p>
           <ol className="space-y-2 border-l border-rule">
             {contents.map((c) => (

@@ -39,7 +39,7 @@ export function Sidebar() {
         collapsed ? "w-14" : "w-60"
       }`}
     >
-      <div className={`pt-4 pb-3 ${collapsed ? "px-2 text-center" : "px-5"}`}>
+      <div className={`pt-3.5 pb-2.5 ${collapsed ? "px-2 text-center" : "px-5"}`}>
         <span className="inline-block border-b-[3px] border-double border-sidebar-ink/50 pb-0.5 text-lg font-semibold tracking-tight text-sidebar-ink-strong">
           {collapsed ? (
             <>
@@ -59,7 +59,7 @@ export function Sidebar() {
             <section
               key={group.label ?? "top"}
               aria-labelledby={headingId}
-              className={gi > 0 ? "mt-3" : ""}
+              className={gi > 0 ? "mt-2.5" : ""}
             >
               {group.label &&
                 (collapsed ? (
@@ -70,7 +70,10 @@ export function Sidebar() {
                     <hr aria-hidden="true" className="mx-2 mb-2 border-sidebar-ink/20" />
                   </>
                 ) : (
-                  <h2 id={headingId} className="px-3 pb-1 text-xs font-medium text-sidebar-ink/70">
+                  <h2
+                    id={headingId}
+                    className="px-3 pb-0.5 text-xs font-medium text-sidebar-ink/70"
+                  >
                     {group.label}
                   </h2>
                 ))}

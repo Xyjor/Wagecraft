@@ -11,8 +11,8 @@ users:
 
 The time clock, where employees clock in and out, needs no sign-in at all.
 
-The screenshots show the 200-employee demo company. They were taken on a Linux build, so file
-paths on them look different from Windows; everything else is the same.
+The screenshots show the 200-employee demo company on Windows. Its names and figures are made
+up.
 
 ## 1. Getting started
 
@@ -33,9 +33,18 @@ name and create the first Admin account. The wizard never shows again once an ac
 Passwords must be at least 10 characters and can't be the username. Three or four unrelated
 words make a strong password that is easy to remember.
 
+After the wizard, the Admin's dashboard shows **Finish setting up**, a short checklist of what a
+new company needs before its first payroll: the company address and TIN, departments and
+positions, a work schedule, this year's holidays, the employees, and the first pay period. Each
+step links to the screen where it's done and ticks itself off when it is. The checklist goes
+away once every step is done; the × hides it sooner.
+
+![Finish setting up](screenshots/setup-checklist.png)
+
 ### Sign in and out
 
-Everyone with an account signs in with a username and password. **Sign out** is at the top right.
+Everyone with an account signs in with a username and password. To sign out, click your name at
+the top right and choose **Sign out**.
 
 ![Sign in](screenshots/sign-in.png)
 
@@ -49,25 +58,36 @@ A few rules protect accounts:
 - When an Admin creates your account or resets your password, you get a temporary password. The
   first time you sign in with it, Wagecraft asks you to choose your own before it shows anything
   else.
-- To change your password later, click **Change password** at the top right, next to your
-  username. It asks for your current password and the new one twice.
+- To change your password later, click your name at the top right and choose **Change
+  password**. It asks for your current password and the new one twice.
 
 ### Light and dark
 
-The **Light**, **Dark** and **System** buttons at the top switch the theme. System follows
-Windows. The choice is kept on this PC.
+Click your name at the top right to find **Light**, **Dark** and **System**. System follows
+Windows. The choice is kept on this PC, and the sign-in screen and the time clock follow it too.
+
+### Getting help
+
+**Help**, at the foot of the sidebar, is this manual inside Wagecraft, with only the parts for
+your role. The **?** at the top of every screen opens Help at the part about that screen. Help
+works without an internet connection.
+
+![Help](screenshots/help.png)
 
 ### What each role sees
 
-The sidebar only lists the screens your role can open. Opening another screen some other way
-shows a short note instead, and the data never leaves the database.
+The sidebar groups the screens by job (Me, People, Time and leave, Payroll and Admin) and only
+lists the ones your role can open. The button at its foot collapses it to icons, and Wagecraft
+remembers the choice. Opening another screen some other way shows a short note instead, and the
+data never leaves the database.
 
-| Screen                                                          | Admin | HR  | Staff |
-| --------------------------------------------------------------- | :---: | :-: | :---: |
-| Home, My profile, My attendance, My leave, My payslips          |  yes  | yes |  yes  |
-| Employees, Attendance, Overtime, Leave, Leave calendar, Payroll |  yes  | yes |       |
-| Organization, Holidays                                          |  yes  | yes |       |
-| Users, Backups, Settings, Activity                              |  yes  |     |       |
+| Screen                                                       | Admin | HR  | Staff |
+| ------------------------------------------------------------ | :---: | :-: | :---: |
+| Home, My profile, My attendance, My leave, My payslips, Help |  yes  | yes |  yes  |
+| Employees, Organization                                      |  yes  | yes |       |
+| Attendance, Overtime, Leave, Leave calendar, Holidays        |  yes  | yes |       |
+| Payroll                                                      |  yes  | yes |       |
+| Users, Backups, Settings, Activity                           |  yes  |     |       |
 
 Admin and HR users who are also on the payroll link their account to their employee record
 (section 4.4) so the My pages show their own data.
@@ -151,7 +171,8 @@ listed yet.
 ### 4.1 Home
 
 The dashboard counts the employees and shows how today is going: present, late, not clocked in
-and on leave. **Waiting for review** links to the leave and overtime requests that need a
+and on leave. Late arrivals show in red and people not clocked in show in amber, so either
+stands out when it isn't zero. **Waiting for review** links to the leave and overtime requests that need a
 decision. The charts show employees by department and the payroll cost of the last six posted
 periods.
 
@@ -178,8 +199,9 @@ add both holidays on the same date. Use the arrows next to the year to move betw
 
 ![Holidays](screenshots/holidays.png)
 
-Wagecraft ships with the 2026 Philippine holidays. A holiday that falls in a posted payroll
-period can no longer be edited or deleted; the row says **Payroll posted**.
+A new install starts with no holidays: add each year's from the proclamation before you run
+that year's first payroll. The demo company comes with the 2026 holidays. A holiday that falls in
+a posted payroll period can no longer be edited or deleted; the row says **Payroll posted**.
 
 ### 4.4 Employees
 
@@ -294,7 +316,10 @@ is created, a panel lists unfinished work that would change the payslips: leave 
 waiting for a decision, and days without a time-out. Sort those out before you compute. A draft
 period can be deleted.
 
-Open the period to reach the register:
+Open the period to reach the register. A band at the top shows the four steps (**Draft**,
+**Computed**, **Approved**, **Posted**), marks where this payroll is, and says what to do next,
+with the buttons for it underneath. In the register, deductions are in red, negative amounts are
+in parentheses, and a double rule sets off the net pay column and the totals.
 
 1. **Compute payroll** works out every current employee's payslip from their attendance, approved
    leave and overtime, holidays, pay rate and pay items, under the period's rule pack. The status
@@ -320,10 +345,10 @@ Open the period to reach the register:
 
    ![Posted payroll](screenshots/register-posted.png)
 
-**Download CSV** and **Download PDF** save the payroll register once the period is computed. The
-PDF carries the company name, address, TIN and logo from Settings.
+**Download CSV** and **Download PDF**, at the top right of the register, save it once the period
+is computed. The PDF carries the company name, address, TIN and logo from Settings.
 
-**Rule packs** (the link at the top of the Payroll screen) shows the government rates each payroll
+**Rule packs** (the button at the top of the Payroll screen) shows the government rates each payroll
 is computed with: the daily rate factors, SSS, PhilHealth and Pag-IBIG contributions, the premium
 pay for holidays, rest days and night work, and the semi-monthly withholding tax table. They
 can't be edited. New rates come as a new pack in an app update, with its own start date, so

@@ -58,7 +58,7 @@ export function AttendanceMonth({
 function RecordTable({ records }: { records: AttendanceRecord[] }) {
   return (
     <table className="w-full text-left text-sm">
-      <thead className="border-b border-rule-strong bg-sunken text-xs text-ink-muted">
+      <thead className="border-b border-rule-strong bg-sunken text-xs whitespace-nowrap text-ink-muted">
         <tr>
           <th className="px-3 py-2 font-medium">Date</th>
           <th className="px-3 py-2 font-medium">Time in</th>
@@ -83,8 +83,8 @@ function RecordTable({ records }: { records: AttendanceRecord[] }) {
         {records.map((r) => (
           <tr key={r.id} className="border-b border-rule hover:bg-sunken/60">
             <td className="px-3 py-2">{formatDate(r.workDate)}</td>
-            <td className="px-3 py-2 tabular-nums">{formatClock(r.timeIn)}</td>
-            <td className="px-3 py-2 tabular-nums">
+            <td className="px-3 py-2 whitespace-nowrap tabular-nums">{formatClock(r.timeIn)}</td>
+            <td className="px-3 py-2 whitespace-nowrap tabular-nums">
               {r.timeOut ? formatClock(r.timeOut) : r.timeIn ? "Not yet" : ""}
             </td>
             <td className={`px-3 py-2 tabular-nums ${minutesInk(r.lateMinutes)}`}>
@@ -93,8 +93,12 @@ function RecordTable({ records }: { records: AttendanceRecord[] }) {
             <td className={`px-3 py-2 tabular-nums ${minutesInk(r.undertimeMinutes)}`}>
               {formatMinutes(r.undertimeMinutes)}
             </td>
-            <td className="px-3 py-2 tabular-nums">{formatMinutes(r.workedMinutes)}</td>
-            <td className="px-3 py-2 tabular-nums">{formatMinutes(r.nightMinutes)}</td>
+            <td className="px-3 py-2 whitespace-nowrap tabular-nums">
+              {formatMinutes(r.workedMinutes)}
+            </td>
+            <td className="px-3 py-2 whitespace-nowrap tabular-nums">
+              {formatMinutes(r.nightMinutes)}
+            </td>
             <td className="space-x-1 px-3 py-2">
               {r.needsReview && <Badge tone="muted">HR to review</Badge>}
               {r.source === "MANUAL" && <Badge tone="muted">Corrected by HR</Badge>}
