@@ -1,22 +1,23 @@
+import { Monitor, Moon, Sun } from "lucide-react";
 import { useTheme } from "@/lib/useTheme";
 import type { Theme } from "@/lib/theme";
 
-const OPTIONS: { value: Theme; label: string }[] = [
-  { value: "LIGHT", label: "Light" },
-  { value: "DARK", label: "Dark" },
-  { value: "SYSTEM", label: "System" },
-];
+const OPTIONS = [
+  { value: "LIGHT", label: "Light", icon: Sun },
+  { value: "DARK", label: "Dark", icon: Moon },
+  { value: "SYSTEM", label: "System", icon: Monitor },
+] as const satisfies readonly { value: Theme; label: string; icon: unknown }[];
 
 export function ThemeMenu() {
   const [theme, setTheme] = useTheme();
 
   return (
-    <fieldset className="flex rounded-md border border-zinc-300 p-0.5 text-sm dark:border-zinc-700">
+    <fieldset className="grid grid-cols-3 gap-0.5 rounded-md border border-rule bg-sunken p-0.5 text-sm">
       <legend className="sr-only">Theme</legend>
       {OPTIONS.map((o) => (
         <label
           key={o.value}
-          className="cursor-pointer rounded px-2.5 py-1 text-zinc-600 has-checked:bg-zinc-900 has-checked:text-white has-focus-visible:ring-2 has-focus-visible:ring-sky-500 dark:text-zinc-300 dark:has-checked:bg-zinc-100 dark:has-checked:text-zinc-900"
+          className="flex cursor-pointer items-center justify-center gap-1.5 rounded px-2 py-1 text-ink-muted has-checked:bg-surface has-checked:font-medium has-checked:text-ink has-checked:shadow-[0_1px_2px_rgb(0_0_0/0.12)] has-focus-visible:ring-2 has-focus-visible:ring-focus"
         >
           <input
             type="radio"
@@ -26,6 +27,7 @@ export function ThemeMenu() {
             onChange={() => setTheme(o.value)}
             className="sr-only"
           />
+          <o.icon aria-hidden="true" className="size-3.5" strokeWidth={1.75} />
           {o.label}
         </label>
       ))}

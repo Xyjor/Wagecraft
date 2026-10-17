@@ -4,7 +4,7 @@ import { TopBar } from "@/components/layout/TopBar";
 
 export function AppShell() {
   return (
-    <div className="flex h-screen bg-white text-zinc-900 dark:bg-zinc-950 dark:text-zinc-100">
+    <div className="flex h-screen bg-canvas text-ink">
       <Sidebar />
       <div className="flex min-w-0 flex-1 flex-col">
         <TopBar />

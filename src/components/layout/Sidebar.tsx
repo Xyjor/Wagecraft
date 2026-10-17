@@ -1,55 +1,130 @@
+import { useState } from "react";
 import { NavLink } from "react-router";
-import type { Role } from "@/bindings/Role";
+import { PanelLeftClose, PanelLeftOpen } from "lucide-react";
 import { useSession } from "@/features/auth/session";
+import { visibleNav } from "./nav";
 
-// Menu entries arrive with each feature. `roles` hides an entry from everyone else;
-// the backend still checks every command, so this is only to keep the menu tidy.
-const ITEMS: { to: string; label: string; roles?: Role[] }[] = [
-  { to: "/", label: "Home" },
-  { to: "/me", label: "My profile" },
-  { to: "/my-attendance", label: "My attendance" },
-  { to: "/my-leave", label: "My leave" },
-  { to: "/my-payslips", label: "My payslips" },
-  { to: "/employees", label: "Employees", roles: ["ADMIN", "HR"] },
-  { to: "/attendance", label: "Attendance", roles: ["ADMIN", "HR"] },
-  { to: "/overtime", label: "Overtime", roles: ["ADMIN", "HR"] },
-  { to: "/leave", label: "Leave", roles: ["ADMIN", "HR"] },
-  { to: "/leave-calendar", label: "Leave calendar", roles: ["ADMIN", "HR"] },
-  { to: "/payroll", label: "Payroll", roles: ["ADMIN", "HR"] },
-  { to: "/organization", label: "Organization", roles: ["ADMIN", "HR"] },
-  { to: "/holidays", label: "Holidays", roles: ["ADMIN", "HR"] },
-  { to: "/users", label: "Users", roles: ["ADMIN"] },
-  { to: "/backups", label: "Backups", roles: ["ADMIN"] },
-  { to: "/settings", label: "Settings", roles: ["ADMIN"] },
-  { to: "/activity", label: "Activity", roles: ["ADMIN"] },
-];
+export const SIDEBAR_KEY = "wagecraft.sidebar";
+
+function readCollapsed() {
+  try {
+    return localStorage.getItem(SIDEBAR_KEY) === "collapsed";
+  } catch {
+    return false;
+  }
+}
+
+const focusRing =
+  "outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ink focus-visible:ring-offset-2 focus-visible:ring-offset-sidebar";
 
 export function Sidebar() {
   const { me } = useSession();
-  const items = ITEMS.filter((i) => !i.roles || i.roles.includes(me.role));
+  const [collapsed, setCollapsed] = useState(readCollapsed);
+  const groups = visibleNav(me.role);
+
+  function toggle() {
+    const next = !collapsed;
+    setCollapsed(next);
+    try {
+      localStorage.setItem(SIDEBAR_KEY, next ? "collapsed" : "expanded");
+    } catch {
+      // Storage can be unavailable; the choice still holds until the app closes.
+    }
+  }
 
   return (
     <nav
       aria-label="Main"
-      className="flex w-56 shrink-0 flex-col gap-1 border-r border-zinc-200 bg-zinc-50 p-3 dark:border-zinc-800 dark:bg-zinc-900"
+      className={`flex shrink-0 flex-col border-r border-sidebar-ink/10 bg-sidebar text-sidebar-ink transition-[width] duration-200 ease-out ${
+        collapsed ? "w-14" : "w-60"
+      }`}
     >
-      <div className="px-2 pb-4 text-lg font-semibold tracking-tight">Wagecraft</div>
-      {items.map((item) => (
-        <NavLink
-          key={item.to}
-          to={item.to}
-          end
-          className={({ isActive }) =>
-            `rounded-md px-2 py-1.5 text-sm ${
-              isActive
-                ? "bg-zinc-200 font-medium dark:bg-zinc-800"
-                : "text-zinc-600 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:bg-zinc-800/60"
-            }`
-          }
+      <div className={`pt-4 pb-3 ${collapsed ? "px-2 text-center" : "px-5"}`}>
+        <span className="inline-block border-b-[3px] border-double border-sidebar-ink/50 pb-0.5 text-lg font-semibold tracking-tight text-white">
+          {collapsed ? (
+            <>
+              <span aria-hidden="true">W</span>
+              <span className="sr-only">Wagecraft</span>
+            </>
+          ) : (
+            "Wagecraft"
+          )}
+        </span>
+      </div>
+
+      <div className="flex-1 overflow-y-auto px-2 pb-4">
+        {groups.map((group, gi) => {
+          const headingId = group.label ? `nav-${gi}` : undefined;
+          return (
+            <section
+              key={group.label ?? "top"}
+              aria-labelledby={headingId}
+              className={gi > 0 ? "mt-3" : ""}
+            >
+              {group.label &&
+                (collapsed ? (
+                  <>
+                    <h2 id={headingId} className="sr-only">
+                      {group.label}
+                    </h2>
+                    <hr aria-hidden="true" className="mx-2 mb-2 border-sidebar-ink/20" />
+                  </>
+                ) : (
+                  <h2 id={headingId} className="px-3 pb-1 text-xs font-medium text-sidebar-ink/70">
+                    {group.label}
+                  </h2>
+                ))}
+              <ul className="flex flex-col gap-0.5">
+                {group.items.map((item) => (
+                  <li key={item.to}>
+                    <NavLink
+                      to={item.to}
+                      end={item.to === "/"}
+                      title={collapsed ? item.label : undefined}
+                      className={({ isActive }) =>
+                        `flex items-center gap-3 rounded-md py-1 text-sm ${focusRing} ${
+                          collapsed ? "justify-center px-0" : "px-3"
+                        } ${
+                          isActive
+                            ? "bg-sidebar-active font-medium text-white"
+                            : "hover:bg-sidebar-active/60 hover:text-white"
+                        }`
+                      }
+                    >
+                      <item.icon
+                        aria-hidden="true"
+                        className="size-4 shrink-0"
+                        strokeWidth={1.75}
+                      />
+                      <span className={collapsed ? "sr-only" : ""}>{item.label}</span>
+                    </NavLink>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          );
+        })}
+      </div>
+
+      <div className="border-t border-sidebar-ink/15 p-2">
+        <button
+          type="button"
+          onClick={toggle}
+          aria-expanded={!collapsed}
+          className={`flex w-full items-center gap-3 rounded-md py-1.5 text-sm hover:bg-sidebar-active/60 hover:text-white ${focusRing} ${
+            collapsed ? "justify-center" : "px-3"
+          }`}
         >
-          {item.label}
-        </NavLink>
-      ))}
+          {collapsed ? (
+            <PanelLeftOpen aria-hidden="true" className="size-4" strokeWidth={1.75} />
+          ) : (
+            <PanelLeftClose aria-hidden="true" className="size-4" strokeWidth={1.75} />
+          )}
+          <span className={collapsed ? "sr-only" : ""}>
+            {collapsed ? "Expand menu" : "Collapse menu"}
+          </span>
+        </button>
+      </div>
     </nav>
   );
 }

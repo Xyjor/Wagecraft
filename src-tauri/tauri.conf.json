@@ -14,7 +14,9 @@
       {
         "title": "Wagecraft",
         "width": 1200,
-        "height": 800
+        "height": 800,
+        "minWidth": 1024,
+        "minHeight": 640
       }
     ],
     "security": {
