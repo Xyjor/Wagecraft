@@ -30,6 +30,9 @@ What changed in each version of Wagecraft. The format follows
 
 - Each pay period shows its steps (Draft, Computed, Approved, Posted), marks where it is, and
   says what to do next.
+- A "Finish setting up" checklist on the Admin dashboard: company address and TIN, departments
+  and positions, a work schedule, this year's holidays, employees, and the first pay period. It
+  goes away once everything is done, or when hidden.
 
 ### Fixed
 
