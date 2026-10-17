@@ -10,13 +10,14 @@ import { formatPesos } from "@/lib/money";
 import { getMyPayslip, myPayslips } from "./api";
 import { PayslipView } from "./PayslipView";
 import { periodLabel } from "./periods";
+import { PageHeader } from "@/components/PageHeader";
 
 /** The signed-in person's payslips (`/my-payslips`), once HR has posted each payroll. */
 export function MyPayslipsPage() {
   const { me } = useSession();
   if (me.employeeId === null) {
     return (
-      <p className="text-zinc-600 dark:text-zinc-400">
+      <p className="text-ink-muted">
         Your account isn&apos;t linked to an employee record. HR can link it from your employee
         profile.
       </p>
@@ -42,22 +43,22 @@ function MyPayslips() {
 
   return (
     <div className="max-w-4xl space-y-6">
-      <h1 className="text-xl font-semibold">My payslips</h1>
+      <PageHeader title="My payslips" />
       <FormAlert message={alert} />
       {slips?.length === 0 && (
-        <p className="text-sm text-zinc-500">
+        <p className="text-sm text-ink-faint">
           No payslips yet. Each one shows up here once HR posts that payroll.
         </p>
       )}
       {slips && slips.length > 0 && (
         <table className="w-full text-left text-sm">
-          <thead className="border-b border-zinc-200 text-zinc-500 dark:border-zinc-800">
+          <thead className="border-b border-rule-strong bg-sunken text-xs text-ink-muted">
             <tr>
-              <th className="py-2 font-medium">Pay period</th>
-              <th className="py-2 font-medium">Pay date</th>
-              <th className="py-2 text-right font-medium">Gross</th>
-              <th className="py-2 text-right font-medium">Net pay</th>
-              <th className="py-2 font-medium">
+              <th className="px-3 py-2 font-medium">Pay period</th>
+              <th className="px-3 py-2 font-medium">Pay date</th>
+              <th className="border-l border-rule/70 px-3 py-2 text-right font-medium">Gross</th>
+              <th className="border-l border-rule/70 px-3 py-2 text-right font-medium">Net pay</th>
+              <th className="px-3 py-2 font-medium">
                 <span className="sr-only">Actions</span>
               </th>
             </tr>
@@ -67,14 +68,16 @@ function MyPayslips() {
               const period = periodLabel(s.periodStart, s.periodEnd);
               const isOpen = open === s.id;
               return [
-                <tr key={s.id} className="border-b border-zinc-100 dark:border-zinc-900">
-                  <td className="py-2">{period}</td>
-                  <td className="py-2">{formatDate(s.payDate)}</td>
-                  <td className="py-2 text-right tabular-nums">{formatPesos(s.grossCents)}</td>
+                <tr key={s.id} className="border-b border-rule hover:bg-sunken/60">
+                  <td className="px-3 py-2">{period}</td>
+                  <td className="px-3 py-2">{formatDate(s.payDate)}</td>
+                  <td className="border-l border-rule/70 px-3 py-2 text-right tabular-nums">
+                    {formatPesos(s.grossCents)}
+                  </td>
                   <td className="py-2 text-right font-medium tabular-nums">
                     {formatPesos(s.netCents)}
                   </td>
-                  <td className="py-2 text-right">
+                  <td className="px-3 py-2 text-right">
                     <button
                       type="button"
                       className={quietButton}

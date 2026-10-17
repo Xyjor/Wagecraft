@@ -9,15 +9,13 @@ import type { AppError } from "@/lib/ipc";
 import { createHoliday, deleteHoliday, listHolidays, updateHoliday } from "./api";
 import { HOLIDAY_KIND_LABELS, weekdayOf } from "./format";
 import { checkHoliday, HOLIDAY_KINDS } from "./validation";
+import { PageHeader } from "@/components/PageHeader";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 
 export function HolidaysPage({ initialYear }: { initialYear?: number }) {
   const { me } = useSession();
   if (me.role === "STAFF") {
-    return (
-      <p className="text-zinc-600 dark:text-zinc-400">
-        Only Admin and HR can manage the holiday calendar.
-      </p>
-    );
+    return <p className="text-ink-muted">Only Admin and HR can manage the holiday calendar.</p>;
   }
   return <Holidays initialYear={initialYear ?? new Date().getFullYear()} />;
 }
@@ -65,31 +63,35 @@ function Holidays({ initialYear }: { initialYear: number }) {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-2xl font-semibold tracking-tight">Holidays</h1>
-        <div className="flex items-center gap-1">
-          <button
-            type="button"
-            className={quietButton}
-            aria-label="Previous year"
-            onClick={() => changeYear(-1)}
-          >
-            ←
-          </button>
-          <span className="w-14 text-center font-medium tabular-nums" aria-live="polite">
-            {year}
-          </span>
-          <button
-            type="button"
-            className={quietButton}
-            aria-label="Next year"
-            onClick={() => changeYear(1)}
-          >
-            →
-          </button>
-        </div>
-      </div>
-      <p className="max-w-prose text-sm text-zinc-600 dark:text-zinc-400">
+      <PageHeader
+        title="Holidays"
+        actions={
+          <>
+            <div className="flex items-center gap-1">
+              <button
+                type="button"
+                className={quietButton}
+                aria-label="Previous year"
+                onClick={() => changeYear(-1)}
+              >
+                <ChevronLeft aria-hidden="true" className="size-4" />
+              </button>
+              <span className="w-14 text-center font-medium tabular-nums" aria-live="polite">
+                {year}
+              </span>
+              <button
+                type="button"
+                className={quietButton}
+                aria-label="Next year"
+                onClick={() => changeYear(1)}
+              >
+                <ChevronRight aria-hidden="true" className="size-4" />
+              </button>
+            </div>
+          </>
+        }
+      />
+      <p className="max-w-prose text-sm text-ink-muted">
         Enter each year&apos;s holidays from the official proclamation. The type sets the holiday
         pay. For a double holiday, add both holidays on the same date.
       </p>
@@ -115,12 +117,12 @@ function Holidays({ initialYear }: { initialYear: number }) {
 
       {holidays && (
         <table className="w-full text-left text-sm">
-          <thead className="border-b border-zinc-200 text-zinc-500 dark:border-zinc-800">
+          <thead className="border-b border-rule-strong bg-sunken text-xs text-ink-muted">
             <tr>
-              <th className="py-2 font-medium">Date</th>
-              <th className="py-2 font-medium">Holiday</th>
-              <th className="py-2 font-medium">Type</th>
-              <th className="py-2 font-medium">
+              <th className="px-3 py-2 font-medium">Date</th>
+              <th className="px-3 py-2 font-medium">Holiday</th>
+              <th className="px-3 py-2 font-medium">Type</th>
+              <th className="px-3 py-2 font-medium">
                 <span className="sr-only">Actions</span>
               </th>
             </tr>
@@ -128,26 +130,26 @@ function Holidays({ initialYear }: { initialYear: number }) {
           <tbody>
             {holidays.length === 0 && (
               <tr>
-                <td colSpan={4} className="py-3 text-zinc-500">
+                <td colSpan={4} className="px-3 py-3 text-ink-muted">
                   No holidays for {year} yet.
                 </td>
               </tr>
             )}
             {holidays.map((h) => (
-              <tr key={h.id} className="border-b border-zinc-100 dark:border-zinc-900">
-                <td className="py-2 tabular-nums">
+              <tr key={h.id} className="border-b border-rule hover:bg-sunken/60">
+                <td className="px-3 py-2 tabular-nums">
                   {weekdayOf(h.date)}, {formatDate(h.date)}
                 </td>
-                <td className="py-2 font-medium">{h.name}</td>
-                <td className="py-2">
+                <td className="px-3 py-2 font-medium">{h.name}</td>
+                <td className="px-3 py-2">
                   <Badge tone={h.kind === "SPECIAL_WORKING" ? "muted" : "good"}>
                     {HOLIDAY_KIND_LABELS[h.kind]}
                   </Badge>
                 </td>
-                <td className="py-2">
+                <td className="px-3 py-2">
                   <div className="flex items-center justify-end gap-1">
                     {h.locked ? (
-                      <span className="text-zinc-500">Payroll posted</span>
+                      <span className="text-ink-faint">Payroll posted</span>
                     ) : confirming === h.id ? (
                       <>
                         <span>Delete {h.name}?</span>
@@ -236,7 +238,7 @@ function HolidayForm({
       onSubmit={submit}
       noValidate
       aria-label={editing ? `Edit ${editing.name}` : "Add holiday"}
-      className="grid max-w-md gap-4 rounded-lg border border-zinc-200 p-4 dark:border-zinc-800"
+      className="grid max-w-md gap-4 rounded-lg border border-rule bg-surface p-4"
     >
       <FormAlert message={alert} />
       <Field
@@ -255,7 +257,7 @@ function HolidayForm({
         defaultValue={editing?.kind ?? "REGULAR"}
         error={errors.kind}
       />
-      <p className="text-sm text-zinc-600 dark:text-zinc-400">
+      <p className="text-sm text-ink-muted">
         Regular holidays and special non-working days are days off. A special working day is an
         ordinary workday with no extra pay.
       </p>

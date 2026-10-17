@@ -15,13 +15,15 @@ import {
 import { formatDays } from "./format";
 import { LeaveRequests } from "./LeaveRequests";
 import { checkLeaveType } from "./validation";
+import { PageHeader } from "@/components/PageHeader";
+import { StatusMessage } from "@/components/Notice";
 
 /** HR's leave screen (`/leave`): requests to decide, the yearly grant and the leave types. */
 export function LeavePage({ thisYear = new Date().getFullYear() }: { thisYear?: number }) {
   const { me } = useSession();
   if (me.role === "STAFF") {
     return (
-      <p className="text-zinc-600 dark:text-zinc-400">
+      <p className="text-ink-muted">
         Only Admin and HR can manage leave. Your own balances are under My leave.
       </p>
     );
@@ -86,7 +88,7 @@ function Leave({
 
   return (
     <div className="space-y-10">
-      <h1 className="text-2xl font-semibold tracking-tight">Leave</h1>
+      <PageHeader title="Leave" />
       <FormAlert message={alert} />
 
       <LeaveRequests types={types ?? []} myEmployeeId={myEmployeeId} />
@@ -95,7 +97,7 @@ function Leave({
         <h2 id="grant-heading" className="text-lg font-semibold">
           Yearly balances
         </h2>
-        <p className="max-w-prose text-sm text-zinc-600 dark:text-zinc-400">
+        <p className="max-w-prose text-sm text-ink-muted">
           Gives every current employee their leave for the year. It only adds what&apos;s missing,
           so it&apos;s safe to run again, for example to give SIL to someone who just reached a year
           of service. An employee&apos;s balances are also added the first time anyone looks at them
@@ -119,11 +121,7 @@ function Leave({
             Grant {String(thisYear + 1)} leave
           </button>
         </div>
-        {granted && (
-          <p role="status" className="text-sm text-emerald-700 dark:text-emerald-400">
-            {granted}
-          </p>
-        )}
+        <StatusMessage>{granted}</StatusMessage>
       </section>
 
       <section className="space-y-4" aria-labelledby="types-heading">
@@ -150,16 +148,16 @@ function Leave({
         )}
         {types && (
           <table className="w-full text-left text-sm">
-            <thead className="border-b border-zinc-200 text-zinc-500 dark:border-zinc-800">
+            <thead className="border-b border-rule-strong bg-sunken text-xs text-ink-muted">
               <tr>
-                <th className="py-2 font-medium">Code</th>
-                <th className="py-2 font-medium">Name</th>
-                <th className="py-2 font-medium">Pay</th>
-                <th className="py-2 font-medium">Each year</th>
-                <th className="py-2 font-medium">After</th>
-                <th className="py-2 font-medium">Status</th>
+                <th className="px-3 py-2 font-medium">Code</th>
+                <th className="px-3 py-2 font-medium">Name</th>
+                <th className="px-3 py-2 font-medium">Pay</th>
+                <th className="px-3 py-2 font-medium">Each year</th>
+                <th className="px-3 py-2 font-medium">After</th>
+                <th className="px-3 py-2 font-medium">Status</th>
                 {isAdmin && (
-                  <th className="py-2 font-medium">
+                  <th className="px-3 py-2 font-medium">
                     <span className="sr-only">Actions</span>
                   </th>
                 )}
@@ -167,21 +165,21 @@ function Leave({
             </thead>
             <tbody>
               {types.map((t) => (
-                <tr key={t.id} className="border-b border-zinc-100 dark:border-zinc-900">
-                  <td className="py-2 font-medium">{t.code}</td>
-                  <td className="py-2">{t.name}</td>
-                  <td className="py-2">{t.isPaid ? "Paid" : "Unpaid"}</td>
-                  <td className="py-2 tabular-nums">
+                <tr key={t.id} className="border-b border-rule hover:bg-sunken/60">
+                  <td className="px-3 py-2 font-medium">{t.code}</td>
+                  <td className="px-3 py-2">{t.name}</td>
+                  <td className="px-3 py-2">{t.isPaid ? "Paid" : "Unpaid"}</td>
+                  <td className="px-3 py-2 tabular-nums">
                     {t.isPaid ? formatDays(t.defaultHalfdaysPerYear) : "No limit"}
                   </td>
-                  <td className="py-2">
+                  <td className="px-3 py-2">
                     {t.minServiceMonths === 0 ? "Hiring" : `${t.minServiceMonths} months`}
                   </td>
-                  <td className="py-2">
+                  <td className="px-3 py-2">
                     <ActiveBadge active={t.isActive} />
                   </td>
                   {isAdmin && (
-                    <td className="py-2">
+                    <td className="px-3 py-2">
                       <div className="flex justify-end gap-1">
                         <button
                           type="button"
@@ -207,7 +205,7 @@ function Leave({
             </tbody>
           </table>
         )}
-        {!isAdmin && <p className="text-sm text-zinc-500">Only Admin can change leave types.</p>}
+        {!isAdmin && <p className="text-sm text-ink-faint">Only Admin can change leave types.</p>}
       </section>
     </div>
   );
@@ -252,7 +250,7 @@ function LeaveTypeForm({
       onSubmit={submit}
       noValidate
       aria-label={editing ? `Edit ${editing.name}` : "Add leave type"}
-      className="grid max-w-md gap-4 rounded-lg border border-zinc-200 p-4 dark:border-zinc-800"
+      className="grid max-w-md gap-4 rounded-lg border border-rule bg-surface p-4"
     >
       <FormAlert message={alert} />
       <div className="grid grid-cols-3 gap-4">
@@ -286,7 +284,7 @@ function LeaveTypeForm({
           error={errors.minServiceMonths}
         />
       </div>
-      <p className="text-sm text-zinc-600 dark:text-zinc-400">
+      <p className="text-sm text-ink-muted">
         Changes apply to balances granted from now on. Balances already given keep their days; HR
         can adjust one from the employee&apos;s Leave tab.
       </p>

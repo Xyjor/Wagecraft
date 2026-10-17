@@ -48,7 +48,7 @@ export function SaveButton({
       >
         {busy ? busyLabel : label}
       </button>
-      {saved && <p className="text-sm text-zinc-500">Saved to {saved}</p>}
+      {saved && <p className="text-sm text-ink-faint">Saved to {saved}</p>}
       <FormAlert message={alert} />
     </div>
   );

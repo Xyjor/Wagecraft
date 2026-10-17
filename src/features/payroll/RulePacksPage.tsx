@@ -1,16 +1,15 @@
 import { useEffect, useId, useState, type ReactNode } from "react";
-import { Link } from "react-router";
 import type { PremiumRow } from "@/bindings/PremiumRow";
 import type { RulePackDetail } from "@/bindings/RulePackDetail";
 import type { RulePackSummary } from "@/bindings/RulePackSummary";
 import type { TaxBracketRow } from "@/bindings/TaxBracketRow";
 import { FormAlert, SelectField } from "@/components/form";
-import { quietButton } from "@/components/ui";
 import { formatDate } from "@/lib/dates";
 import type { AppError } from "@/lib/ipc";
 import { formatPesos } from "@/lib/money";
 import { getRulePack, listRulePacks } from "./api";
 import { percentText } from "./periods";
+import { PageHeader } from "@/components/PageHeader";
 
 const DAY_TYPES: Record<string, string> = {
   ORDINARY: "Ordinary day",
@@ -60,19 +59,14 @@ export function RulePacksPage() {
 
   return (
     <div className="max-w-4xl space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-2xl font-semibold tracking-tight">Rule packs</h1>
-        <Link to="/payroll" className={quietButton}>
-          Back to payroll
-        </Link>
-      </div>
-      <p className="max-w-prose text-sm text-zinc-600 dark:text-zinc-400">
+      <PageHeader title="Rule packs" crumbs={[{ label: "Payroll", to: "/payroll" }]} />
+      <p className="max-w-prose text-sm text-ink-muted">
         The government rates each payroll is computed with. They can&apos;t be edited here: new
         rates come as a new pack in an app update, so payslips already posted keep the rates they
         were made with.
       </p>
       <FormAlert message={alert} />
-      {packs?.length === 0 && <p className="text-sm text-zinc-500">No rule packs are active.</p>}
+      {packs?.length === 0 && <p className="text-sm text-ink-faint">No rule packs are active.</p>}
       {packs && packs.length > 1 && (
         <div className="max-w-xs">
           <SelectField
@@ -102,7 +96,7 @@ function PackView({ pack }: { pack: RulePackDetail }) {
         <h2 className="text-lg font-semibold">
           {summary.name} ({summary.code})
         </h2>
-        <p className="text-sm text-zinc-500">{effective}</p>
+        <p className="text-sm text-ink-faint">{effective}</p>
       </div>
 
       <ul className="list-disc space-y-1 pl-5 text-sm">
@@ -215,12 +209,12 @@ function Table({
       <caption className="pb-2 text-left font-medium">
         {caption}
         {note && (
-          <span id={noteId} className="block text-xs font-normal text-zinc-500" aria-hidden>
+          <span id={noteId} className="block text-xs font-normal text-ink-faint" aria-hidden>
             {note}
           </span>
         )}
       </caption>
-      <thead className="border-b border-zinc-200 text-zinc-500 dark:border-zinc-800">
+      <thead className="border-b border-rule-strong bg-sunken text-xs text-ink-muted">
         <tr>
           {headers.map((h, i) => (
             <th key={h} className={`py-2 font-medium ${i > 0 ? "text-right" : ""}`}>

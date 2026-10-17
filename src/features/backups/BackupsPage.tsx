@@ -8,11 +8,13 @@ import { backUpNow, listBackups } from "./api";
 import { formatBytes, kindLabel, splitPath } from "./backups";
 import { RestorePanel } from "./RestorePanel";
 import { formatWhen } from "@/lib/dates";
+import { PageHeader } from "@/components/PageHeader";
+import { StatusMessage } from "@/components/Notice";
 
 export function BackupsPage() {
   const { me } = useSession();
   if (me.role !== "ADMIN") {
-    return <p className="text-zinc-600 dark:text-zinc-400">Only Admins can manage backups.</p>;
+    return <p className="text-ink-muted">Only Admins can manage backups.</p>;
   }
   return <Backups />;
 }
@@ -54,13 +56,17 @@ function Backups() {
 
   return (
     <section className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold tracking-tight">Backups</h1>
-        <button type="button" className={primary} onClick={backUp} disabled={busy}>
-          {busy ? "Backing up…" : "Back up now"}
-        </button>
-      </div>
-      <p className="max-w-prose text-sm text-zinc-600 dark:text-zinc-400">
+      <PageHeader
+        title="Backups"
+        actions={
+          <>
+            <button type="button" className={primary} onClick={backUp} disabled={busy}>
+              {busy ? "Backing up…" : "Back up now"}
+            </button>
+          </>
+        }
+      />
+      <p className="max-w-prose text-sm text-ink-muted">
         Wagecraft backs up by itself once a day when it starts, and keeps the newest daily backups
         (14 unless changed in Settings, where you can also pick the folder). It also backs up before
         posting payroll. Use <strong>Back up now</strong> to save a copy to a USB drive or another
@@ -70,17 +76,13 @@ function Backups() {
       <RestorePanel />
 
       <FormAlert message={alert} />
-      {notice && (
-        <p role="status" className="text-sm text-emerald-700 dark:text-emerald-400">
-          {notice}
-        </p>
-      )}
+      <StatusMessage>{notice}</StatusMessage>
 
-      {!backups && !alert && <p className="text-zinc-500">Loading backups…</p>}
-      {backups?.length === 0 && <p className="text-zinc-500">No backups yet.</p>}
+      {!backups && !alert && <p className="text-ink-faint">Loading backups…</p>}
+      {backups?.length === 0 && <p className="text-ink-faint">No backups yet.</p>}
       {backups && backups.length > 0 && (
         <table className="w-full text-left text-sm">
-          <thead className="border-b border-zinc-200 text-zinc-500 dark:border-zinc-800">
+          <thead className="border-b border-rule-strong bg-sunken text-xs text-ink-muted">
             <tr>
               <th className="py-2 pr-4 font-medium whitespace-nowrap">Kind</th>
               <th className="py-2 pr-4 font-medium whitespace-nowrap">Taken</th>
@@ -93,20 +95,20 @@ function Backups() {
             {backups.map((b) => {
               const { folder, name } = splitPath(b.path);
               return (
-                <tr key={b.id} className="border-b border-zinc-100 dark:border-zinc-900">
+                <tr key={b.id} className="border-b border-rule hover:bg-sunken/60">
                   <th scope="row" className="py-2 pr-4 font-normal whitespace-nowrap">
                     {kindLabel(b.kind)}
                   </th>
                   <td className="py-2 pr-4 whitespace-nowrap">{formatWhen(b.createdAt)}</td>
-                  <td className="py-2 pr-4 whitespace-nowrap text-zinc-600 dark:text-zinc-400">
+                  <td className="py-2 pr-4 whitespace-nowrap text-ink-muted">
                     {b.createdByName ?? "Automatic"}
                   </td>
                   <td className="py-2 pr-4 text-right tabular-nums whitespace-nowrap">
                     {formatBytes(b.sizeBytes)}
                   </td>
-                  <td className="py-2">
+                  <td className="px-3 py-2">
                     <span className="font-mono text-xs">
-                      <span className="break-all text-zinc-500">{folder}</span>
+                      <span className="break-all text-ink-faint">{folder}</span>
                       <span className="whitespace-nowrap">{name}</span>
                     </span>{" "}
                     {!b.onDisk && <Badge tone="bad">File missing</Badge>}

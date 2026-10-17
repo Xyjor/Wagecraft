@@ -141,7 +141,7 @@ function LiveClock() {
     return () => clearInterval(t);
   }, []);
   return (
-    <p className="mt-1 text-sm text-ink-muted tabular-nums dark:text-ink-faint">
+    <p className="mt-1 text-sm text-ink-muted tabular-nums">
       {now.toLocaleDateString("en-PH", { weekday: "long", month: "long", day: "numeric" })} ·{" "}
       {now.toLocaleTimeString("en-PH", { hour: "numeric", minute: "2-digit", second: "2-digit" })}
     </p>

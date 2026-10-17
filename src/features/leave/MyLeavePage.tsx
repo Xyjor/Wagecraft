@@ -11,13 +11,14 @@ import { BalanceTable } from "./BalanceTable";
 import { leaveDates } from "./format";
 import { LeaveRequestForm } from "./LeaveRequestForm";
 import { LeaveRequestTable } from "./LeaveRequestTable";
+import { PageHeader } from "@/components/PageHeader";
 
 /** The signed-in person's leave (`/my-leave`): filing, their requests and this year's balances. */
 export function MyLeavePage({ year = new Date().getFullYear() }: { year?: number }) {
   const { me } = useSession();
   if (me.employeeId === null) {
     return (
-      <p className="text-zinc-600 dark:text-zinc-400">
+      <p className="text-ink-muted">
         Your account isn&apos;t linked to an employee record. HR can link it from your employee
         profile.
       </p>
@@ -66,14 +67,18 @@ function MyLeave({ year }: { year: number }) {
 
   return (
     <div className="max-w-4xl space-y-8">
-      <div className="flex items-center justify-between">
-        <h1 className="text-xl font-semibold">My leave</h1>
-        {!filing && (
-          <button type="button" className={primaryButton} onClick={() => setFiling(true)}>
-            File leave
-          </button>
-        )}
-      </div>
+      <PageHeader
+        title="My leave"
+        actions={
+          <>
+            {!filing && (
+              <button type="button" className={primaryButton} onClick={() => setFiling(true)}>
+                File leave
+              </button>
+            )}
+          </>
+        }
+      />
       <FormAlert message={alert} />
       {filing && (
         <LeaveRequestForm
@@ -109,7 +114,7 @@ function MyLeave({ year }: { year: number }) {
             }
           />
         )}
-        <p className="text-sm text-zinc-500">
+        <p className="text-sm text-ink-faint">
           You can cancel leave until HR decides. To take back approved leave, ask HR.
         </p>
       </section>
@@ -121,7 +126,7 @@ function MyLeave({ year }: { year: number }) {
         {balances && (
           <BalanceTable balances={balances} empty={`You have no leave balances for ${year}.`} />
         )}
-        <p className="text-sm text-zinc-500">
+        <p className="text-sm text-ink-faint">
           Service Incentive Leave starts after a year of service. If a balance looks wrong, ask HR.
         </p>
       </section>

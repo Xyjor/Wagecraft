@@ -20,16 +20,16 @@ export function OvertimeTable({
   const columns = 5 + (showEmployee ? 1 : 0) + (actions ? 1 : 0);
   return (
     <table className="w-full text-left text-sm">
-      <thead className="border-b border-zinc-200 text-zinc-500 dark:border-zinc-800">
+      <thead className="border-b border-rule-strong bg-sunken text-xs text-ink-muted">
         <tr>
-          {showEmployee && <th className="py-2 font-medium">Employee</th>}
-          <th className="py-2 font-medium">Date</th>
-          <th className="py-2 font-medium">Hours</th>
-          <th className="py-2 font-medium">Length</th>
-          <th className="py-2 font-medium">Reason</th>
-          <th className="py-2 font-medium">Status</th>
+          {showEmployee && <th className="px-3 py-2 font-medium">Employee</th>}
+          <th className="px-3 py-2 font-medium">Date</th>
+          <th className="px-3 py-2 font-medium">Hours</th>
+          <th className="px-3 py-2 font-medium">Length</th>
+          <th className="px-3 py-2 font-medium">Reason</th>
+          <th className="px-3 py-2 font-medium">Status</th>
           {actions && (
-            <th className="py-2 font-medium">
+            <th className="px-3 py-2 font-medium">
               <span className="sr-only">Actions</span>
             </th>
           )}
@@ -38,30 +38,30 @@ export function OvertimeTable({
       <tbody>
         {requests.length === 0 && (
           <tr>
-            <td colSpan={columns} className="py-3 text-zinc-500">
+            <td colSpan={columns} className="px-3 py-3 text-ink-muted">
               {empty}
             </td>
           </tr>
         )}
         {requests.map((r) => (
-          <tr key={r.id} className="border-b border-zinc-100 align-top dark:border-zinc-900">
+          <tr key={r.id} className="border-b border-rule align-top hover:bg-sunken/60">
             {showEmployee && (
-              <td className="py-2">
+              <td className="px-3 py-2">
                 <div className="font-medium">{r.employeeName}</div>
-                <div className="text-zinc-500">{r.employeeNo}</div>
+                <div className="text-ink-faint">{r.employeeNo}</div>
               </td>
             )}
-            <td className="py-2">{formatDate(r.workDate)}</td>
-            <td className="py-2 tabular-nums">{overtimeHours(r)}</td>
-            <td className="py-2 tabular-nums">{formatMinutes(r.minutes)}</td>
-            <td className="py-2">{r.reason}</td>
-            <td className="py-2">
+            <td className="px-3 py-2">{formatDate(r.workDate)}</td>
+            <td className="px-3 py-2 tabular-nums">{overtimeHours(r)}</td>
+            <td className="px-3 py-2 tabular-nums">{formatMinutes(r.minutes)}</td>
+            <td className="px-3 py-2">{r.reason}</td>
+            <td className="px-3 py-2">
               <Badge tone={STATUS_TONES[r.status]}>{STATUS_LABELS[r.status]}</Badge>
               {r.decisionNote && (
-                <div className="mt-1 text-zinc-500">&ldquo;{r.decisionNote}&rdquo;</div>
+                <div className="mt-1 text-ink-faint">&ldquo;{r.decisionNote}&rdquo;</div>
               )}
             </td>
-            {actions && <td className="py-2">{actions(r)}</td>}
+            {actions && <td className="px-3 py-2">{actions(r)}</td>}
           </tr>
         ))}
       </tbody>

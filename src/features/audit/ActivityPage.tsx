@@ -13,6 +13,8 @@ import type { AppError } from "@/lib/ipc";
 import { activityFilters, exportActivity, listActivity } from "./api";
 import { changes } from "./diff";
 import { groupByArea, recordLabel, recordLink } from "./format";
+import { PageHeader } from "@/components/PageHeader";
+import { StatusMessage } from "@/components/Notice";
 
 const PAGE_SIZE = 50;
 
@@ -33,9 +35,7 @@ const NO_FILTERS: AuditFilters = { actors: [], actions: [], entityTypes: [] };
 export function ActivityPage() {
   const { me } = useSession();
   if (me.role !== "ADMIN") {
-    return (
-      <p className="text-zinc-600 dark:text-zinc-400">Only Admins can see the activity log.</p>
-    );
+    return <p className="text-ink-muted">Only Admins can see the activity log.</p>;
   }
   return <ActivityLog />;
 }
@@ -87,21 +87,26 @@ function ActivityLog() {
 
   return (
     <section className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold tracking-tight">Activity</h1>
-        <button type="button" className={secondaryButton} disabled={exporting} onClick={exportCsv}>
-          Export CSV
-        </button>
-      </div>
-      <p className="max-w-prose text-sm text-zinc-600 dark:text-zinc-400">
+      <PageHeader
+        title="Activity"
+        actions={
+          <>
+            <button
+              type="button"
+              className={secondaryButton}
+              disabled={exporting}
+              onClick={exportCsv}
+            >
+              Export CSV
+            </button>
+          </>
+        }
+      />
+      <p className="max-w-prose text-sm text-ink-muted">
         Every sign-in and every change, newest first. Nothing here can be edited or deleted.
       </p>
       <FormAlert message={alert} />
-      {exportNote && (
-        <p role="status" className="text-sm text-emerald-700 dark:text-emerald-300">
-          {exportNote}
-        </p>
-      )}
+      <StatusMessage>{exportNote}</StatusMessage>
 
       <Filters query={query} options={filters} onChange={refine} />
 
@@ -222,20 +227,20 @@ function Entries({ entries, filtered }: { entries: AuditEntry[]; filtered: boole
 
   if (entries.length === 0) {
     return (
-      <p className="text-zinc-500">
+      <p className="text-ink-faint">
         {filtered ? "No activity matches these filters." : "Nothing recorded yet."}
       </p>
     );
   }
   return (
     <table className="w-full text-left text-sm">
-      <thead className="border-b border-zinc-200 text-zinc-500 dark:border-zinc-800">
+      <thead className="border-b border-rule-strong bg-sunken text-xs text-ink-muted">
         <tr>
-          <th className="py-2 font-medium">When</th>
-          <th className="py-2 font-medium">User</th>
-          <th className="py-2 font-medium">Action</th>
-          <th className="py-2 font-medium">Record</th>
-          <th className="py-2">
+          <th className="px-3 py-2 font-medium">When</th>
+          <th className="px-3 py-2 font-medium">User</th>
+          <th className="px-3 py-2 font-medium">Action</th>
+          <th className="px-3 py-2 font-medium">Record</th>
+          <th className="px-3 py-2">
             <span className="sr-only">Details</span>
           </th>
         </tr>
@@ -267,13 +272,13 @@ function EntryRows({
   const link = recordLink(entry.entityType, entry.entityId);
   return (
     <>
-      <tr className="border-b border-zinc-100 dark:border-zinc-900">
+      <tr className="border-b border-rule hover:bg-sunken/60">
         <td className="py-2 whitespace-nowrap tabular-nums">
           <time dateTime={entry.at}>{formatWhen(entry.at)}</time>
         </td>
-        <td className="py-2">{entry.actorUsername}</td>
+        <td className="px-3 py-2">{entry.actorUsername}</td>
         <td className="py-2 font-mono text-xs">{entry.action}</td>
-        <td className="py-2">
+        <td className="px-3 py-2">
           {link ? (
             <Link to={link} className="hover:underline">
               {record}
@@ -282,7 +287,7 @@ function EntryRows({
             record
           )}
         </td>
-        <td className="py-2 text-right">
+        <td className="px-3 py-2 text-right">
           <button
             type="button"
             className={quietButton}
@@ -294,7 +299,7 @@ function EntryRows({
         </td>
       </tr>
       {open && (
-        <tr className="border-b border-zinc-100 dark:border-zinc-900">
+        <tr className="border-b border-rule hover:bg-sunken/60">
           <td colSpan={5} className="py-2 pl-4">
             <Details entry={entry} record={record} />
           </td>
@@ -308,11 +313,11 @@ function Details({ entry, record }: { entry: AuditEntry; record: string }) {
   const rows = changes(entry.before, entry.after);
   const name = record ? `Changes to ${record}` : `Details of ${entry.action}`;
   if (rows.length === 0) {
-    return <p className="text-sm text-zinc-500">Nothing was recorded besides the action.</p>;
+    return <p className="text-sm text-ink-faint">Nothing was recorded besides the action.</p>;
   }
   return (
     <table aria-label={name} className="w-full max-w-3xl text-left text-sm">
-      <thead className="text-zinc-500">
+      <thead className="text-ink-faint">
         <tr>
           <th className="py-1 font-medium">Field</th>
           <th className="py-1 font-medium">Before</th>
@@ -325,9 +330,7 @@ function Details({ entry, record }: { entry: AuditEntry; record: string }) {
             <th scope="row" className="py-1 pr-4 font-mono text-xs font-normal">
               {c.field}
             </th>
-            <td className="py-1 pr-4 break-all text-zinc-600 dark:text-zinc-400">
-              {c.before ?? "—"}
-            </td>
+            <td className="py-1 pr-4 break-all text-ink-muted">{c.before ?? "—"}</td>
             <td className="py-1 break-all">{c.after ?? "—"}</td>
           </tr>
         ))}

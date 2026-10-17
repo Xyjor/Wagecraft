@@ -29,5 +29,6 @@
 
 - **Consequences:**
   - ➕ The new look appears everywhere from the first PR. Dark mode is designed once in the tokens. The ratchet makes progress visible and stops raw classes coming back.
-  - ➖ Until the bridge is gone, "zinc" in a class name means "ledger neutral", not zinc. Read `src/index.css` before choosing a colour.
+  - ➖ While the bridge existed, "zinc" in a class name meant "ledger neutral", not zinc.
+  - **Update (1.1.0, same release):** every page moved to the semantic tokens, so the bridge and the remaining `dark:` classes were removed. `palette.test.ts` now fails on any raw palette class.
   - ➖ The PDFs and Recharts don't use Tailwind classes, so they are recoloured separately.
