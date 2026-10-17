@@ -4,8 +4,8 @@ import { describe, expect, it } from "vitest";
 // src/index.css. Pages are moving to the tokens one PR at a time; these limits only go down.
 // Lower them in the same PR that removes classes, and never raise them. See ADR-0013.
 const LIMITS: Record<string, number> = {
-  "/src/components/": 92,
-  "/src/app/": 4,
+  "/src/components/": 73,
+  "/src/app/": 0,
   "/src/features/": 483,
 };
 

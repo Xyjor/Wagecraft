@@ -11,6 +11,11 @@ What changed in each version of Wagecraft. The format follows
 - New "Ledger" look, part 1: green-tinted neutrals, ledger green for success and focus, red ink for
   errors, and the IBM Plex Sans typeface bundled with the app. See
   [ADR-013](docs/adr/0013-ledger-design-tokens.md).
+- The sidebar is grouped (Me, People, Time and leave, Payroll, Admin), with icons, and collapses to
+  an icon rail; the choice is remembered. A section stays highlighted on its detail pages.
+- The theme switch, Change password and Sign out moved into an account menu under your name at
+  the top right.
+- The window can't be made smaller than 1024 × 640.
 
 ### Fixed
 
