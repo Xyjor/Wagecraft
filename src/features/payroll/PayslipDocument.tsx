@@ -4,29 +4,36 @@ import type { PayslipLine } from "@/bindings/PayslipLine";
 import { formatDate } from "@/lib/dates";
 import { CompanyBlock } from "./CompanyBlock";
 import { formatAmount, payslipSections } from "./payslipPdf";
+import { amountInk, doubleRule, PDF } from "./pdfTheme";
 import { periodLabel, quantityText } from "./periods";
 
 const styles = StyleSheet.create({
-  page: { padding: 40, fontSize: 10, fontFamily: "Helvetica", color: "#18181b" },
+  page: { padding: 40, fontSize: 10, fontFamily: "Helvetica", color: PDF.ink },
   company: { fontSize: 16, fontFamily: "Helvetica-Bold" },
-  title: { fontSize: 11, color: "#52525b", marginTop: 8, marginBottom: 16 },
+  title: { fontSize: 11, color: PDF.muted, marginTop: 8, marginBottom: 16 },
   header: { flexDirection: "row", justifyContent: "space-between", marginBottom: 16 },
-  muted: { color: "#71717a" },
+  muted: { color: PDF.faint },
   bold: { fontFamily: "Helvetica-Bold" },
   heading: {
     fontFamily: "Helvetica-Bold",
     marginTop: 12,
     paddingBottom: 3,
-    borderBottom: "1pt solid #d4d4d8",
+    borderBottom: `1pt solid ${PDF.ruleStrong}`,
     flexDirection: "row",
   },
-  row: { flexDirection: "row", paddingVertical: 2 },
-  total: { flexDirection: "row", paddingVertical: 3, borderTop: "1pt solid #d4d4d8" },
-  net: { flexDirection: "row", marginTop: 12, padding: 6, backgroundColor: "#f4f4f5" },
+  row: { flexDirection: "row", paddingVertical: 2, borderBottom: `0.5pt solid ${PDF.rule}` },
+  total: { flexDirection: "row", paddingVertical: 3 },
+  net: {
+    flexDirection: "row",
+    marginTop: 12,
+    padding: 6,
+    backgroundColor: PDF.accentSoft,
+    color: PDF.accent,
+  },
   label: { flex: 3 },
-  qty: { flex: 2, color: "#71717a" },
+  qty: { flex: 2, color: PDF.faint },
   amount: { flex: 2, textAlign: "right" },
-  footer: { position: "absolute", bottom: 30, left: 40, right: 40, color: "#71717a" },
+  footer: { position: "absolute", bottom: 30, left: 40, right: 40, color: PDF.faint },
 });
 
 /** Plan §6.6's payslip: header, earnings, deductions, totals, then the employer's share. */
@@ -86,7 +93,9 @@ function Section({ title, lines }: { title: string; lines: PayslipLine[] }) {
         <View key={`${i}-${l.code}`} style={styles.row}>
           <Text style={styles.label}>{l.label}</Text>
           <Text style={styles.qty}>{quantityText(l.quantity, l.unit)}</Text>
-          <Text style={styles.amount}>{formatAmount(l.amountCents)}</Text>
+          <Text style={[styles.amount, amountInk(l.amountCents)]}>
+            {formatAmount(l.amountCents)}
+          </Text>
         </View>
       ))}
     </View>
@@ -102,11 +111,16 @@ function Row({
   amountCents: number;
   style: (typeof styles)[keyof typeof styles];
 }) {
+  // A double rule above each total, as on a ledger page.
   return (
-    <View style={style}>
-      <Text style={[styles.label, styles.bold]}>{label}</Text>
-      <Text style={styles.qty} />
-      <Text style={[styles.amount, styles.bold]}>{formatAmount(amountCents)}</Text>
+    <View style={doubleRule.above}>
+      <View style={[style, doubleRule.aboveInner]}>
+        <Text style={[styles.label, styles.bold]}>{label}</Text>
+        <Text style={styles.qty} />
+        <Text style={[styles.amount, styles.bold, amountInk(amountCents)]}>
+          {formatAmount(amountCents)}
+        </Text>
+      </View>
     </View>
   );
 }

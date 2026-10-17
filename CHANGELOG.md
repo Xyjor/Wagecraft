@@ -25,9 +25,16 @@ What changed in each version of Wagecraft. The format follows
   as (₱1,149.43) on screen. A dashboard that fails to load offers Retry.
 - The employee and attendance screens use the ledger look, with page headers and breadcrumbs
   (Employees › name › Edit). Late and undertime minutes show in red ink.
+- Every other screen uses the ledger look too: ruled tables, square-cornered boxes, page
+  headers closed by a double rule, the dashboard's figures in one ruled strip, and the register's
+  net pay set off by a double rule.
+- Payslip and payroll register PDFs use the ledger look: a green rule under the company, ruled
+  lines, double rules above totals, and net pay on a green band. Negative amounts show in
+  parentheses and red ink, so they still read when printed in black and white.
 
 ### Added
 
+- A "Skip to content" link for keyboard users, shown when it has focus.
 - Each pay period shows its steps (Draft, Computed, Approved, Posted), marks where it is, and
   says what to do next.
 - A "Finish setting up" checklist on the Admin dashboard: company address and TIN, departments

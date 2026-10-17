@@ -7,14 +7,15 @@ import type { PayslipLine } from "@/bindings/PayslipLine";
 // loaded only when someone downloads a payslip, so the PDF library stays out of startup.
 
 /**
- * 1250000 → "12,500.00". The PDF's built-in Helvetica has no "₱", so amounts are plain
- * numbers under a "PHP" column heading instead.
+ * 1250000 → "12,500.00", -114943 → "(1,149.43)". The PDF's built-in Helvetica has no "₱", so
+ * amounts are plain numbers under a "PHP" column heading instead. Negatives are in parentheses,
+ * as on screen, so they still read when the PDF is printed in black and white.
  */
 export function formatAmount(cents: number): string {
-  const sign = cents < 0 ? "-" : "";
   const abs = Math.abs(cents);
   const pesos = Math.trunc(abs / 100).toLocaleString("en-US");
-  return `${sign}${pesos}.${String(abs % 100).padStart(2, "0")}`;
+  const amount = `${pesos}.${String(abs % 100).padStart(2, "0")}`;
+  return cents < 0 ? `(${amount})` : amount;
 }
 
 /** "payslip-EMP-0001-2026-10-16.pdf" */

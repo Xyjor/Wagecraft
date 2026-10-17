@@ -57,7 +57,8 @@ const slip: PayslipDetail = {
 describe("payslip PDF", () => {
   it("writes amounts without the peso sign, which the PDF's built-in font lacks", () => {
     expect(formatAmount(1_250_000)).toBe("12,500.00");
-    expect(formatAmount(-114_943)).toBe("-1,149.43");
+    // Negatives in parentheses, as on screen, so they read even printed in black and white.
+    expect(formatAmount(-114_943)).toBe("(1,149.43)");
     expect(formatAmount(5)).toBe("0.05");
   });
 
