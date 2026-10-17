@@ -1,7 +1,7 @@
 import { lazy, Suspense, useEffect, useState } from "react";
 import { Link } from "react-router";
 import type { TeamDashboard as Summary } from "@/bindings/TeamDashboard";
-import { FormAlert } from "@/components/form";
+import { EmptyState, ErrorState, Loading } from "@/components/states";
 import { periodLabel } from "@/features/payroll/periods";
 import type { AppError } from "@/lib/ipc";
 import { formatPesos } from "@/lib/money";
@@ -21,15 +21,21 @@ const PayrollCostChart = lazy(() =>
 export function TeamDashboard() {
   const [data, setData] = useState<Summary | null>(null);
   const [alert, setAlert] = useState<string>();
+  const [attempt, setAttempt] = useState(0);
 
   useEffect(() => {
     getTeamDashboard()
       .then(setData)
       .catch((e: AppError) => setAlert(e.message));
-  }, []);
+  }, [attempt]);
 
-  if (alert) return <FormAlert message={alert} />;
-  if (!data) return <p className="text-zinc-500">Loading the dashboard…</p>;
+  function retry() {
+    setAlert(undefined);
+    setAttempt((a) => a + 1);
+  }
+
+  if (alert) return <ErrorState message={alert} onRetry={retry} />;
+  if (!data) return <Loading label="Loading the dashboard…" />;
   const { today } = data;
   const waiting = data.pendingLeave + data.pendingOvertime > 0;
 
@@ -40,8 +46,12 @@ export function TeamDashboard() {
           {data.newHiresThisMonth} new this month
         </Tile>
         <Tile label="Present" value={today.present} />
-        <Tile label="Late" value={today.late} />
-        <Tile label="Not clocked in" value={today.notIn} />
+        <Tile label="Late" value={today.late} tone={today.late > 0 ? "danger" : undefined} />
+        <Tile
+          label="Not clocked in"
+          value={today.notIn}
+          tone={today.notIn > 0 ? "warn" : undefined}
+        />
         <Tile label="On leave" value={today.onLeave} />
       </div>
 
@@ -50,21 +60,27 @@ export function TeamDashboard() {
           <ul className="space-y-1 text-sm">
             {data.pendingLeave > 0 && (
               <li>
-                <Link to="/leave" className="underline">
+                <Link
+                  to="/leave"
+                  className="font-medium text-accent underline underline-offset-2 hover:text-accent-hover"
+                >
                   {plural(data.pendingLeave, "leave request", "leave requests")}
                 </Link>
               </li>
             )}
             {data.pendingOvertime > 0 && (
               <li>
-                <Link to="/overtime" className="underline">
+                <Link
+                  to="/overtime"
+                  className="font-medium text-accent underline underline-offset-2 hover:text-accent-hover"
+                >
                   {plural(data.pendingOvertime, "overtime request", "overtime requests")}
                 </Link>
               </li>
             )}
           </ul>
         ) : (
-          <p className="text-sm text-zinc-500">No requests waiting for review.</p>
+          <EmptyState message="No requests waiting for review." />
         )}
       </Panel>
 
@@ -93,10 +109,10 @@ export function TeamDashboard() {
 
         <Panel title="Payroll cost, last 6 posted periods">
           {data.payrollCost.length === 0 ? (
-            <p className="text-sm text-zinc-500">No payroll posted yet.</p>
+            <EmptyState message="No payroll posted yet." />
           ) : (
             <>
-              <p className="text-xs text-zinc-500">Gross pay plus employer contributions.</p>
+              <p className="text-xs text-ink-faint">Gross pay plus employer contributions.</p>
               <Suspense fallback={null}>
                 <PayrollCostChart rows={data.payrollCost} />
               </Suspense>

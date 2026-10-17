@@ -209,7 +209,7 @@ describe("RegisterPage", () => {
     await waitFor(() => expect(call).toHaveBeenCalledWith("payslip_get", { id: 11 }));
     const detail = await screen.findByRole("region", { name: "Payslip for Santos, Ana" });
     expect(within(detail).getByText("1 day")).toBeTruthy();
-    expect(within(detail).getByText("-₱1,149.43")).toBeTruthy();
+    expect(within(detail).getByText("(₱1,149.43)")).toBeTruthy();
     expect(within(detail).getByText("SSS (employer)")).toBeTruthy();
     expect(within(detail).getByText("₱10,725.57")).toBeTruthy();
   });

@@ -19,6 +19,10 @@ What changed in each version of Wagecraft. The format follows
 - Buttons, form fields, badges and the sign-in card use the Ledger colours: ledger green for the
   main action on each screen, outlined buttons for second actions, and a status badge per payroll
   step (draft amber, approved green, posted solid green).
+- The dashboard and payroll screens use the ledger look. Late arrivals show in red ink and people
+  not clocked in show in amber. The charts follow Light and Dark. The payroll register has ruled
+  money columns with deductions in red and a double rule above the totals. Negative amounts show
+  as (₱1,149.43) on screen. A dashboard that fails to load offers Retry.
 
 ### Fixed
 

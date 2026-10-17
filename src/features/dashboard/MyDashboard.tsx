@@ -4,7 +4,7 @@ import type { LeaveBalance } from "@/bindings/LeaveBalance";
 import type { MyDashboard as Summary } from "@/bindings/MyDashboard";
 import type { MyDay } from "@/bindings/MyDay";
 import type { MyPayslip } from "@/bindings/MyPayslip";
-import { FormAlert } from "@/components/form";
+import { EmptyState, ErrorState, Loading } from "@/components/states";
 import { formatClock, formatMinutes } from "@/features/attendance/format";
 import { myBalances } from "@/features/leave/api";
 import { formatDays } from "@/features/leave/format";
@@ -27,6 +27,7 @@ interface Loaded {
 export function MyDashboard() {
   const [data, setData] = useState<Loaded | null>(null);
   const [alert, setAlert] = useState<string>();
+  const [attempt, setAttempt] = useState(0);
 
   useEffect(() => {
     let live = true;
@@ -41,10 +42,15 @@ export function MyDashboard() {
     return () => {
       live = false;
     };
-  }, []);
+  }, [attempt]);
 
-  if (alert) return <FormAlert message={alert} />;
-  if (!data) return <p className="text-zinc-500">Loading your dashboard…</p>;
+  function retry() {
+    setAlert(undefined);
+    setAttempt((a) => a + 1);
+  }
+
+  if (alert) return <ErrorState message={alert} onRetry={retry} />;
+  if (!data) return <Loading label="Loading your dashboard…" />;
   const { summary, balances, latest } = data;
   const { cutoff } = summary;
   const waiting = summary.pendingLeave + summary.pendingOvertime > 0;
@@ -58,7 +64,11 @@ export function MyDashboard() {
       <Panel title={`This cutoff, ${periodLabel(cutoff.periodStart, cutoff.periodEnd)}`}>
         <div className="grid grid-cols-3 gap-3">
           <Tile label="Days present" value={cutoff.daysPresent} />
-          <Tile label="Late" value={formatMinutes(cutoff.lateMinutes) || "None"} />
+          <Tile
+            label="Late"
+            value={formatMinutes(cutoff.lateMinutes) || "None"}
+            tone={cutoff.lateMinutes > 0 ? "danger" : undefined}
+          />
           <Tile label="Approved overtime" value={formatMinutes(cutoff.overtimeMinutes) || "None"} />
         </div>
       </Panel>
@@ -66,13 +76,13 @@ export function MyDashboard() {
       <div className="grid gap-4 lg:grid-cols-3">
         <Panel title="Leave left this year">
           {balances.length === 0 ? (
-            <p className="text-sm text-zinc-500">No leave credits yet.</p>
+            <EmptyState message="No leave credits yet." />
           ) : (
             <ul className="space-y-1 text-sm">
               {balances.map((b) => (
                 <li key={b.id} className="flex justify-between gap-2">
                   <span>{b.leaveTypeName}</span>
-                  <span className="text-zinc-600 tabular-nums dark:text-zinc-400">
+                  <span className="text-ink-muted tabular-nums">
                     {formatDays(b.entitledHalfdays - b.usedHalfdays)} left of{" "}
                     {formatDays(b.entitledHalfdays)}
                   </span>
@@ -87,17 +97,18 @@ export function MyDashboard() {
             <div className="space-y-1 text-sm">
               <p>{periodLabel(latest.periodStart, latest.periodEnd)}</p>
               <p className="text-2xl font-semibold tabular-nums">{formatPesos(latest.netCents)}</p>
-              <p className="text-zinc-500">
+              <p className="text-ink-muted">
                 Net pay, paid {formatDate(latest.payDate)}. Gross {formatPesos(latest.grossCents)}.
               </p>
-              <Link to="/my-payslips" className="underline">
+              <Link
+                to="/my-payslips"
+                className="font-medium text-accent underline underline-offset-2 hover:text-accent-hover"
+              >
                 View or download in My payslips
               </Link>
             </div>
           ) : (
-            <p className="text-sm text-zinc-500">
-              No payslips yet. Each one shows up once HR posts that payroll.
-            </p>
+            <EmptyState message="No payslips yet. Each one shows up once HR posts that payroll." />
           )}
         </Panel>
 
@@ -106,14 +117,20 @@ export function MyDashboard() {
             <ul className="space-y-1 text-sm">
               {summary.pendingLeave > 0 && (
                 <li>
-                  <Link to="/my-leave" className="underline">
+                  <Link
+                    to="/my-leave"
+                    className="font-medium text-accent underline underline-offset-2 hover:text-accent-hover"
+                  >
                     {plural(summary.pendingLeave, "leave request", "leave requests")} waiting for HR
                   </Link>
                 </li>
               )}
               {summary.pendingOvertime > 0 && (
                 <li>
-                  <Link to="/my-attendance" className="underline">
+                  <Link
+                    to="/my-attendance"
+                    className="font-medium text-accent underline underline-offset-2 hover:text-accent-hover"
+                  >
                     {plural(summary.pendingOvertime, "overtime request", "overtime requests")}{" "}
                     waiting for HR
                   </Link>
@@ -121,7 +138,7 @@ export function MyDashboard() {
               )}
             </ul>
           ) : (
-            <p className="text-sm text-zinc-500">Nothing waiting for HR.</p>
+            <EmptyState message="Nothing waiting for HR." />
           )}
         </Panel>
       </div>
@@ -141,7 +158,7 @@ function TodayLine({ day }: { day: MyDay }) {
   else text = "Not clocked in yet";
   return (
     <p className="text-sm">
-      <span className="text-zinc-500">{formatDate(day.date)}. </span>
+      <span className="text-ink-muted">{formatDate(day.date)}. </span>
       {text}
     </p>
   );
