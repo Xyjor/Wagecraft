@@ -16,6 +16,9 @@ What changed in each version of Wagecraft. The format follows
 - The theme switch, Change password and Sign out moved into an account menu under your name at
   the top right.
 - The window can't be made smaller than 1024 × 640.
+- Buttons, form fields, badges and the sign-in card use the Ledger colours: ledger green for the
+  main action on each screen, outlined buttons for second actions, and a status badge per payroll
+  step (draft amber, approved green, posted solid green).
 
 ### Fixed
 

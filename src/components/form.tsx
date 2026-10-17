@@ -1,4 +1,16 @@
 import type { ReactNode } from "react";
+import { primaryButton } from "./ui";
+
+/** A text input or select in a form. Exported for the few inputs that aren't a Field. */
+export const inputClass =
+  "rounded-md border border-field bg-surface px-3 py-2 text-sm text-ink outline-none placeholder:text-ink-faint focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-focus/40 aria-invalid:border-danger";
+
+/** A compact select or input in a filter row above a table. */
+export const filterClass =
+  "h-9 rounded-md border border-field bg-surface px-2 py-1.5 text-sm text-ink outline-none focus-visible:border-accent focus-visible:ring-2 focus-visible:ring-focus/40";
+
+const labelClass = "text-sm font-medium text-ink";
+const errorClass = "text-sm text-danger";
 
 type FieldProps = {
   name: string;
@@ -31,7 +43,7 @@ export function Field({
   const errorId = `${name}-error`;
   return (
     <div className="flex flex-col gap-1">
-      <label htmlFor={name} className="text-sm font-medium">
+      <label htmlFor={name} className={labelClass}>
         {label}
       </label>
       <input
@@ -46,10 +58,10 @@ export function Field({
         onChange={onChange && ((e) => onChange(e.target.value))}
         aria-invalid={error ? true : undefined}
         aria-describedby={error ? errorId : undefined}
-        className="rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-sky-500 aria-invalid:border-red-500 dark:border-zinc-700 dark:bg-zinc-900"
+        className={inputClass}
       />
       {error && (
-        <p id={errorId} className="text-sm text-red-600 dark:text-red-400">
+        <p id={errorId} className={errorClass}>
           {error}
         </p>
       )}
@@ -77,7 +89,7 @@ export function SelectField({
   const errorId = `${name}-error`;
   return (
     <div className="flex flex-col gap-1">
-      <label htmlFor={name} className="text-sm font-medium">
+      <label htmlFor={name} className={labelClass}>
         {label}
       </label>
       <select
@@ -87,7 +99,7 @@ export function SelectField({
         onChange={onChange && ((e) => onChange(e.target.value))}
         aria-invalid={error ? true : undefined}
         aria-describedby={error ? errorId : undefined}
-        className="rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm outline-none focus-visible:ring-2 focus-visible:ring-sky-500 aria-invalid:border-red-500 dark:border-zinc-700 dark:bg-zinc-900"
+        className={inputClass}
       >
         {options.map((o) => (
           <option key={o.value} value={o.value}>
@@ -96,7 +108,7 @@ export function SelectField({
         ))}
       </select>
       {error && (
-        <p id={errorId} className="text-sm text-red-600 dark:text-red-400">
+        <p id={errorId} className={errorClass}>
           {error}
         </p>
       )}
@@ -104,6 +116,7 @@ export function SelectField({
   );
 }
 
+/** The card for sign-in, first-run setup and the forced password change. */
 export function AuthCard({
   title,
   intro,
@@ -114,10 +127,16 @@ export function AuthCard({
   children: ReactNode;
 }) {
   return (
-    <main className="flex min-h-screen items-center justify-center bg-zinc-50 p-6 text-zinc-900 dark:bg-zinc-950 dark:text-zinc-100">
-      <div className="w-full max-w-sm rounded-xl border border-zinc-200 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+    <main className="flex min-h-screen flex-col items-center justify-center gap-6 bg-canvas p-6 text-ink">
+      <p
+        aria-hidden="true"
+        className="border-b-[3px] border-double border-rule-strong pb-0.5 text-lg font-semibold tracking-tight text-accent"
+      >
+        Wagecraft
+      </p>
+      <div className="w-full max-w-sm rounded-lg border border-rule bg-surface p-6 shadow-[0_1px_2px_rgb(0_0_0/0.06)]">
         <h1 className="text-xl font-semibold">{title}</h1>
-        {intro && <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">{intro}</p>}
+        {intro && <p className="mt-1 text-sm text-ink-muted">{intro}</p>}
         <div className="mt-6">{children}</div>
       </div>
     </main>
@@ -126,11 +145,7 @@ export function AuthCard({
 
 export function SubmitButton({ busy, children }: { busy: boolean; children: ReactNode }) {
   return (
-    <button
-      type="submit"
-      disabled={busy}
-      className="w-full rounded-md bg-zinc-900 px-3 py-2 text-sm font-medium text-white hover:bg-zinc-700 focus-visible:ring-2 focus-visible:ring-sky-500 disabled:opacity-60 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-300"
-    >
+    <button type="submit" disabled={busy} className={`${primaryButton} w-full py-2`}>
       {children}
     </button>
   );
@@ -141,7 +156,7 @@ export function FormAlert({ message }: { message?: string }) {
   return (
     <p
       role="alert"
-      className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700 dark:bg-red-950 dark:text-red-300"
+      className="rounded-md border border-danger/30 bg-danger-soft px-3 py-2 text-sm text-danger"
     >
       {message}
     </p>

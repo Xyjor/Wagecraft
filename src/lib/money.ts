@@ -10,6 +10,11 @@ export function formatPesos(cents: number): string {
   return `${sign}₱${pesos}.${centavos}`;
 }
 
+/** Ledger style for money columns: -114943 → "(₱1,149.43)". Prose and CSV keep formatPesos. */
+export function formatAccounting(cents: number): string {
+  return cents < 0 ? `(${formatPesos(-cents)})` : formatPesos(cents);
+}
+
 /** "₱25,000.50" or "25000.5" → 2500050. Returns null for anything that isn't a plain amount. */
 export function parsePesos(text: string): number | null {
   const cleaned = text.trim().replace(/^₱/, "").replace(/,/g, "");

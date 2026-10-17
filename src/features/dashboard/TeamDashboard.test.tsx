@@ -93,11 +93,7 @@ describe("TeamDashboard", () => {
   it("gives each chart a table of its numbers", async () => {
     show();
 
-    const depts = await screen.findByRole(
-      "table",
-      { name: "Employees by department" },
-      { timeout: 5000 },
-    );
+    const depts = await screen.findByRole("table", { name: "Employees by department" });
     const rows = within(depts)
       .getAllByRole("row")
       .map((r) => r.textContent);

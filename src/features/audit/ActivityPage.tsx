@@ -4,9 +4,9 @@ import type { AuditEntry } from "@/bindings/AuditEntry";
 import type { AuditFilters } from "@/bindings/AuditFilters";
 import type { AuditPage } from "@/bindings/AuditPage";
 import type { AuditQuery } from "@/bindings/AuditQuery";
-import { FormAlert } from "@/components/form";
+import { filterClass, FormAlert } from "@/components/form";
 import { Pager } from "@/components/Pager";
-import { quietButton } from "@/components/ui";
+import { quietButton, secondaryButton } from "@/components/ui";
 import { useSession } from "@/features/auth/session";
 import { formatWhen } from "@/lib/dates";
 import type { AppError } from "@/lib/ipc";
@@ -28,9 +28,6 @@ const FIRST_PAGE: AuditQuery = {
 };
 
 const NO_FILTERS: AuditFilters = { actors: [], actions: [], entityTypes: [] };
-
-const filterClass =
-  "h-9 rounded-md border border-zinc-300 bg-white px-2 py-1.5 text-sm dark:border-zinc-700 dark:bg-zinc-900";
 
 /** The audit log for Admin (plan §6.8): who did what, when, and what changed. */
 export function ActivityPage() {
@@ -92,12 +89,7 @@ function ActivityLog() {
     <section className="space-y-4">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold tracking-tight">Activity</h1>
-        <button
-          type="button"
-          className={`${quietButton} border border-zinc-300 dark:border-zinc-700`}
-          disabled={exporting}
-          onClick={exportCsv}
-        >
+        <button type="button" className={secondaryButton} disabled={exporting} onClick={exportCsv}>
           Export CSV
         </button>
       </div>

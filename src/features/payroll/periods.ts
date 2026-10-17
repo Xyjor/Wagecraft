@@ -43,10 +43,10 @@ export const STATUS_LABELS: Record<PayrollPeriod["status"], string> = {
 };
 
 export const STATUS_TONES = {
-  DRAFT: "muted",
+  DRAFT: "warn",
   COMPUTED: "muted",
   APPROVED: "good",
-  POSTED: "good",
+  POSTED: "final",
 } as const;
 
 /** "3", "DAYS" → "3 days". Lines with no unit, such as monthly basic pay, show nothing. */
