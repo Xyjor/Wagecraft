@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from "react";
+import { inputClass } from "@/components/form";
 import { quietButton } from "@/components/ui";
 
 /** The inline note HR writes when rejecting a request. A rejection always says why. */
@@ -35,10 +36,10 @@ export function RejectForm({
         placeholder="Why it's rejected"
         aria-invalid={error ? true : undefined}
         aria-describedby={error ? "note-error" : undefined}
-        className="w-full rounded-md border border-zinc-300 bg-white px-2 py-1 text-sm aria-invalid:border-red-500 dark:border-zinc-700 dark:bg-zinc-900"
+        className={`${inputClass} w-full px-2 py-1`}
       />
       {error && (
-        <p id="note-error" className="text-sm text-red-600 dark:text-red-400">
+        <p id="note-error" className="text-sm text-danger">
           {error}
         </p>
       )}

@@ -1,20 +1,38 @@
 // Small shared pieces so every screen's buttons and badges look the same.
+// Colours come from the Ledger tokens in src/index.css (ADR-013).
 
-const button =
-  "rounded-md px-2.5 py-1 text-sm focus-visible:ring-2 focus-visible:ring-sky-500 disabled:opacity-60";
+/** The one focus ring, for anything that draws its own. */
+export const focusRing =
+  "outline-none focus-visible:ring-2 focus-visible:ring-focus focus-visible:ring-offset-2 focus-visible:ring-offset-canvas";
 
-export const primaryButton = `${button} bg-zinc-900 font-medium text-white hover:bg-zinc-700 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-300`;
+const button = `inline-flex items-center justify-center gap-1.5 rounded-md px-2.5 py-1 text-sm ${focusRing} disabled:cursor-not-allowed disabled:opacity-60`;
 
-export const quietButton = `${button} text-zinc-700 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-800`;
+/** The main action on a screen. Use at most one per view. */
+export const primaryButton = `${button} bg-accent font-medium text-accent-ink hover:bg-accent-hover`;
+
+/** A second action that still needs to stand out, such as Export CSV. */
+export const secondaryButton = `${button} border border-rule-strong bg-surface text-ink hover:bg-sunken`;
+
+/** Row and inline actions. */
+export const quietButton = `${button} text-ink-muted hover:bg-sunken hover:text-ink`;
 
 const TONES = {
-  good: "bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300",
-  bad: "bg-red-50 text-red-700 dark:bg-red-950 dark:text-red-300",
-  muted: "bg-zinc-100 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300",
+  good: "bg-accent-soft text-accent",
+  bad: "bg-danger-soft text-danger",
+  warn: "bg-warn-soft text-warn",
+  muted: "bg-sunken text-ink-muted",
+  /** A finished state that can't change, such as a posted payroll. */
+  final: "bg-accent text-accent-ink",
 };
 
-export function Badge({ tone, children }: { tone: keyof typeof TONES; children: string }) {
-  return <span className={`rounded px-1.5 py-0.5 text-xs ${TONES[tone]}`}>{children}</span>;
+export type Tone = keyof typeof TONES;
+
+export function Badge({ tone, children }: { tone: Tone; children: string }) {
+  return (
+    <span className={`rounded px-1.5 py-0.5 text-xs font-medium whitespace-nowrap ${TONES[tone]}`}>
+      {children}
+    </span>
+  );
 }
 
 export function ActiveBadge({ active }: { active: boolean }) {

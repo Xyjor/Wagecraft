@@ -38,6 +38,7 @@
   --wc-sidebar: #173d33;
   --wc-sidebar-active: #24564a;
   --wc-sidebar-ink: #cfe0d7;
+  --wc-sidebar-ink-strong: #ffffff;
   --wc-chart: #1a7f5e;
   /* The bridge's one theme-aware step: muted text has to pass 4.5:1 on the canvas in both themes. */
   --wc-zinc-500: #66736b;
@@ -65,6 +66,7 @@
   --wc-sidebar: #0b1411;
   --wc-sidebar-active: #1c3a30;
   --wc-sidebar-ink: #b9cec3;
+  --wc-sidebar-ink-strong: #f0f6f2;
   --wc-chart: #3fa57e;
   --wc-zinc-500: #8d9c93;
 }
@@ -93,6 +95,7 @@
   --color-sidebar: var(--wc-sidebar);
   --color-sidebar-active: var(--wc-sidebar-active);
   --color-sidebar-ink: var(--wc-sidebar-ink);
+  --color-sidebar-ink-strong: var(--wc-sidebar-ink-strong);
   --color-chart: var(--wc-chart);
   --color-focus: var(--wc-accent);
 

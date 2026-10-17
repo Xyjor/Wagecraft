@@ -5,9 +5,9 @@ import type { Department } from "@/bindings/Department";
 import type { EmployeePage } from "@/bindings/EmployeePage";
 import type { EmployeeQuery } from "@/bindings/EmployeeQuery";
 import type { EmployeeSort } from "@/bindings/EmployeeSort";
-import { FormAlert } from "@/components/form";
+import { filterClass, FormAlert } from "@/components/form";
 import { Pager } from "@/components/Pager";
-import { Badge, primaryButton, quietButton } from "@/components/ui";
+import { Badge, primaryButton, secondaryButton } from "@/components/ui";
 import { useSession } from "@/features/auth/session";
 import { listDepartments } from "@/features/org/api";
 import { formatDate } from "@/lib/dates";
@@ -29,9 +29,6 @@ const FIRST_PAGE: EmployeeQuery = {
   page: 1,
   pageSize: PAGE_SIZE,
 };
-
-const filterClass =
-  "h-9 rounded-md border border-zinc-300 bg-white px-2 py-1.5 text-sm dark:border-zinc-700 dark:bg-zinc-900";
 
 export function EmployeesPage() {
   const { me } = useSession();
@@ -109,7 +106,7 @@ function EmployeeList() {
         <div className="flex gap-2">
           <button
             type="button"
-            className={`${quietButton} border border-zinc-300 dark:border-zinc-700`}
+            className={secondaryButton}
             disabled={exporting}
             onClick={exportCsv}
           >

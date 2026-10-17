@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { compactPesos, formatPesos, parsePesos } from "./money";
+import { compactPesos, formatAccounting, formatPesos, parsePesos } from "./money";
 
 describe("formatPesos", () => {
   it.each([
@@ -45,5 +45,15 @@ describe("compactPesos", () => {
     [625_000_000, "₱6.3M"],
   ])("%i centavos read as %s on a chart axis", (cents, text) => {
     expect(compactPesos(cents)).toBe(text);
+  });
+});
+
+describe("formatAccounting", () => {
+  it.each([
+    [2_500_000, "₱25,000.00"],
+    [0, "₱0.00"],
+    [-114_943, "(₱1,149.43)"],
+  ])("%i centavos read as %s in a ledger column", (cents, text) => {
+    expect(formatAccounting(cents)).toBe(text);
   });
 });

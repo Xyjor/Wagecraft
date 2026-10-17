@@ -16,7 +16,7 @@ export function Pager({
   const to = Math.min(page * pageSize, total);
   const last = Math.max(1, Math.ceil(total / pageSize));
   return (
-    <div className="flex items-center justify-between text-sm text-zinc-600 dark:text-zinc-400">
+    <div className="flex items-center justify-between text-sm text-ink-muted">
       <span>{total > 0 && `Showing ${from}–${to} of ${total}`}</span>
       <div className="flex gap-1">
         <button

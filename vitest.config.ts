@@ -5,6 +5,7 @@ export default defineConfig({
   test: {
     environment: "jsdom",
     include: ["src/**/*.test.{ts,tsx}", "scripts/**/*.test.ts"],
+    setupFiles: ["src/test/setup.ts"],
     alias: { "@": fileURLToPath(new URL("./src", import.meta.url)) },
     passWithNoTests: true,
   },

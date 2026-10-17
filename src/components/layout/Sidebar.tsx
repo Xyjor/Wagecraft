@@ -40,7 +40,7 @@ export function Sidebar() {
       }`}
     >
       <div className={`pt-4 pb-3 ${collapsed ? "px-2 text-center" : "px-5"}`}>
-        <span className="inline-block border-b-[3px] border-double border-sidebar-ink/50 pb-0.5 text-lg font-semibold tracking-tight text-white">
+        <span className="inline-block border-b-[3px] border-double border-sidebar-ink/50 pb-0.5 text-lg font-semibold tracking-tight text-sidebar-ink-strong">
           {collapsed ? (
             <>
               <span aria-hidden="true">W</span>
@@ -86,8 +86,8 @@ export function Sidebar() {
                           collapsed ? "justify-center px-0" : "px-3"
                         } ${
                           isActive
-                            ? "bg-sidebar-active font-medium text-white"
-                            : "hover:bg-sidebar-active/60 hover:text-white"
+                            ? "bg-sidebar-active font-medium text-sidebar-ink-strong"
+                            : "hover:bg-sidebar-active/60 hover:text-sidebar-ink-strong"
                         }`
                       }
                     >
@@ -111,7 +111,7 @@ export function Sidebar() {
           type="button"
           onClick={toggle}
           aria-expanded={!collapsed}
-          className={`flex w-full items-center gap-3 rounded-md py-1.5 text-sm hover:bg-sidebar-active/60 hover:text-white ${focusRing} ${
+          className={`flex w-full items-center gap-3 rounded-md py-1.5 text-sm hover:bg-sidebar-active/60 hover:text-sidebar-ink-strong ${focusRing} ${
             collapsed ? "justify-center" : "px-3"
           }`}
         >
