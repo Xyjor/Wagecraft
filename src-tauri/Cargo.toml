@@ -1,6 +1,6 @@
 [package]
 name = "wagecraft"
-version = "1.0.0"
+version = "1.0.1"
 description = "Philippine payroll desktop app"
 authors = ["Plue Truslow"]
 license = "MIT"

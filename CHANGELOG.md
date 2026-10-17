@@ -6,6 +6,8 @@ What changed in each version of Wagecraft. The format follows
 
 ## [Unreleased]
 
+## [1.0.1] - 2026-10-17
+
 ### Fixed
 
 - Download PDF (the payroll register and payslips) failed in the installed app: the content
@@ -59,5 +61,6 @@ The first release.
   role matrix and the Tauri config locked down.
 - **License:** MIT.
 
-[Unreleased]: https://github.com/Xyjor/Wagecraft/compare/v1.0.0...HEAD
+[Unreleased]: https://github.com/Xyjor/Wagecraft/compare/v1.0.1...HEAD
+[1.0.1]: https://github.com/Xyjor/Wagecraft/compare/v1.0.0...v1.0.1
 [1.0.0]: https://github.com/Xyjor/Wagecraft/releases/tag/v1.0.0
