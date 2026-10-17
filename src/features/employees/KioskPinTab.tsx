@@ -21,7 +21,7 @@ export function KioskPinTab({
   const [busy, setBusy] = useState(false);
 
   if (employee.archivedAt !== null) {
-    return <p className="text-sm text-zinc-500">Archived employees can't use the time clock.</p>;
+    return <p className="text-sm text-ink-faint">Archived employees can't use the time clock.</p>;
   }
 
   async function submit(e: FormEvent<HTMLFormElement>) {
@@ -53,13 +53,13 @@ export function KioskPinTab({
 
   return (
     <div className="max-w-sm space-y-4">
-      <p className="text-sm text-zinc-600 dark:text-zinc-400">
+      <p className="text-sm text-ink-muted">
         {employee.hasKioskPin
           ? "This employee has a PIN. Setting a new one replaces it and lets them back in if the time clock locked them out."
           : "No PIN yet. Set one so this employee can clock in and out on the time clock."}
       </p>
       {saved && (
-        <p role="status" className="text-sm text-emerald-700 dark:text-emerald-400">
+        <p role="status" className="text-sm text-accent">
           PIN saved. Tell {employee.firstName} the new PIN in person.
         </p>
       )}

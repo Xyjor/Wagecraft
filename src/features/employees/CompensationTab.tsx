@@ -40,29 +40,29 @@ export function CompensationTab({ employee }: { employee: Employee }) {
   return (
     <div className="space-y-6">
       {history.length === 0 ? (
-        <p className="text-sm text-zinc-500">
+        <p className="text-sm text-ink-faint">
           No pay rate yet. Add one before this employee's first payroll.
         </p>
       ) : (
         <table className="w-full text-left text-sm">
-          <thead className="border-b border-zinc-200 text-zinc-500 dark:border-zinc-800">
+          <thead className="border-b border-rule-strong bg-sunken text-xs text-ink-muted">
             <tr>
-              <th className="py-2 font-medium">Starts</th>
-              <th className="py-2 font-medium">Ends</th>
-              <th className="py-2 font-medium">Basis</th>
-              <th className="py-2 text-right font-medium">Rate</th>
-              <th className="py-2 pl-6 font-medium">Reason</th>
-              <th className="py-2 font-medium">Changed by</th>
+              <th className="px-3 py-2 font-medium">Starts</th>
+              <th className="px-3 py-2 font-medium">Ends</th>
+              <th className="px-3 py-2 font-medium">Basis</th>
+              <th className="border-l border-rule/70 px-3 py-2 text-right font-medium">Rate</th>
+              <th className="py-2 pr-3 pl-6 font-medium">Reason</th>
+              <th className="px-3 py-2 font-medium">Changed by</th>
             </tr>
           </thead>
           <tbody>
             {history.map((c) => (
-              <tr key={c.id} className="border-b border-zinc-100 dark:border-zinc-900">
-                <td className="py-2">{formatDate(c.effectiveFrom)}</td>
-                <td className="py-2">
+              <tr key={c.id} className="border-b border-rule hover:bg-sunken/60">
+                <td className="px-3 py-2">{formatDate(c.effectiveFrom)}</td>
+                <td className="px-3 py-2">
                   {c.effectiveTo ? formatDate(c.effectiveTo) : <Badge tone="good">Current</Badge>}
                 </td>
-                <td className="py-2">
+                <td className="px-3 py-2">
                   {PAY_BASIS_LABELS[c.payBasis] ?? c.payBasis}
                   {c.minimumWageEarner && (
                     <div className="pt-0.5">
@@ -70,15 +70,17 @@ export function CompensationTab({ employee }: { employee: Employee }) {
                     </div>
                   )}
                 </td>
-                <td className="py-2 text-right tabular-nums">{formatPesos(c.rateCents)}</td>
-                <td className="py-2 pl-6">{c.reason}</td>
-                <td className="py-2">{c.createdByName}</td>
+                <td className="border-l border-rule/70 px-3 py-2 text-right tabular-nums">
+                  {formatPesos(c.rateCents)}
+                </td>
+                <td className="py-2 pr-3 pl-6">{c.reason}</td>
+                <td className="px-3 py-2">{c.createdByName}</td>
               </tr>
             ))}
           </tbody>
         </table>
       )}
-      {warning && <p className="text-sm text-amber-700 dark:text-amber-300">{warning}</p>}
+      {warning && <p className="text-sm text-warn">{warning}</p>}
 
       {employee.archivedAt === null && (
         <AddRate
@@ -133,7 +135,7 @@ function AddRate({
   return (
     <form onSubmit={submit} noValidate className="space-y-3">
       <h2 className="text-lg font-semibold">{current ? "Change pay" : "Set pay"}</h2>
-      <p className="text-sm text-zinc-600 dark:text-zinc-400">
+      <p className="text-sm text-ink-muted">
         A rate starts on the 1st or 16th, the first day of a pay period.
         {current &&
           " The current rate ends the day before, and past payslips keep the rate they used."}
@@ -159,7 +161,7 @@ function AddRate({
           />
           <span>
             Minimum wage earner
-            <span className="block text-zinc-600 dark:text-zinc-400">
+            <span className="block text-ink-muted">
               No tax is withheld while this rate applies. Untick it when a raise takes them above
               the minimum wage.
             </span>

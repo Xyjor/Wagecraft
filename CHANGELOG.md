@@ -23,6 +23,8 @@ What changed in each version of Wagecraft. The format follows
   not clocked in show in amber. The charts follow Light and Dark. The payroll register has ruled
   money columns with deductions in red and a double rule above the totals. Negative amounts show
   as (₱1,149.43) on screen. A dashboard that fails to load offers Retry.
+- The employee and attendance screens use the ledger look, with page headers and breadcrumbs
+  (Employees › name › Edit). Late and undertime minutes show in red ink.
 
 ### Fixed
 

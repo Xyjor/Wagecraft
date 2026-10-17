@@ -139,7 +139,7 @@ function AdjustForm({
       onSubmit={submit}
       noValidate
       aria-label={`Adjust ${balance.leaveTypeName}`}
-      className="grid max-w-md gap-4 rounded-lg border border-zinc-200 p-4 dark:border-zinc-800"
+      className="grid max-w-md gap-4 rounded-lg border border-rule bg-surface p-4"
     >
       <FormAlert message={alert} />
       <Field
@@ -150,7 +150,7 @@ function AdjustForm({
         error={errors.days}
       />
       <Field name="reason" label="Reason for the change" error={errors.reason} />
-      <p className="text-sm text-zinc-600 dark:text-zinc-400">
+      <p className="text-sm text-ink-muted">
         {formatDays(balance.usedHalfdays)} already used. Use half days like 2.5 if needed.
       </p>
       <div className="flex gap-2">

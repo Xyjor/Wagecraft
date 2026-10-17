@@ -48,10 +48,10 @@ export function AccountTab({ employee }: { employee: Employee }) {
       {account ? (
         <Linked account={account} onUnlink={() => run(unlinkAccount(employee.id))} />
       ) : employee.archivedAt !== null ? (
-        <p className="text-sm text-zinc-500">No account. Archived employees can't get one.</p>
+        <p className="text-sm text-ink-faint">No account. Archived employees can't get one.</p>
       ) : (
         <>
-          <p className="text-sm text-zinc-500">
+          <p className="text-sm text-ink-faint">
             No account yet. Staff need one to see their payslips and file leave.
           </p>
           <CreateStaff employeeId={employee.id} onCreated={load} />
@@ -76,11 +76,11 @@ function Linked({ account, onUnlink }: { account: AccountSummary; onUnlink: () =
   return (
     <div className="space-y-3">
       <dl className="grid gap-x-6 gap-y-3 sm:grid-cols-[12rem_1fr]">
-        <dt className="text-sm text-zinc-500">Username</dt>
+        <dt className="text-sm text-ink-faint">Username</dt>
         <dd className="text-sm font-medium">{account.username}</dd>
-        <dt className="text-sm text-zinc-500">Role</dt>
+        <dt className="text-sm text-ink-faint">Role</dt>
         <dd className="text-sm">{ROLE_LABELS[account.role]}</dd>
-        <dt className="text-sm text-zinc-500">Status</dt>
+        <dt className="text-sm text-ink-faint">Status</dt>
         <dd>
           <ActiveBadge active={account.isActive} />
         </dd>
@@ -91,7 +91,7 @@ function Linked({ account, onUnlink }: { account: AccountSummary; onUnlink: () =
         </button>
       )}
       {confirming && (
-        <div className="space-y-2 rounded-md border border-zinc-200 p-3 dark:border-zinc-800">
+        <div className="space-y-2 rounded-md border border-rule bg-surface p-3">
           <p className="text-sm">
             Unlink {account.username}?
             {staff && " A Staff account can't work without an employee, so it will be turned off."}
@@ -144,7 +144,7 @@ function CreateStaff({
   return (
     <form onSubmit={submit} noValidate className="space-y-3">
       <h2 className="text-lg font-semibold">Create a Staff account</h2>
-      <p className="text-sm text-zinc-600 dark:text-zinc-400">
+      <p className="text-sm text-ink-muted">
         Give the employee this username and temporary password. They choose their own password the
         first time they sign in.
       </p>
@@ -177,16 +177,14 @@ function LinkExisting({
   return (
     <div className="space-y-3">
       <h2 className="text-lg font-semibold">Or link an existing account</h2>
-      <p className="text-sm text-zinc-600 dark:text-zinc-400">
-        For an Admin or HR user who is also on the payroll.
-      </p>
+      <p className="text-sm text-ink-muted">For an Admin or HR user who is also on the payroll.</p>
       <div className="flex items-end gap-2">
         <label className="flex flex-col gap-1 text-sm">
           <span className="font-medium">Account</span>
           <select
             value={userId}
             onChange={(e) => setUserId(e.target.value)}
-            className="h-9 rounded-md border border-zinc-300 bg-white px-2 text-sm dark:border-zinc-700 dark:bg-zinc-900"
+            className="h-9 rounded-md border border-field bg-surface px-2 text-sm text-ink"
           >
             {accounts.map((a) => (
               <option key={a.userId} value={a.userId}>
@@ -198,7 +196,7 @@ function LinkExisting({
         </label>
         <button
           type="button"
-          className={`${quietButton} h-9 border border-zinc-300 dark:border-zinc-700`}
+          className={`${quietButton} h-9 border border-rule-strong`}
           onClick={() => onLink(Number(userId))}
         >
           Link account

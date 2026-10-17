@@ -45,32 +45,34 @@ export function ScheduleTab({ employee }: { employee: Employee }) {
   return (
     <div className="space-y-6">
       {history.length === 0 ? (
-        <p className="text-sm text-zinc-500">
+        <p className="text-sm text-ink-faint">
           No work schedule yet. Set one before this employee clocks in.
         </p>
       ) : (
         <table className="w-full text-left text-sm">
-          <thead className="border-b border-zinc-200 text-zinc-500 dark:border-zinc-800">
+          <thead className="border-b border-rule-strong bg-sunken text-xs text-ink-muted">
             <tr>
-              <th className="py-2 font-medium">Starts</th>
-              <th className="py-2 font-medium">Schedule</th>
-              <th className="py-2 pl-6 font-medium">Reason</th>
-              <th className="py-2 font-medium">Changed by</th>
+              <th className="px-3 py-2 font-medium">Starts</th>
+              <th className="px-3 py-2 font-medium">Schedule</th>
+              <th className="py-2 pr-3 pl-6 font-medium">Reason</th>
+              <th className="px-3 py-2 font-medium">Changed by</th>
             </tr>
           </thead>
           <tbody>
             {newestFirst.map((a) => {
               const s = a.scheduleId === null ? undefined : byId.get(a.scheduleId);
               return (
-                <tr key={a.id} className="border-b border-zinc-100 dark:border-zinc-900">
-                  <td className="py-2">
+                <tr key={a.id} className="border-b border-rule hover:bg-sunken/60">
+                  <td className="px-3 py-2">
                     <span className="mr-2">{formatDate(a.effectiveFrom)}</span>
                     {a === current && <Badge tone="good">Current</Badge>}
                     {a.effectiveFrom > now && <Badge tone="muted">Upcoming</Badge>}
                   </td>
-                  <td className="py-2">{s ? describe(s) : (a.scheduleName ?? "No schedule")}</td>
-                  <td className="py-2 pl-6">{a.reason}</td>
-                  <td className="py-2">{a.createdByName}</td>
+                  <td className="px-3 py-2">
+                    {s ? describe(s) : (a.scheduleName ?? "No schedule")}
+                  </td>
+                  <td className="py-2 pr-3 pl-6">{a.reason}</td>
+                  <td className="px-3 py-2">{a.createdByName}</td>
                 </tr>
               );
             })}
@@ -134,7 +136,7 @@ function MoveForm({
   return (
     <form onSubmit={submit} noValidate className="space-y-3">
       <h2 className="text-lg font-semibold">Change schedule</h2>
-      <p className="text-sm text-zinc-600 dark:text-zinc-400">
+      <p className="text-sm text-ink-muted">
         Days before the start date keep the schedule they had. The start date has to come after the
         last day with attendance recorded. Leave from that date is counted again with the new work
         days.

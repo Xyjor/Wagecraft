@@ -1,6 +1,7 @@
 import { useState, type ReactNode } from "react";
 import type { Employee } from "@/bindings/Employee";
 import { FormAlert } from "@/components/form";
+import { PageHeader, type Crumb } from "@/components/PageHeader";
 import { Badge } from "@/components/ui";
 import { formatDate } from "@/lib/dates";
 import { formatId } from "@/lib/govIds";
@@ -17,11 +18,14 @@ export function ProfileView({
   employee: e,
   actions,
   alert,
+  crumbs,
   extraTabs = [],
 }: {
   employee: Employee;
   actions?: ReactNode;
   alert?: string;
+  /** Breadcrumbs back to the list, on HR's page. */
+  crumbs?: Crumb[];
   extraTabs?: ExtraTab[];
 }) {
   const tabs = ["Personal", "Employment", "Government IDs", ...extraTabs.map((t) => t.name)];
@@ -30,28 +34,23 @@ export function ProfileView({
 
   return (
     <article className="max-w-3xl space-y-6">
-      <header className="flex items-start justify-between gap-4">
-        <div className="space-y-1">
-          <h1 className="text-2xl font-semibold tracking-tight">{fullName(e)}</h1>
-          <p className="text-zinc-600 dark:text-zinc-400">
-            {[e.employeeNo, role].filter(Boolean).join(" · ")}
-          </p>
-          <div className="flex gap-1">
+      <PageHeader
+        title={fullName(e)}
+        crumbs={crumbs}
+        description={[e.employeeNo, role].filter(Boolean).join(" · ")}
+        meta={
+          <>
             <Badge tone={isSeparated(e) ? "muted" : "good"}>
               {STATUS_LABELS[e.employmentStatus] ?? e.employmentStatus}
             </Badge>
             {e.archivedAt !== null && <Badge tone="muted">Archived</Badge>}
-          </div>
-        </div>
-        {actions && <div className="flex gap-1">{actions}</div>}
-      </header>
+          </>
+        }
+        actions={actions}
+      />
       <FormAlert message={alert} />
 
-      <div
-        role="tablist"
-        aria-label="Profile sections"
-        className="flex gap-1 border-b border-zinc-200 dark:border-zinc-800"
-      >
+      <div role="tablist" aria-label="Profile sections" className="flex gap-1 border-b border-rule">
         {tabs.map((t) => (
           <button
             key={t}
@@ -59,7 +58,7 @@ export function ProfileView({
             role="tab"
             aria-selected={tab === t}
             onClick={() => setTab(t)}
-            className="-mb-px border-b-2 border-transparent px-3 py-2 text-sm text-zinc-600 aria-selected:border-zinc-900 aria-selected:font-medium aria-selected:text-zinc-900 dark:text-zinc-400 dark:aria-selected:border-zinc-100 dark:aria-selected:text-zinc-100"
+            className="-mb-px border-b-2 border-transparent px-3 py-2 text-sm text-ink-muted hover:text-ink aria-selected:border-accent aria-selected:font-medium aria-selected:text-ink"
           >
             {t}
           </button>
@@ -114,8 +113,8 @@ function Details({ rows }: { rows: [label: string, value: string | null | undefi
     <dl className="grid gap-x-6 gap-y-3 sm:grid-cols-[12rem_1fr]">
       {rows.map(([label, value]) => (
         <div key={label} className="contents">
-          <dt className="text-sm text-zinc-500">{label}</dt>
-          <dd className="text-sm">{value || <span className="text-zinc-400">Not set</span>}</dd>
+          <dt className="text-sm text-ink-faint">{label}</dt>
+          <dd className="text-sm">{value || <span className="text-ink-faint">Not set</span>}</dd>
         </div>
       ))}
     </dl>

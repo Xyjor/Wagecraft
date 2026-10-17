@@ -9,6 +9,8 @@ import { formValues, serverErrors } from "@/lib/formData";
 import type { AppError } from "@/lib/ipc";
 import { attendanceDay, markReviewed, reviewQueue, saveAttendance } from "./api";
 import { formatClock, formatMinutes, shiftDate, todayIso } from "./format";
+import { PageHeader } from "@/components/PageHeader";
+import { minutesInk } from "./format";
 
 const STATUS_LABELS: Record<string, string> = {
   PRESENT: "Present",
@@ -31,7 +33,7 @@ type Editing = {
 export function AttendancePage() {
   const { me } = useSession();
   if (me.role === "STAFF") {
-    return <p className="text-zinc-600 dark:text-zinc-400">Only Admin and HR can see this.</p>;
+    return <p className="text-ink-muted">Only Admin and HR can see this.</p>;
   }
   return <Attendance />;
 }
@@ -81,7 +83,7 @@ function Attendance() {
 
   return (
     <div className="max-w-6xl space-y-8">
-      <h1 className="text-xl font-semibold">Attendance</h1>
+      <PageHeader title="Attendance" />
       <FormAlert message={alert} />
 
       {queue.length > 0 && (
@@ -90,27 +92,27 @@ function Attendance() {
             Needs review ({queue.length})
           </h2>
           <table className="w-full text-left text-sm">
-            <thead className="border-b border-zinc-200 text-zinc-500 dark:border-zinc-800">
+            <thead className="border-b border-rule-strong bg-sunken text-xs text-ink-muted">
               <tr>
-                <th className="py-2 font-medium">Date</th>
-                <th className="py-2 font-medium">Employee</th>
-                <th className="py-2 font-medium">Time in</th>
-                <th className="py-2 font-medium">Time out</th>
-                <th className="py-2 font-medium">Why</th>
-                <th className="py-2 font-medium">
+                <th className="px-3 py-2 font-medium">Date</th>
+                <th className="px-3 py-2 font-medium">Employee</th>
+                <th className="px-3 py-2 font-medium">Time in</th>
+                <th className="px-3 py-2 font-medium">Time out</th>
+                <th className="px-3 py-2 font-medium">Why</th>
+                <th className="px-3 py-2 font-medium">
                   <span className="sr-only">Actions</span>
                 </th>
               </tr>
             </thead>
             <tbody>
               {queue.map(({ employeeName, record: r }) => (
-                <tr key={r.id} className="border-b border-zinc-100 dark:border-zinc-900">
-                  <td className="py-2">{formatDate(r.workDate)}</td>
-                  <td className="py-2 font-medium">{employeeName}</td>
-                  <td className="py-2 tabular-nums">{formatClock(r.timeIn)}</td>
-                  <td className="py-2 tabular-nums">{formatClock(r.timeOut)}</td>
-                  <td className="py-2 text-zinc-600 dark:text-zinc-400">{r.reviewNote}</td>
-                  <td className="py-2">
+                <tr key={r.id} className="border-b border-rule hover:bg-sunken/60">
+                  <td className="px-3 py-2">{formatDate(r.workDate)}</td>
+                  <td className="px-3 py-2 font-medium">{employeeName}</td>
+                  <td className="px-3 py-2 tabular-nums">{formatClock(r.timeIn)}</td>
+                  <td className="px-3 py-2 tabular-nums">{formatClock(r.timeOut)}</td>
+                  <td className="px-3 py-2 text-ink-muted">{r.reviewNote}</td>
+                  <td className="px-3 py-2">
                     <div className="flex justify-end gap-1">
                       <button
                         type="button"
@@ -166,7 +168,7 @@ function Attendance() {
           <h2 id="day-heading" className="text-lg font-semibold">
             {date ? formatDate(date) : "Pick a date"}
             {rows?.[0]?.holiday && (
-              <span className="ml-2 text-sm font-normal text-zinc-500">{rows[0].holiday}</span>
+              <span className="ml-2 text-sm font-normal text-ink-faint">{rows[0].holiday}</span>
             )}
           </h2>
           <div className="flex items-end gap-1">
@@ -187,7 +189,7 @@ function Attendance() {
                 value={date}
                 max={today}
                 onChange={(e) => setDate(e.target.value)}
-                className="rounded-md border border-zinc-300 bg-white px-3 py-1.5 text-sm dark:border-zinc-700 dark:bg-zinc-900"
+                className="rounded-md border border-field bg-surface px-3 py-1.5 text-sm text-ink"
               />
             </div>
             <button
@@ -202,17 +204,17 @@ function Attendance() {
         </div>
         {rows && (
           <table className="w-full text-left text-sm">
-            <thead className="border-b border-zinc-200 text-zinc-500 dark:border-zinc-800">
+            <thead className="border-b border-rule-strong bg-sunken text-xs text-ink-muted">
               <tr>
-                <th className="py-2 font-medium">Employee</th>
-                <th className="py-2 font-medium">Department</th>
-                <th className="py-2 font-medium">Status</th>
-                <th className="py-2 font-medium">Time in</th>
-                <th className="py-2 font-medium">Time out</th>
-                <th className="py-2 font-medium">Late</th>
-                <th className="py-2 font-medium">Undertime</th>
-                <th className="py-2 font-medium">Worked</th>
-                <th className="py-2 font-medium">
+                <th className="px-3 py-2 font-medium">Employee</th>
+                <th className="px-3 py-2 font-medium">Department</th>
+                <th className="px-3 py-2 font-medium">Status</th>
+                <th className="px-3 py-2 font-medium">Time in</th>
+                <th className="px-3 py-2 font-medium">Time out</th>
+                <th className="px-3 py-2 font-medium">Late</th>
+                <th className="px-3 py-2 font-medium">Undertime</th>
+                <th className="px-3 py-2 font-medium">Worked</th>
+                <th className="px-3 py-2 font-medium">
                   <span className="sr-only">Actions</span>
                 </th>
               </tr>
@@ -220,7 +222,7 @@ function Attendance() {
             <tbody>
               {rows.length === 0 && (
                 <tr>
-                  <td colSpan={9} className="py-6 text-center text-zinc-500">
+                  <td colSpan={9} className="px-3 py-6 text-center text-ink-muted">
                     No current employees on this date.
                   </td>
                 </tr>
@@ -228,27 +230,32 @@ function Attendance() {
               {rows.map((row) => {
                 const r = row.record;
                 return (
-                  <tr
-                    key={row.employeeId}
-                    className="border-b border-zinc-100 dark:border-zinc-900"
-                  >
-                    <td className="py-2">
+                  <tr key={row.employeeId} className="border-b border-rule hover:bg-sunken/60">
+                    <td className="px-3 py-2">
                       <span className="font-medium">{row.employeeName}</span>{" "}
-                      <span className="text-zinc-500">{row.employeeNo}</span>
+                      <span className="text-ink-faint">{row.employeeNo}</span>
                     </td>
-                    <td className="py-2">{row.departmentName}</td>
-                    <td className="space-x-1 py-2">
+                    <td className="px-3 py-2">{row.departmentName}</td>
+                    <td className="space-x-1 px-3 py-2">
                       <StatusBadge status={row.status} isToday={date === today} />
-                      {row.leave && <span className="text-zinc-500">{row.leave}</span>}
+                      {row.leave && <span className="text-ink-faint">{row.leave}</span>}
                       {r?.needsReview && <Badge tone="muted">Needs review</Badge>}
                       {r?.source === "MANUAL" && <Badge tone="muted">Corrected</Badge>}
                     </td>
-                    <td className="py-2 tabular-nums">{formatClock(r?.timeIn)}</td>
-                    <td className="py-2 tabular-nums">{formatClock(r?.timeOut)}</td>
-                    <td className="py-2 tabular-nums">{formatMinutes(r?.lateMinutes ?? 0)}</td>
-                    <td className="py-2 tabular-nums">{formatMinutes(r?.undertimeMinutes ?? 0)}</td>
-                    <td className="py-2 tabular-nums">{formatMinutes(r?.workedMinutes ?? 0)}</td>
-                    <td className="py-2 text-right">
+                    <td className="px-3 py-2 tabular-nums">{formatClock(r?.timeIn)}</td>
+                    <td className="px-3 py-2 tabular-nums">{formatClock(r?.timeOut)}</td>
+                    <td className={`px-3 py-2 tabular-nums ${minutesInk(r?.lateMinutes ?? 0)}`}>
+                      {formatMinutes(r?.lateMinutes ?? 0)}
+                    </td>
+                    <td
+                      className={`px-3 py-2 tabular-nums ${minutesInk(r?.undertimeMinutes ?? 0)}`}
+                    >
+                      {formatMinutes(r?.undertimeMinutes ?? 0)}
+                    </td>
+                    <td className="px-3 py-2 tabular-nums">
+                      {formatMinutes(r?.workedMinutes ?? 0)}
+                    </td>
+                    <td className="px-3 py-2 text-right">
                       {(r || !row.fullDayLeave) && (
                         <button
                           type="button"
@@ -335,7 +342,7 @@ function CorrectionForm({
       onSubmit={submit}
       noValidate
       aria-label={`Attendance for ${editing.employeeName}`}
-      className="grid max-w-md gap-4 rounded-lg border border-zinc-200 p-4 dark:border-zinc-800"
+      className="grid max-w-md gap-4 rounded-lg border border-rule bg-surface p-4"
     >
       <p className="font-medium">
         {editing.employeeName} · {formatDate(editing.workDate)}
@@ -358,7 +365,7 @@ function CorrectionForm({
         />
       </div>
       <Field name="reason" label="Reason for the change" error={errors.reason} />
-      <p className="text-sm text-zinc-600 dark:text-zinc-400">
+      <p className="text-sm text-ink-muted">
         A time out earlier than the time in means the next day. The reason is saved in the audit
         log. Leave the time out empty if they are still at work.
       </p>

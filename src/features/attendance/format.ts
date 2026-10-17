@@ -16,6 +16,11 @@ export function formatMinutes(minutes: number): string {
   return m === 0 ? `${h}h` : `${h}h ${m}m`;
 }
 
+/** Late and undertime minutes are written in red ink; none shows nothing. */
+export function minutesInk(minutes: number): string {
+  return minutes > 0 ? "text-danger" : "";
+}
+
 /** First and last day of a `YYYY-MM` month, as `YYYY-MM-DD`. */
 export function monthRange(month: string): { from: string; to: string } {
   const [y, m] = month.split("-").map(Number);

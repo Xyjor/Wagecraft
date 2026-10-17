@@ -61,8 +61,8 @@ export function KioskPage({
   }
 
   return (
-    <main className="flex min-h-screen items-center justify-center bg-zinc-50 p-6 text-zinc-900 dark:bg-zinc-950 dark:text-zinc-100">
-      <div className="w-full max-w-sm space-y-6 rounded-xl border border-zinc-200 bg-white p-6 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
+    <main className="flex min-h-screen items-center justify-center bg-canvas p-6 text-ink">
+      <div className="w-full max-w-sm space-y-6 rounded-lg border border-rule bg-surface p-6 shadow-[0_1px_2px_rgb(0_0_0/0.06)]">
         <div>
           <h1 className="text-xl font-semibold">Time clock</h1>
           <LiveClock />
@@ -120,7 +120,7 @@ function Confirmation({ punch }: { punch: KioskPunch }) {
   return (
     <div
       role="status"
-      className="space-y-1 rounded-md bg-emerald-50 px-4 py-3 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-200"
+      className="space-y-1 rounded-md border border-accent/30 bg-accent-soft px-4 py-3 text-accent"
     >
       <p className="font-medium">
         {punch.kind === "IN" ? "Time in" : "Time out"} recorded, {punch.firstName}.
@@ -141,7 +141,7 @@ function LiveClock() {
     return () => clearInterval(t);
   }, []);
   return (
-    <p className="mt-1 text-sm text-zinc-600 tabular-nums dark:text-zinc-400">
+    <p className="mt-1 text-sm text-ink-muted tabular-nums dark:text-ink-faint">
       {now.toLocaleDateString("en-PH", { weekday: "long", month: "long", day: "numeric" })} ·{" "}
       {now.toLocaleTimeString("en-PH", { hour: "numeric", minute: "2-digit", second: "2-digit" })}
     </p>
