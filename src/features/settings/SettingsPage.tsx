@@ -9,11 +9,13 @@ import { formatId } from "@/lib/govIds";
 import type { AppError } from "@/lib/ipc";
 import { clearLogo, getSettings, pickBackupFolder, pickLogo, saveSettings } from "./api";
 import { settingsSchema } from "./schemas";
+import { PageHeader } from "@/components/PageHeader";
+import { StatusMessage } from "@/components/Notice";
 
 export function SettingsPage() {
   const { me } = useSession();
   if (me.role !== "ADMIN") {
-    return <p className="text-zinc-600 dark:text-zinc-400">Only Admins can change settings.</p>;
+    return <p className="text-ink-muted">Only Admins can change settings.</p>;
   }
   return <SettingsLoader />;
 }
@@ -31,14 +33,10 @@ function SettingsLoader() {
 
   return (
     <section className="max-w-xl space-y-4">
-      <h1 className="text-2xl font-semibold tracking-tight">Settings</h1>
+      <PageHeader title="Settings" />
       <FormAlert message={alert} />
-      {notice && (
-        <p role="status" className="text-sm text-emerald-700 dark:text-emerald-400">
-          {notice}
-        </p>
-      )}
-      {!settings && !alert && <p className="text-zinc-500">Loading settings…</p>}
+      <StatusMessage>{notice}</StatusMessage>
+      {!settings && !alert && <p className="text-ink-faint">Loading settings…</p>}
       {settings && (
         <LogoPanel
           logo={settings.companyLogo}
@@ -154,7 +152,7 @@ function SettingsForm({
         <div className="space-y-2">
           <p className="text-sm font-medium">Folder</p>
           <p className="font-mono text-xs break-all">{folder || saved.defaultBackupFolder}</p>
-          {!folder && <p className="text-xs text-zinc-500">The default folder.</p>}
+          {!folder && <p className="text-xs text-ink-faint">The default folder.</p>}
           <div className="flex gap-2">
             <button type="button" className={quiet} onClick={chooseFolder}>
               Choose folder…
@@ -165,9 +163,7 @@ function SettingsForm({
               </button>
             )}
           </div>
-          {errors.backupFolder && (
-            <p className="text-sm text-red-600 dark:text-red-400">{errors.backupFolder}</p>
-          )}
+          {errors.backupFolder && <p className="text-sm text-danger">{errors.backupFolder}</p>}
         </div>
         <Field
           name="backupKeep"
@@ -220,7 +216,7 @@ function LogoPanel({
       {logo ? (
         <img src={logo} alt="Company logo" className="max-h-16 max-w-48 object-contain" />
       ) : (
-        <p className="text-sm text-zinc-500">No logo yet.</p>
+        <p className="text-sm text-ink-faint">No logo yet.</p>
       )}
       <div className="flex gap-2">
         <button
@@ -248,9 +244,9 @@ function LogoPanel({
 
 function Group({ title, note, children }: { title: string; note?: string; children: ReactNode }) {
   return (
-    <fieldset className="space-y-3 rounded-lg border border-zinc-200 p-4 dark:border-zinc-800">
+    <fieldset className="space-y-3 rounded-sm border border-rule bg-surface p-4">
       <legend className="px-1 text-sm font-semibold">{title}</legend>
-      {note && <p className="text-sm text-zinc-600 dark:text-zinc-400">{note}</p>}
+      {note && <p className="text-sm text-ink-muted">{note}</p>}
       {children}
     </fieldset>
   );

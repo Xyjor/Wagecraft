@@ -6,6 +6,7 @@ import { formValues, serverErrors } from "@/lib/formData";
 import type { AppError } from "@/lib/ipc";
 import { setKioskPin } from "./api";
 import { checkPin } from "./validation";
+import { StatusMessage } from "@/components/Notice";
 
 /** Sets or replaces the PIN this employee types on the time clock (plan §6.3). */
 export function KioskPinTab({
@@ -59,9 +60,7 @@ export function KioskPinTab({
           : "No PIN yet. Set one so this employee can clock in and out on the time clock."}
       </p>
       {saved && (
-        <p role="status" className="text-sm text-accent">
-          PIN saved. Tell {employee.firstName} the new PIN in person.
-        </p>
+        <StatusMessage>PIN saved. Tell {employee.firstName} the new PIN in person.</StatusMessage>
       )}
       <form onSubmit={submit} noValidate aria-label="Kiosk PIN" className="flex flex-col gap-4">
         <FormAlert message={alert} />

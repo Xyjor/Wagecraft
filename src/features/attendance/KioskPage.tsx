@@ -62,7 +62,7 @@ export function KioskPage({
 
   return (
     <main className="flex min-h-screen items-center justify-center bg-canvas p-6 text-ink">
-      <div className="w-full max-w-sm space-y-6 rounded-lg border border-rule bg-surface p-6 shadow-[0_1px_2px_rgb(0_0_0/0.06)]">
+      <div className="w-full max-w-sm space-y-6 rounded-sm border border-rule bg-surface p-6 shadow-[0_1px_2px_rgb(0_0_0/0.06)]">
         <div>
           <h1 className="text-xl font-semibold">Time clock</h1>
           <LiveClock />
@@ -141,7 +141,7 @@ function LiveClock() {
     return () => clearInterval(t);
   }, []);
   return (
-    <p className="mt-1 text-sm text-ink-muted tabular-nums dark:text-ink-faint">
+    <p className="mt-1 text-sm text-ink-muted tabular-nums">
       {now.toLocaleDateString("en-PH", { weekday: "long", month: "long", day: "numeric" })} ·{" "}
       {now.toLocaleTimeString("en-PH", { hour: "numeric", minute: "2-digit", second: "2-digit" })}
     </p>

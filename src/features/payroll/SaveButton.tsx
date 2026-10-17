@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { FormAlert } from "@/components/form";
-import { quietButton } from "@/components/ui";
+import { quietButton, secondaryButton } from "@/components/ui";
 import type { AppError } from "@/lib/ipc";
 
 /**
@@ -11,11 +11,14 @@ export function SaveButton({
   label,
   busyLabel,
   ariaLabel,
+  variant = "quiet",
   save,
 }: {
   label: string;
   busyLabel: string;
   ariaLabel?: string;
+  /** "secondary" when the button stands in a page header with other actions. */
+  variant?: "quiet" | "secondary";
   save: () => Promise<string | null>;
 }) {
   const [busy, setBusy] = useState(false);
@@ -41,14 +44,14 @@ export function SaveButton({
     <div className="flex flex-wrap items-center gap-3">
       <button
         type="button"
-        className={quietButton}
+        className={variant === "secondary" ? secondaryButton : quietButton}
         aria-label={ariaLabel}
         disabled={busy}
         onClick={run}
       >
         {busy ? busyLabel : label}
       </button>
-      {saved && <p className="text-sm text-zinc-500">Saved to {saved}</p>}
+      {saved && <p className="text-sm text-ink-faint">Saved to {saved}</p>}
       <FormAlert message={alert} />
     </div>
   );

@@ -54,7 +54,7 @@ export function LeaveRequestForm({
       onSubmit={submit}
       noValidate
       aria-label="File leave"
-      className="grid max-w-md gap-4 rounded-lg border border-zinc-200 p-4 dark:border-zinc-800"
+      className="grid max-w-md gap-4 rounded-sm border border-rule bg-surface p-4"
     >
       <FormAlert message={alert} />
       {forSomeone && (
@@ -88,13 +88,13 @@ export function LeaveRequestForm({
           Half day only
         </label>
         {errors.halfDay && (
-          <p id="halfDay-error" className="mt-1 text-sm text-red-600 dark:text-red-400">
+          <p id="halfDay-error" className="mt-1 text-sm text-danger">
             {errors.halfDay}
           </p>
         )}
       </div>
       <Field name="reason" label="What it's for" error={errors.reason} />
-      <p className="text-sm text-zinc-600 dark:text-zinc-400">
+      <p className="text-sm text-ink-muted">
         Leave the last day empty for a one-day leave. Only scheduled work days count, so weekends
         and holidays off are free. Paid leave comes out of the balance once HR approves it.
       </p>

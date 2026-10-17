@@ -30,6 +30,7 @@ import {
   POSITION_FIELD,
   WEEKDAYS,
 } from "./validation";
+import { PageHeader } from "@/components/PageHeader";
 
 /** Which form is open: none, a new record, or editing one. */
 type Editing<T> = null | "new" | T;
@@ -37,11 +38,7 @@ type Editing<T> = null | "new" | T;
 export function OrganizationPage() {
   const { me } = useSession();
   if (me.role === "STAFF") {
-    return (
-      <p className="text-zinc-600 dark:text-zinc-400">
-        Only Admin and HR can manage the organization.
-      </p>
-    );
+    return <p className="text-ink-muted">Only Admin and HR can manage the organization.</p>;
   }
   return <Organization />;
 }
@@ -86,7 +83,7 @@ function Organization() {
 
   return (
     <div className="space-y-10">
-      <h1 className="text-2xl font-semibold tracking-tight">Organization</h1>
+      <PageHeader title="Organization" />
       <FormAlert message={alert} />
 
       <section className="space-y-4" aria-labelledby="departments-heading">
@@ -113,13 +110,13 @@ function Organization() {
         )}
         {departments && (
           <table className="w-full text-left text-sm">
-            <thead className="border-b border-zinc-200 text-zinc-500 dark:border-zinc-800">
+            <thead className="border-b border-rule-strong bg-sunken text-xs text-ink-muted">
               <tr>
-                <th className="py-2 font-medium">Code</th>
-                <th className="py-2 font-medium">Name</th>
-                <th className="py-2 font-medium">Description</th>
-                <th className="py-2 font-medium">Status</th>
-                <th className="py-2 font-medium">
+                <th className="px-3 py-2 font-medium">Code</th>
+                <th className="px-3 py-2 font-medium">Name</th>
+                <th className="px-3 py-2 font-medium">Description</th>
+                <th className="px-3 py-2 font-medium">Status</th>
+                <th className="px-3 py-2 font-medium">
                   <span className="sr-only">Actions</span>
                 </th>
               </tr>
@@ -127,14 +124,14 @@ function Organization() {
             <tbody>
               {departments.length === 0 && <EmptyRow>No departments yet.</EmptyRow>}
               {departments.map((d) => (
-                <tr key={d.id} className="border-b border-zinc-100 dark:border-zinc-900">
+                <tr key={d.id} className="border-b border-rule hover:bg-sunken/60">
                   <td className="py-2 font-medium tracking-wide">{d.code}</td>
-                  <td className="py-2">{d.name}</td>
-                  <td className="py-2 text-zinc-600 dark:text-zinc-400">{d.description}</td>
-                  <td className="py-2">
+                  <td className="px-3 py-2">{d.name}</td>
+                  <td className="px-3 py-2 text-ink-muted">{d.description}</td>
+                  <td className="px-3 py-2">
                     <ActiveBadge active={d.isActive} />
                   </td>
-                  <td className="py-2">
+                  <td className="px-3 py-2">
                     <RowActions
                       name={d.name}
                       active={d.isActive}
@@ -174,13 +171,13 @@ function Organization() {
         )}
         {positions && (
           <table className="w-full text-left text-sm">
-            <thead className="border-b border-zinc-200 text-zinc-500 dark:border-zinc-800">
+            <thead className="border-b border-rule-strong bg-sunken text-xs text-ink-muted">
               <tr>
-                <th className="py-2 font-medium">Title</th>
-                <th className="py-2 font-medium">Department</th>
-                <th className="py-2 font-medium">Monthly salary range</th>
-                <th className="py-2 font-medium">Status</th>
-                <th className="py-2 font-medium">
+                <th className="px-3 py-2 font-medium">Title</th>
+                <th className="px-3 py-2 font-medium">Department</th>
+                <th className="px-3 py-2 font-medium">Monthly salary range</th>
+                <th className="px-3 py-2 font-medium">Status</th>
+                <th className="px-3 py-2 font-medium">
                   <span className="sr-only">Actions</span>
                 </th>
               </tr>
@@ -188,16 +185,16 @@ function Organization() {
             <tbody>
               {positions.length === 0 && <EmptyRow>No positions yet.</EmptyRow>}
               {positions.map((p) => (
-                <tr key={p.id} className="border-b border-zinc-100 dark:border-zinc-900">
-                  <td className="py-2 font-medium">{p.title}</td>
-                  <td className="py-2">{p.departmentName}</td>
-                  <td className="py-2 tabular-nums">
+                <tr key={p.id} className="border-b border-rule hover:bg-sunken/60">
+                  <td className="px-3 py-2 font-medium">{p.title}</td>
+                  <td className="px-3 py-2">{p.departmentName}</td>
+                  <td className="px-3 py-2 tabular-nums">
                     {salaryRange(p.minRateCents, p.maxRateCents)}
                   </td>
-                  <td className="py-2">
+                  <td className="px-3 py-2">
                     <ActiveBadge active={p.isActive} />
                   </td>
-                  <td className="py-2">
+                  <td className="px-3 py-2">
                     <RowActions
                       name={p.title}
                       active={p.isActive}
@@ -236,14 +233,14 @@ function Organization() {
         )}
         {schedules && (
           <table className="w-full text-left text-sm">
-            <thead className="border-b border-zinc-200 text-zinc-500 dark:border-zinc-800">
+            <thead className="border-b border-rule-strong bg-sunken text-xs text-ink-muted">
               <tr>
-                <th className="py-2 font-medium">Name</th>
-                <th className="py-2 font-medium">Hours</th>
-                <th className="py-2 font-medium">Work days</th>
-                <th className="py-2 font-medium">Employees</th>
-                <th className="py-2 font-medium">Status</th>
-                <th className="py-2 font-medium">
+                <th className="px-3 py-2 font-medium">Name</th>
+                <th className="px-3 py-2 font-medium">Hours</th>
+                <th className="px-3 py-2 font-medium">Work days</th>
+                <th className="px-3 py-2 font-medium">Employees</th>
+                <th className="px-3 py-2 font-medium">Status</th>
+                <th className="px-3 py-2 font-medium">
                   <span className="sr-only">Actions</span>
                 </th>
               </tr>
@@ -251,15 +248,15 @@ function Organization() {
             <tbody>
               {schedules.length === 0 && <EmptyRow colSpan={6}>No work schedules yet.</EmptyRow>}
               {schedules.map((s) => (
-                <tr key={s.id} className="border-b border-zinc-100 dark:border-zinc-900">
-                  <td className="py-2 font-medium">{s.name}</td>
-                  <td className="py-2 tabular-nums">{scheduleHours(s)}</td>
-                  <td className="py-2">{workDaysLabel(s.workDays)}</td>
-                  <td className="py-2 tabular-nums">{s.employeeCount}</td>
-                  <td className="py-2">
+                <tr key={s.id} className="border-b border-rule hover:bg-sunken/60">
+                  <td className="px-3 py-2 font-medium">{s.name}</td>
+                  <td className="px-3 py-2 tabular-nums">{scheduleHours(s)}</td>
+                  <td className="px-3 py-2">{workDaysLabel(s.workDays)}</td>
+                  <td className="px-3 py-2 tabular-nums">{s.employeeCount}</td>
+                  <td className="px-3 py-2">
                     <ActiveBadge active={s.isActive} />
                   </td>
-                  <td className="py-2">
+                  <td className="px-3 py-2">
                     <RowActions
                       name={s.name}
                       active={s.isActive}
@@ -344,7 +341,7 @@ function DepartmentForm({
       onSubmit={submit}
       noValidate
       aria-label={editing ? `Edit ${editing.name}` : "Add department"}
-      className="grid max-w-md gap-4 rounded-lg border border-zinc-200 p-4 dark:border-zinc-800"
+      className="grid max-w-md gap-4 rounded-sm border border-rule bg-surface p-4"
     >
       <FormAlert message={alert} />
       <Field
@@ -416,7 +413,7 @@ function PositionForm({
       onSubmit={submit}
       noValidate
       aria-label={editing ? `Edit ${editing.title}` : "Add position"}
-      className="grid max-w-md gap-4 rounded-lg border border-zinc-200 p-4 dark:border-zinc-800"
+      className="grid max-w-md gap-4 rounded-sm border border-rule bg-surface p-4"
     >
       <FormAlert message={alert} />
       <SelectField
@@ -439,7 +436,7 @@ function PositionForm({
         defaultValue={plain(editing?.maxRateCents)}
         error={errors.maxRate}
       />
-      <p className="text-sm text-zinc-600 dark:text-zinc-400">
+      <p className="text-sm text-ink-muted">
         Optional. A pay rate outside this range shows a warning on the employee.
       </p>
       <FormButtons busy={busy} save="Save position" onCancel={onCancel} />
@@ -471,7 +468,7 @@ function FormButtons({
 function EmptyRow({ children, colSpan = 5 }: { children: string; colSpan?: number }) {
   return (
     <tr>
-      <td colSpan={colSpan} className="py-3 text-zinc-500">
+      <td colSpan={colSpan} className="px-3 py-3 text-ink-muted">
         {children}
       </td>
     </tr>
@@ -524,7 +521,7 @@ function ScheduleForm({
       onSubmit={submit}
       noValidate
       aria-label={editing ? `Edit ${editing.name}` : "Add schedule"}
-      className="grid max-w-md gap-4 rounded-lg border border-zinc-200 p-4 dark:border-zinc-800"
+      className="grid max-w-md gap-4 rounded-sm border border-rule bg-surface p-4"
     >
       <FormAlert message={alert} />
       <Field name="name" label="Name" autoFocus defaultValue={editing?.name} error={errors.name} />
@@ -569,12 +566,12 @@ function ScheduleForm({
           ))}
         </div>
         {errors.workDays && (
-          <p id="workDays-error" className="mt-1 text-sm text-red-600 dark:text-red-400">
+          <p id="workDays-error" className="mt-1 text-sm text-danger">
             {errors.workDays}
           </p>
         )}
       </fieldset>
-      <p className="text-sm text-zinc-600 dark:text-zinc-400">
+      <p className="text-sm text-ink-muted">
         An end time earlier than the start means the shift ends the next day. Arriving within the
         grace period is not counted as late. Changes apply to attendance recorded from now on.
       </p>

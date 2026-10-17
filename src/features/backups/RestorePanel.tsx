@@ -50,17 +50,17 @@ export function RestorePanel() {
       {preview && (
         <section
           aria-labelledby={headingId}
-          className="max-w-prose space-y-3 rounded-md border border-amber-300 bg-amber-50 p-4 text-sm dark:border-amber-800 dark:bg-amber-950"
+          className="max-w-prose space-y-3 rounded-md border border-warn-rule bg-warn-soft p-4 text-sm"
         >
           <h2 id={headingId} className="text-base font-semibold">
             Restore this backup?
           </h2>
           <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1">
-            <dt className="text-zinc-600 dark:text-zinc-400">File</dt>
+            <dt className="text-ink-muted">File</dt>
             <dd className="font-mono text-xs break-all">{preview.fileName}</dd>
-            <dt className="text-zinc-600 dark:text-zinc-400">Saved</dt>
+            <dt className="text-ink-muted">Saved</dt>
             <dd>{preview.savedAt ? formatWhen(preview.savedAt) : "Unknown"}</dd>
-            <dt className="text-zinc-600 dark:text-zinc-400">Holds</dt>
+            <dt className="text-ink-muted">Holds</dt>
             <dd>
               {preview.employeeCount} {preview.employeeCount === 1 ? "employee" : "employees"},{" "}
               {lastPosted(preview)}
@@ -82,7 +82,7 @@ export function RestorePanel() {
                   onChange={(e) => setTyped(e.target.value)}
                   autoComplete="off"
                   spellCheck={false}
-                  className="rounded-md border border-zinc-300 bg-white px-2 py-1 font-mono dark:border-zinc-700 dark:bg-zinc-900"
+                  className="rounded-md border border-field bg-surface px-2 py-1 font-mono text-ink"
                 />
               </label>
               <button

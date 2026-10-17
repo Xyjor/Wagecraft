@@ -15,6 +15,8 @@ import type { AppError } from "@/lib/ipc";
 import { createUser, listUsers, resetPassword, setActive, setRole } from "./api";
 import { newUserSchema, temporaryPasswordSchema } from "./schemas";
 import { formatWhen } from "@/lib/dates";
+import { PageHeader } from "@/components/PageHeader";
+import { StatusMessage } from "@/components/Notice";
 
 const ROLE_OPTIONS = [
   { value: "ADMIN", label: "Admin" },
@@ -24,9 +26,7 @@ const ROLE_OPTIONS = [
 export function UsersPage() {
   const { me } = useSession();
   if (me.role !== "ADMIN") {
-    return (
-      <p className="text-zinc-600 dark:text-zinc-400">Only Admins can manage user accounts.</p>
-    );
+    return <p className="text-ink-muted">Only Admins can manage user accounts.</p>;
   }
   return <UserAdmin myId={me.userId} />;
 }
@@ -61,21 +61,21 @@ function UserAdmin({ myId }: { myId: number }) {
 
   return (
     <section className="space-y-4">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold tracking-tight">Users</h1>
-        {!adding && (
-          <button type="button" className={primary} onClick={() => setAdding(true)}>
-            Add user
-          </button>
-        )}
-      </div>
+      <PageHeader
+        title="Users"
+        actions={
+          <>
+            {!adding && (
+              <button type="button" className={primary} onClick={() => setAdding(true)}>
+                Add user
+              </button>
+            )}
+          </>
+        }
+      />
 
       <FormAlert message={alert} />
-      {notice && (
-        <p role="status" className="text-sm text-emerald-700 dark:text-emerald-400">
-          {notice}
-        </p>
-      )}
+      <StatusMessage>{notice}</StatusMessage>
 
       {adding && (
         <AddUserForm
@@ -88,17 +88,17 @@ function UserAdmin({ myId }: { myId: number }) {
         />
       )}
 
-      {!users && !alert && <p className="text-zinc-500">Loading users…</p>}
+      {!users && !alert && <p className="text-ink-faint">Loading users…</p>}
       {users && (
         <table className="w-full text-left text-sm">
-          <thead className="border-b border-zinc-200 text-zinc-500 dark:border-zinc-800">
+          <thead className="border-b border-rule-strong bg-sunken text-xs text-ink-muted">
             <tr>
-              <th className="py-2 font-medium">Username</th>
-              <th className="py-2 font-medium">Role</th>
-              <th className="py-2 font-medium">Employee</th>
-              <th className="py-2 font-medium">Status</th>
-              <th className="py-2 font-medium">Last sign-in</th>
-              <th className="py-2 font-medium">
+              <th className="px-3 py-2 font-medium">Username</th>
+              <th className="px-3 py-2 font-medium">Role</th>
+              <th className="px-3 py-2 font-medium">Employee</th>
+              <th className="px-3 py-2 font-medium">Status</th>
+              <th className="px-3 py-2 font-medium">Last sign-in</th>
+              <th className="px-3 py-2 font-medium">
                 <span className="sr-only">Actions</span>
               </th>
             </tr>
@@ -144,18 +144,18 @@ type RowProps = {
 function UserRow({ user: u, isMe, resetting, ...on }: RowProps) {
   return (
     <>
-      <tr className="border-b border-zinc-100 dark:border-zinc-900">
-        <td className="py-2 font-medium">
+      <tr className="border-b border-rule hover:bg-sunken/60">
+        <td className="px-3 py-2 font-medium">
           {u.username}
-          {isMe && <span className="ml-1 text-zinc-500">(you)</span>}
+          {isMe && <span className="ml-1 text-ink-faint">(you)</span>}
         </td>
-        <td className="py-2">
+        <td className="px-3 py-2">
           <select
             aria-label={`Role for ${u.username}`}
             value={u.role}
             disabled={isMe}
             onChange={(e) => on.onRole(e.target.value as Role)}
-            className="rounded-md border border-zinc-300 bg-white px-2 py-1 text-sm disabled:opacity-60 dark:border-zinc-700 dark:bg-zinc-900"
+            className="rounded-md border border-field bg-surface px-2 py-1 text-sm text-ink disabled:opacity-60"
           >
             {ROLE_OPTIONS.map((o) => (
               <option key={o.value} value={o.value}>
@@ -169,16 +169,18 @@ function UserRow({ user: u, isMe, resetting, ...on }: RowProps) {
             )}
           </select>
         </td>
-        <td className="py-2 text-zinc-600 dark:text-zinc-400">{u.employeeLabel}</td>
-        <td className="py-2">
+        <td className="px-3 py-2 whitespace-nowrap text-ink-muted">{u.employeeLabel}</td>
+        <td className="px-3 py-2">
           <div className="flex flex-wrap gap-1">
             <ActiveBadge active={u.isActive} />
             {u.locked && <Badge tone="bad">Locked</Badge>}
             {u.mustChangePassword && <Badge tone="muted">Must change password</Badge>}
           </div>
         </td>
-        <td className="py-2 text-zinc-600 dark:text-zinc-400">{lastSeen(u.lastLoginAt)}</td>
-        <td className="py-2">
+        <td className="px-3 py-2 whitespace-nowrap text-ink-muted tabular-nums">
+          {lastSeen(u.lastLoginAt)}
+        </td>
+        <td className="px-3 py-2">
           <div className="flex justify-end gap-1">
             <button
               type="button"
@@ -203,7 +205,7 @@ function UserRow({ user: u, isMe, resetting, ...on }: RowProps) {
       </tr>
       {resetting && (
         <tr>
-          <td colSpan={6} className="py-2">
+          <td colSpan={6} className="px-3 py-2">
             <ResetPasswordForm
               username={u.username}
               onSave={on.onResetDone}
@@ -250,7 +252,7 @@ function AddUserForm({
       onSubmit={submit}
       noValidate
       aria-label="Add user"
-      className="grid max-w-md gap-4 rounded-lg border border-zinc-200 p-4 dark:border-zinc-800"
+      className="grid max-w-md gap-4 rounded-sm border border-rule bg-surface p-4"
     >
       <FormAlert message={alert} />
       <Field
@@ -274,7 +276,7 @@ function AddUserForm({
         autoComplete="new-password"
         error={errors.password}
       />
-      <p className="text-sm text-zinc-600 dark:text-zinc-400">
+      <p className="text-sm text-ink-muted">
         Staff accounts are created from the employee's profile, on the Sign-in account tab.
       </p>
       <div className="flex gap-2">

@@ -46,7 +46,7 @@ export function OvertimeForm({
       onSubmit={submit}
       noValidate
       aria-label="File overtime"
-      className="grid max-w-md gap-4 rounded-lg border border-zinc-200 p-4 dark:border-zinc-800"
+      className="grid max-w-md gap-4 rounded-sm border border-rule bg-surface p-4"
     >
       <FormAlert message={alert} />
       {forSomeone && (
@@ -65,7 +65,7 @@ export function OvertimeForm({
         <Field name="endTime" label="To" type="time" error={errors.endTime} />
       </div>
       <Field name="reason" label="What it's for" error={errors.reason} />
-      <p className="text-sm text-zinc-600 dark:text-zinc-400">
+      <p className="text-sm text-ink-muted">
         Overtime must be outside the work schedule, unless it&apos;s a rest day or a holiday off,
         and at most 12 hours. A time earlier than the start means the next day. It&apos;s paid only
         once HR approves it.

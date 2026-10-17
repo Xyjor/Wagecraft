@@ -1,0 +1,1056 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-10-17T04:09:40.101Z",
+  "title": "Design System: Wagecraft",
+  "extensions": {
+    "colorMeta": {
+      "accent": {
+        "role": "primary",
+        "displayName": "Ledger Green",
+        "canonical": "#1f6b55",
+        "cssVar": "--wc-accent",
+        "theme": "light",
+        "tonalRamp": [
+          "oklch(15.0% 0.082 169.8)",
+          "oklch(26.4% 0.082 169.8)",
+          "oklch(37.9% 0.082 169.8)",
+          "oklch(49.3% 0.082 169.8)",
+          "oklch(60.7% 0.082 169.8)",
+          "oklch(72.1% 0.082 169.8)",
+          "oklch(83.6% 0.082 169.8)",
+          "oklch(95.0% 0.082 169.8)"
+        ]
+      },
+      "accent-hover": {
+        "role": "primary",
+        "displayName": "Ledger Green Deep",
+        "canonical": "#185645",
+        "cssVar": "--wc-accent-hover",
+        "theme": "light",
+        "tonalRamp": [
+          "oklch(15.0% 0.069 171.0)",
+          "oklch(26.4% 0.069 171.0)",
+          "oklch(37.9% 0.069 171.0)",
+          "oklch(49.3% 0.069 171.0)",
+          "oklch(60.7% 0.069 171.0)",
+          "oklch(72.1% 0.069 171.0)",
+          "oklch(83.6% 0.069 171.0)",
+          "oklch(95.0% 0.069 171.0)"
+        ]
+      },
+      "accent-ink": {
+        "role": "primary",
+        "displayName": "Ink on Green",
+        "canonical": "#ffffff",
+        "cssVar": "--wc-accent-ink",
+        "theme": "light",
+        "tonalRamp": [
+          "oklch(15.0% 0.000 89.9)",
+          "oklch(26.4% 0.000 89.9)",
+          "oklch(37.9% 0.000 89.9)",
+          "oklch(49.3% 0.000 89.9)",
+          "oklch(60.7% 0.000 89.9)",
+          "oklch(72.1% 0.000 89.9)",
+          "oklch(83.6% 0.000 89.9)",
+          "oklch(95.0% 0.000 89.9)"
+        ]
+      },
+      "accent-soft": {
+        "role": "primary",
+        "displayName": "Green Wash",
+        "canonical": "#e3efe8",
+        "cssVar": "--wc-accent-soft",
+        "theme": "light",
+        "tonalRamp": [
+          "oklch(15.0% 0.016 160.6)",
+          "oklch(26.4% 0.016 160.6)",
+          "oklch(37.9% 0.016 160.6)",
+          "oklch(49.3% 0.016 160.6)",
+          "oklch(60.7% 0.016 160.6)",
+          "oklch(72.1% 0.016 160.6)",
+          "oklch(83.6% 0.016 160.6)",
+          "oklch(95.0% 0.016 160.6)"
+        ]
+      },
+      "chart": {
+        "role": "primary",
+        "displayName": "Chart Green",
+        "canonical": "#1a7f5e",
+        "cssVar": "--wc-chart",
+        "theme": "light",
+        "tonalRamp": [
+          "oklch(15.0% 0.103 165.5)",
+          "oklch(26.4% 0.103 165.5)",
+          "oklch(37.9% 0.103 165.5)",
+          "oklch(49.3% 0.103 165.5)",
+          "oklch(60.7% 0.103 165.5)",
+          "oklch(72.1% 0.103 165.5)",
+          "oklch(83.6% 0.103 165.5)",
+          "oklch(95.0% 0.103 165.5)"
+        ]
+      },
+      "danger": {
+        "role": "secondary",
+        "displayName": "Red Ink",
+        "canonical": "#b3261e",
+        "cssVar": "--wc-danger",
+        "theme": "light",
+        "tonalRamp": [
+          "oklch(15.0% 0.150 28.7)",
+          "oklch(26.4% 0.150 28.7)",
+          "oklch(37.9% 0.150 28.7)",
+          "oklch(49.3% 0.150 28.7)",
+          "oklch(60.7% 0.150 28.7)",
+          "oklch(72.1% 0.150 28.7)",
+          "oklch(83.6% 0.150 28.7)",
+          "oklch(95.0% 0.150 28.7)"
+        ]
+      },
+      "danger-soft": {
+        "role": "secondary",
+        "displayName": "Red Ink Wash",
+        "canonical": "#fbeae8",
+        "cssVar": "--wc-danger-soft",
+        "theme": "light",
+        "tonalRamp": [
+          "oklch(15.0% 0.019 25.6)",
+          "oklch(26.4% 0.019 25.6)",
+          "oklch(37.9% 0.019 25.6)",
+          "oklch(49.3% 0.019 25.6)",
+          "oklch(60.7% 0.019 25.6)",
+          "oklch(72.1% 0.019 25.6)",
+          "oklch(83.6% 0.019 25.6)",
+          "oklch(95.0% 0.019 25.6)"
+        ]
+      },
+      "warn": {
+        "role": "tertiary",
+        "displayName": "Draft Amber",
+        "canonical": "#92400e",
+        "cssVar": "--wc-warn",
+        "theme": "light",
+        "tonalRamp": [
+          "oklch(15.0% 0.125 46.2)",
+          "oklch(26.4% 0.125 46.2)",
+          "oklch(37.9% 0.125 46.2)",
+          "oklch(49.3% 0.125 46.2)",
+          "oklch(60.7% 0.125 46.2)",
+          "oklch(72.1% 0.125 46.2)",
+          "oklch(83.6% 0.125 46.2)",
+          "oklch(95.0% 0.125 46.2)"
+        ]
+      },
+      "warn-soft": {
+        "role": "tertiary",
+        "displayName": "Amber Wash",
+        "canonical": "#fffbeb",
+        "cssVar": "--wc-warn-soft",
+        "theme": "light",
+        "tonalRamp": [
+          "oklch(15.0% 0.021 95.3)",
+          "oklch(26.4% 0.021 95.3)",
+          "oklch(37.9% 0.021 95.3)",
+          "oklch(49.3% 0.021 95.3)",
+          "oklch(60.7% 0.021 95.3)",
+          "oklch(72.1% 0.021 95.3)",
+          "oklch(83.6% 0.021 95.3)",
+          "oklch(95.0% 0.021 95.3)"
+        ]
+      },
+      "warn-rule": {
+        "role": "tertiary",
+        "displayName": "Amber Rule",
+        "canonical": "#fcd34d",
+        "cssVar": "--wc-warn-rule",
+        "theme": "light",
+        "tonalRamp": [
+          "oklch(15.0% 0.150 91.6)",
+          "oklch(26.4% 0.150 91.6)",
+          "oklch(37.9% 0.150 91.6)",
+          "oklch(49.3% 0.150 91.6)",
+          "oklch(60.7% 0.150 91.6)",
+          "oklch(72.1% 0.150 91.6)",
+          "oklch(83.6% 0.150 91.6)",
+          "oklch(95.0% 0.150 91.6)"
+        ]
+      },
+      "sidebar": {
+        "role": "neutral",
+        "displayName": "Spine Green",
+        "canonical": "#173d33",
+        "cssVar": "--wc-sidebar",
+        "theme": "light",
+        "tonalRamp": [
+          "oklch(15.0% 0.047 173.5)",
+          "oklch(26.4% 0.047 173.5)",
+          "oklch(37.9% 0.047 173.5)",
+          "oklch(49.3% 0.047 173.5)",
+          "oklch(60.7% 0.047 173.5)",
+          "oklch(72.1% 0.047 173.5)",
+          "oklch(83.6% 0.047 173.5)",
+          "oklch(95.0% 0.047 173.5)"
+        ]
+      },
+      "sidebar-active": {
+        "role": "neutral",
+        "displayName": "Spine Green Active",
+        "canonical": "#24564a",
+        "cssVar": "--wc-sidebar-active",
+        "theme": "light",
+        "tonalRamp": [
+          "oklch(15.0% 0.058 175.3)",
+          "oklch(26.4% 0.058 175.3)",
+          "oklch(37.9% 0.058 175.3)",
+          "oklch(49.3% 0.058 175.3)",
+          "oklch(60.7% 0.058 175.3)",
+          "oklch(72.1% 0.058 175.3)",
+          "oklch(83.6% 0.058 175.3)",
+          "oklch(95.0% 0.058 175.3)"
+        ]
+      },
+      "sidebar-ink": {
+        "role": "neutral",
+        "displayName": "Spine Ink",
+        "canonical": "#cfe0d7",
+        "cssVar": "--wc-sidebar-ink",
+        "theme": "light",
+        "tonalRamp": [
+          "oklch(15.0% 0.022 163.0)",
+          "oklch(26.4% 0.022 163.0)",
+          "oklch(37.9% 0.022 163.0)",
+          "oklch(49.3% 0.022 163.0)",
+          "oklch(60.7% 0.022 163.0)",
+          "oklch(72.1% 0.022 163.0)",
+          "oklch(83.6% 0.022 163.0)",
+          "oklch(95.0% 0.022 163.0)"
+        ]
+      },
+      "sidebar-ink-strong": {
+        "role": "neutral",
+        "displayName": "Spine Ink Strong",
+        "canonical": "#ffffff",
+        "cssVar": "--wc-sidebar-ink-strong",
+        "theme": "light",
+        "tonalRamp": [
+          "oklch(15.0% 0.000 89.9)",
+          "oklch(26.4% 0.000 89.9)",
+          "oklch(37.9% 0.000 89.9)",
+          "oklch(49.3% 0.000 89.9)",
+          "oklch(60.7% 0.000 89.9)",
+          "oklch(72.1% 0.000 89.9)",
+          "oklch(83.6% 0.000 89.9)",
+          "oklch(95.0% 0.000 89.9)"
+        ]
+      },
+      "canvas": {
+        "role": "neutral",
+        "displayName": "Pad Paper",
+        "canonical": "#f5f7f2",
+        "cssVar": "--wc-canvas",
+        "theme": "light",
+        "tonalRamp": [
+          "oklch(15.0% 0.007 124.4)",
+          "oklch(26.4% 0.007 124.4)",
+          "oklch(37.9% 0.007 124.4)",
+          "oklch(49.3% 0.007 124.4)",
+          "oklch(60.7% 0.007 124.4)",
+          "oklch(72.1% 0.007 124.4)",
+          "oklch(83.6% 0.007 124.4)",
+          "oklch(95.0% 0.007 124.4)"
+        ]
+      },
+      "surface": {
+        "role": "neutral",
+        "displayName": "White Sheet",
+        "canonical": "#ffffff",
+        "cssVar": "--wc-surface",
+        "theme": "light",
+        "tonalRamp": [
+          "oklch(15.0% 0.000 89.9)",
+          "oklch(26.4% 0.000 89.9)",
+          "oklch(37.9% 0.000 89.9)",
+          "oklch(49.3% 0.000 89.9)",
+          "oklch(60.7% 0.000 89.9)",
+          "oklch(72.1% 0.000 89.9)",
+          "oklch(83.6% 0.000 89.9)",
+          "oklch(95.0% 0.000 89.9)"
+        ]
+      },
+      "sunken": {
+        "role": "neutral",
+        "displayName": "Sunken Grey-Green",
+        "canonical": "#eef2eb",
+        "cssVar": "--wc-sunken",
+        "theme": "light",
+        "tonalRamp": [
+          "oklch(15.0% 0.010 131.4)",
+          "oklch(26.4% 0.010 131.4)",
+          "oklch(37.9% 0.010 131.4)",
+          "oklch(49.3% 0.010 131.4)",
+          "oklch(60.7% 0.010 131.4)",
+          "oklch(72.1% 0.010 131.4)",
+          "oklch(83.6% 0.010 131.4)",
+          "oklch(95.0% 0.010 131.4)"
+        ]
+      },
+      "ink": {
+        "role": "neutral",
+        "displayName": "Ink",
+        "canonical": "#1b2420",
+        "cssVar": "--wc-ink",
+        "theme": "light",
+        "tonalRamp": [
+          "oklch(15.0% 0.015 166.3)",
+          "oklch(26.4% 0.015 166.3)",
+          "oklch(37.9% 0.015 166.3)",
+          "oklch(49.3% 0.015 166.3)",
+          "oklch(60.7% 0.015 166.3)",
+          "oklch(72.1% 0.015 166.3)",
+          "oklch(83.6% 0.015 166.3)",
+          "oklch(95.0% 0.015 166.3)"
+        ]
+      },
+      "ink-muted": {
+        "role": "neutral",
+        "displayName": "Muted Ink",
+        "canonical": "#4f5d55",
+        "cssVar": "--wc-ink-muted",
+        "theme": "light",
+        "tonalRamp": [
+          "oklch(15.0% 0.022 160.4)",
+          "oklch(26.4% 0.022 160.4)",
+          "oklch(37.9% 0.022 160.4)",
+          "oklch(49.3% 0.022 160.4)",
+          "oklch(60.7% 0.022 160.4)",
+          "oklch(72.1% 0.022 160.4)",
+          "oklch(83.6% 0.022 160.4)",
+          "oklch(95.0% 0.022 160.4)"
+        ]
+      },
+      "ink-faint": {
+        "role": "neutral",
+        "displayName": "Faint Ink",
+        "canonical": "#606d65",
+        "cssVar": "--wc-ink-faint",
+        "theme": "light",
+        "tonalRamp": [
+          "oklch(15.0% 0.020 158.6)",
+          "oklch(26.4% 0.020 158.6)",
+          "oklch(37.9% 0.020 158.6)",
+          "oklch(49.3% 0.020 158.6)",
+          "oklch(60.7% 0.020 158.6)",
+          "oklch(72.1% 0.020 158.6)",
+          "oklch(83.6% 0.020 158.6)",
+          "oklch(95.0% 0.020 158.6)"
+        ]
+      },
+      "rule": {
+        "role": "neutral",
+        "displayName": "Rule",
+        "canonical": "#d5dfd4",
+        "cssVar": "--wc-rule",
+        "theme": "light",
+        "tonalRamp": [
+          "oklch(15.0% 0.018 142.8)",
+          "oklch(26.4% 0.018 142.8)",
+          "oklch(37.9% 0.018 142.8)",
+          "oklch(49.3% 0.018 142.8)",
+          "oklch(60.7% 0.018 142.8)",
+          "oklch(72.1% 0.018 142.8)",
+          "oklch(83.6% 0.018 142.8)",
+          "oklch(95.0% 0.018 142.8)"
+        ]
+      },
+      "rule-strong": {
+        "role": "neutral",
+        "displayName": "Strong Rule",
+        "canonical": "#a9b8ab",
+        "cssVar": "--wc-rule-strong",
+        "theme": "light",
+        "tonalRamp": [
+          "oklch(15.0% 0.025 149.3)",
+          "oklch(26.4% 0.025 149.3)",
+          "oklch(37.9% 0.025 149.3)",
+          "oklch(49.3% 0.025 149.3)",
+          "oklch(60.7% 0.025 149.3)",
+          "oklch(72.1% 0.025 149.3)",
+          "oklch(83.6% 0.025 149.3)",
+          "oklch(95.0% 0.025 149.3)"
+        ]
+      },
+      "field": {
+        "role": "neutral",
+        "displayName": "Field Edge",
+        "canonical": "#7d8f84",
+        "cssVar": "--wc-field",
+        "theme": "light",
+        "tonalRamp": [
+          "oklch(15.0% 0.026 158.7)",
+          "oklch(26.4% 0.026 158.7)",
+          "oklch(37.9% 0.026 158.7)",
+          "oklch(49.3% 0.026 158.7)",
+          "oklch(60.7% 0.026 158.7)",
+          "oklch(72.1% 0.026 158.7)",
+          "oklch(83.6% 0.026 158.7)",
+          "oklch(95.0% 0.026 158.7)"
+        ]
+      },
+      "accent-dark": {
+        "role": "primary",
+        "displayName": "Ledger Green (dark theme)",
+        "canonical": "#5db592",
+        "cssVar": "--wc-accent",
+        "theme": "dark",
+        "tonalRamp": [
+          "oklch(15.0% 0.101 165.6)",
+          "oklch(26.4% 0.101 165.6)",
+          "oklch(37.9% 0.101 165.6)",
+          "oklch(49.3% 0.101 165.6)",
+          "oklch(60.7% 0.101 165.6)",
+          "oklch(72.1% 0.101 165.6)",
+          "oklch(83.6% 0.101 165.6)",
+          "oklch(95.0% 0.101 165.6)"
+        ]
+      },
+      "accent-hover-dark": {
+        "role": "primary",
+        "displayName": "Ledger Green Deep (dark theme)",
+        "canonical": "#79c4a8",
+        "cssVar": "--wc-accent-hover",
+        "theme": "dark",
+        "tonalRamp": [
+          "oklch(15.0% 0.086 168.3)",
+          "oklch(26.4% 0.086 168.3)",
+          "oklch(37.9% 0.086 168.3)",
+          "oklch(49.3% 0.086 168.3)",
+          "oklch(60.7% 0.086 168.3)",
+          "oklch(72.1% 0.086 168.3)",
+          "oklch(83.6% 0.086 168.3)",
+          "oklch(95.0% 0.086 168.3)"
+        ]
+      },
+      "accent-ink-dark": {
+        "role": "primary",
+        "displayName": "Ink on Green (dark theme)",
+        "canonical": "#0b1a14",
+        "cssVar": "--wc-accent-ink",
+        "theme": "dark",
+        "tonalRamp": [
+          "oklch(15.0% 0.024 166.5)",
+          "oklch(26.4% 0.024 166.5)",
+          "oklch(37.9% 0.024 166.5)",
+          "oklch(49.3% 0.024 166.5)",
+          "oklch(60.7% 0.024 166.5)",
+          "oklch(72.1% 0.024 166.5)",
+          "oklch(83.6% 0.024 166.5)",
+          "oklch(95.0% 0.024 166.5)"
+        ]
+      },
+      "accent-soft-dark": {
+        "role": "primary",
+        "displayName": "Green Wash (dark theme)",
+        "canonical": "#1a3329",
+        "cssVar": "--wc-accent-soft",
+        "theme": "dark",
+        "tonalRamp": [
+          "oklch(15.0% 0.036 166.4)",
+          "oklch(26.4% 0.036 166.4)",
+          "oklch(37.9% 0.036 166.4)",
+          "oklch(49.3% 0.036 166.4)",
+          "oklch(60.7% 0.036 166.4)",
+          "oklch(72.1% 0.036 166.4)",
+          "oklch(83.6% 0.036 166.4)",
+          "oklch(95.0% 0.036 166.4)"
+        ]
+      },
+      "chart-dark": {
+        "role": "primary",
+        "displayName": "Chart Green (dark theme)",
+        "canonical": "#3fa57e",
+        "cssVar": "--wc-chart",
+        "theme": "dark",
+        "tonalRamp": [
+          "oklch(15.0% 0.112 164.6)",
+          "oklch(26.4% 0.112 164.6)",
+          "oklch(37.9% 0.112 164.6)",
+          "oklch(49.3% 0.112 164.6)",
+          "oklch(60.7% 0.112 164.6)",
+          "oklch(72.1% 0.112 164.6)",
+          "oklch(83.6% 0.112 164.6)",
+          "oklch(95.0% 0.112 164.6)"
+        ]
+      },
+      "danger-dark": {
+        "role": "secondary",
+        "displayName": "Red Ink (dark theme)",
+        "canonical": "#f28b82",
+        "cssVar": "--wc-danger",
+        "theme": "dark",
+        "tonalRamp": [
+          "oklch(15.0% 0.127 25.8)",
+          "oklch(26.4% 0.127 25.8)",
+          "oklch(37.9% 0.127 25.8)",
+          "oklch(49.3% 0.127 25.8)",
+          "oklch(60.7% 0.127 25.8)",
+          "oklch(72.1% 0.127 25.8)",
+          "oklch(83.6% 0.127 25.8)",
+          "oklch(95.0% 0.127 25.8)"
+        ]
+      },
+      "danger-soft-dark": {
+        "role": "secondary",
+        "displayName": "Red Ink Wash (dark theme)",
+        "canonical": "#3a1714",
+        "cssVar": "--wc-danger-soft",
+        "theme": "dark",
+        "tonalRamp": [
+          "oklch(15.0% 0.056 26.7)",
+          "oklch(26.4% 0.056 26.7)",
+          "oklch(37.9% 0.056 26.7)",
+          "oklch(49.3% 0.056 26.7)",
+          "oklch(60.7% 0.056 26.7)",
+          "oklch(72.1% 0.056 26.7)",
+          "oklch(83.6% 0.056 26.7)",
+          "oklch(95.0% 0.056 26.7)"
+        ]
+      },
+      "warn-dark": {
+        "role": "tertiary",
+        "displayName": "Draft Amber (dark theme)",
+        "canonical": "#e5b75a",
+        "cssVar": "--wc-warn",
+        "theme": "dark",
+        "tonalRamp": [
+          "oklch(15.0% 0.123 82.9)",
+          "oklch(26.4% 0.123 82.9)",
+          "oklch(37.9% 0.123 82.9)",
+          "oklch(49.3% 0.123 82.9)",
+          "oklch(60.7% 0.123 82.9)",
+          "oklch(72.1% 0.123 82.9)",
+          "oklch(83.6% 0.123 82.9)",
+          "oklch(95.0% 0.123 82.9)"
+        ]
+      },
+      "warn-soft-dark": {
+        "role": "tertiary",
+        "displayName": "Amber Wash (dark theme)",
+        "canonical": "#2e2410",
+        "cssVar": "--wc-warn-soft",
+        "theme": "dark",
+        "tonalRamp": [
+          "oklch(15.0% 0.036 83.4)",
+          "oklch(26.4% 0.036 83.4)",
+          "oklch(37.9% 0.036 83.4)",
+          "oklch(49.3% 0.036 83.4)",
+          "oklch(60.7% 0.036 83.4)",
+          "oklch(72.1% 0.036 83.4)",
+          "oklch(83.6% 0.036 83.4)",
+          "oklch(95.0% 0.036 83.4)"
+        ]
+      },
+      "warn-rule-dark": {
+        "role": "tertiary",
+        "displayName": "Amber Rule (dark theme)",
+        "canonical": "#92400e",
+        "cssVar": "--wc-warn-rule",
+        "theme": "dark",
+        "tonalRamp": [
+          "oklch(15.0% 0.125 46.2)",
+          "oklch(26.4% 0.125 46.2)",
+          "oklch(37.9% 0.125 46.2)",
+          "oklch(49.3% 0.125 46.2)",
+          "oklch(60.7% 0.125 46.2)",
+          "oklch(72.1% 0.125 46.2)",
+          "oklch(83.6% 0.125 46.2)",
+          "oklch(95.0% 0.125 46.2)"
+        ]
+      },
+      "sidebar-dark": {
+        "role": "neutral",
+        "displayName": "Spine Green (dark theme)",
+        "canonical": "#0b1411",
+        "cssVar": "--wc-sidebar",
+        "theme": "dark",
+        "tonalRamp": [
+          "oklch(15.0% 0.015 171.9)",
+          "oklch(26.4% 0.015 171.9)",
+          "oklch(37.9% 0.015 171.9)",
+          "oklch(49.3% 0.015 171.9)",
+          "oklch(60.7% 0.015 171.9)",
+          "oklch(72.1% 0.015 171.9)",
+          "oklch(83.6% 0.015 171.9)",
+          "oklch(95.0% 0.015 171.9)"
+        ]
+      },
+      "sidebar-active-dark": {
+        "role": "neutral",
+        "displayName": "Spine Green Active (dark theme)",
+        "canonical": "#1c3a30",
+        "cssVar": "--wc-sidebar-active",
+        "theme": "dark",
+        "tonalRamp": [
+          "oklch(15.0% 0.041 170.0)",
+          "oklch(26.4% 0.041 170.0)",
+          "oklch(37.9% 0.041 170.0)",
+          "oklch(49.3% 0.041 170.0)",
+          "oklch(60.7% 0.041 170.0)",
+          "oklch(72.1% 0.041 170.0)",
+          "oklch(83.6% 0.041 170.0)",
+          "oklch(95.0% 0.041 170.0)"
+        ]
+      },
+      "sidebar-ink-dark": {
+        "role": "neutral",
+        "displayName": "Spine Ink (dark theme)",
+        "canonical": "#b9cec3",
+        "cssVar": "--wc-sidebar-ink",
+        "theme": "dark",
+        "tonalRamp": [
+          "oklch(15.0% 0.027 163.1)",
+          "oklch(26.4% 0.027 163.1)",
+          "oklch(37.9% 0.027 163.1)",
+          "oklch(49.3% 0.027 163.1)",
+          "oklch(60.7% 0.027 163.1)",
+          "oklch(72.1% 0.027 163.1)",
+          "oklch(83.6% 0.027 163.1)",
+          "oklch(95.0% 0.027 163.1)"
+        ]
+      },
+      "sidebar-ink-strong-dark": {
+        "role": "neutral",
+        "displayName": "Spine Ink Strong (dark theme)",
+        "canonical": "#f0f6f2",
+        "cssVar": "--wc-sidebar-ink-strong",
+        "theme": "dark",
+        "tonalRamp": [
+          "oklch(15.0% 0.008 157.1)",
+          "oklch(26.4% 0.008 157.1)",
+          "oklch(37.9% 0.008 157.1)",
+          "oklch(49.3% 0.008 157.1)",
+          "oklch(60.7% 0.008 157.1)",
+          "oklch(72.1% 0.008 157.1)",
+          "oklch(83.6% 0.008 157.1)",
+          "oklch(95.0% 0.008 157.1)"
+        ]
+      },
+      "canvas-dark": {
+        "role": "neutral",
+        "displayName": "Pad Paper (dark theme)",
+        "canonical": "#0f1714",
+        "cssVar": "--wc-canvas",
+        "theme": "dark",
+        "tonalRamp": [
+          "oklch(15.0% 0.013 169.9)",
+          "oklch(26.4% 0.013 169.9)",
+          "oklch(37.9% 0.013 169.9)",
+          "oklch(49.3% 0.013 169.9)",
+          "oklch(60.7% 0.013 169.9)",
+          "oklch(72.1% 0.013 169.9)",
+          "oklch(83.6% 0.013 169.9)",
+          "oklch(95.0% 0.013 169.9)"
+        ]
+      },
+      "surface-dark": {
+        "role": "neutral",
+        "displayName": "White Sheet (dark theme)",
+        "canonical": "#16211c",
+        "cssVar": "--wc-surface",
+        "theme": "dark",
+        "tonalRamp": [
+          "oklch(15.0% 0.018 165.2)",
+          "oklch(26.4% 0.018 165.2)",
+          "oklch(37.9% 0.018 165.2)",
+          "oklch(49.3% 0.018 165.2)",
+          "oklch(60.7% 0.018 165.2)",
+          "oklch(72.1% 0.018 165.2)",
+          "oklch(83.6% 0.018 165.2)",
+          "oklch(95.0% 0.018 165.2)"
+        ]
+      },
+      "sunken-dark": {
+        "role": "neutral",
+        "displayName": "Sunken Grey-Green (dark theme)",
+        "canonical": "#1b2823",
+        "cssVar": "--wc-sunken",
+        "theme": "dark",
+        "tonalRamp": [
+          "oklch(15.0% 0.020 169.1)",
+          "oklch(26.4% 0.020 169.1)",
+          "oklch(37.9% 0.020 169.1)",
+          "oklch(49.3% 0.020 169.1)",
+          "oklch(60.7% 0.020 169.1)",
+          "oklch(72.1% 0.020 169.1)",
+          "oklch(83.6% 0.020 169.1)",
+          "oklch(95.0% 0.020 169.1)"
+        ]
+      },
+      "ink-dark": {
+        "role": "neutral",
+        "displayName": "Ink (dark theme)",
+        "canonical": "#e4ece6",
+        "cssVar": "--wc-ink",
+        "theme": "dark",
+        "tonalRamp": [
+          "oklch(15.0% 0.012 153.7)",
+          "oklch(26.4% 0.012 153.7)",
+          "oklch(37.9% 0.012 153.7)",
+          "oklch(49.3% 0.012 153.7)",
+          "oklch(60.7% 0.012 153.7)",
+          "oklch(72.1% 0.012 153.7)",
+          "oklch(83.6% 0.012 153.7)",
+          "oklch(95.0% 0.012 153.7)"
+        ]
+      },
+      "ink-muted-dark": {
+        "role": "neutral",
+        "displayName": "Muted Ink (dark theme)",
+        "canonical": "#a9b9af",
+        "cssVar": "--wc-ink-muted",
+        "theme": "dark",
+        "tonalRamp": [
+          "oklch(15.0% 0.023 158.4)",
+          "oklch(26.4% 0.023 158.4)",
+          "oklch(37.9% 0.023 158.4)",
+          "oklch(49.3% 0.023 158.4)",
+          "oklch(60.7% 0.023 158.4)",
+          "oklch(72.1% 0.023 158.4)",
+          "oklch(83.6% 0.023 158.4)",
+          "oklch(95.0% 0.023 158.4)"
+        ]
+      },
+      "ink-faint-dark": {
+        "role": "neutral",
+        "displayName": "Faint Ink (dark theme)",
+        "canonical": "#8d9c93",
+        "cssVar": "--wc-ink-faint",
+        "theme": "dark",
+        "tonalRamp": [
+          "oklch(15.0% 0.022 159.5)",
+          "oklch(26.4% 0.022 159.5)",
+          "oklch(37.9% 0.022 159.5)",
+          "oklch(49.3% 0.022 159.5)",
+          "oklch(60.7% 0.022 159.5)",
+          "oklch(72.1% 0.022 159.5)",
+          "oklch(83.6% 0.022 159.5)",
+          "oklch(95.0% 0.022 159.5)"
+        ]
+      },
+      "rule-dark": {
+        "role": "neutral",
+        "displayName": "Rule (dark theme)",
+        "canonical": "#34473d",
+        "cssVar": "--wc-rule",
+        "theme": "dark",
+        "tonalRamp": [
+          "oklch(15.0% 0.029 161.6)",
+          "oklch(26.4% 0.029 161.6)",
+          "oklch(37.9% 0.029 161.6)",
+          "oklch(49.3% 0.029 161.6)",
+          "oklch(60.7% 0.029 161.6)",
+          "oklch(72.1% 0.029 161.6)",
+          "oklch(83.6% 0.029 161.6)",
+          "oklch(95.0% 0.029 161.6)"
+        ]
+      },
+      "rule-strong-dark": {
+        "role": "neutral",
+        "displayName": "Strong Rule (dark theme)",
+        "canonical": "#4c6357",
+        "cssVar": "--wc-rule-strong",
+        "theme": "dark",
+        "tonalRamp": [
+          "oklch(15.0% 0.034 162.1)",
+          "oklch(26.4% 0.034 162.1)",
+          "oklch(37.9% 0.034 162.1)",
+          "oklch(49.3% 0.034 162.1)",
+          "oklch(60.7% 0.034 162.1)",
+          "oklch(72.1% 0.034 162.1)",
+          "oklch(83.6% 0.034 162.1)",
+          "oklch(95.0% 0.034 162.1)"
+        ]
+      },
+      "field-dark": {
+        "role": "neutral",
+        "displayName": "Field Edge (dark theme)",
+        "canonical": "#5f7468",
+        "cssVar": "--wc-field",
+        "theme": "dark",
+        "tonalRamp": [
+          "oklch(15.0% 0.031 160.1)",
+          "oklch(26.4% 0.031 160.1)",
+          "oklch(37.9% 0.031 160.1)",
+          "oklch(49.3% 0.031 160.1)",
+          "oklch(60.7% 0.031 160.1)",
+          "oklch(72.1% 0.031 160.1)",
+          "oklch(83.6% 0.031 160.1)",
+          "oklch(95.0% 0.031 160.1)"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "headline": {
+        "displayName": "Headline",
+        "purpose": "Page titles in the page header (auth cards use 20px)."
+      },
+      "figure": {
+        "displayName": "Figure",
+        "purpose": "The number in a dashboard tile, tabular."
+      },
+      "title": {
+        "displayName": "Title",
+        "purpose": "Section and panel headings (14px inside panels)."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "Almost all UI text: tables, forms, buttons, notices, nav."
+      },
+      "reading": {
+        "displayName": "Reading",
+        "purpose": "The Help manual, max 70ch; h2 22px under a double rule, h3 18px."
+      },
+      "label": {
+        "displayName": "Label",
+        "purpose": "Table headers, badges, sidebar group labels, footnotes. Sentence case."
+      },
+      "numeric": {
+        "displayName": "Numeric",
+        "purpose": "Money and counts: tabular figures, right-aligned in tables."
+      }
+    },
+    "shadows": [
+      {
+        "name": "sheet-lift",
+        "value": "0 1px 2px rgb(0 0 0 / 0.06)",
+        "purpose": "The auth card on the bare canvas."
+      },
+      {
+        "name": "popover",
+        "value": "0 8px 24px -8px rgb(0 0 0 / 0.25)",
+        "purpose": "The user menu panel."
+      },
+      {
+        "name": "selected-segment",
+        "value": "0 1px 2px rgb(0 0 0 / 0.12)",
+        "purpose": "The checked option in the theme switch."
+      }
+    ],
+    "rules": [
+      {
+        "name": "rule",
+        "value": "1px solid var(--wc-rule)",
+        "purpose": "Card, row and bar borders."
+      },
+      {
+        "name": "rule-strong",
+        "value": "1px solid var(--wc-rule-strong)",
+        "purpose": "Table header underline, secondary button border."
+      },
+      {
+        "name": "column-rule",
+        "value": "1px solid var(--wc-rule-strong)",
+        "purpose": "Left edge of money columns."
+      },
+      {
+        "name": "double-rule",
+        "value": "3px double var(--wc-rule-strong)",
+        "purpose": "Closes page headers, totals rows, the totals column and the figure strip; underlines the wordmark."
+      }
+    ],
+    "focus": {
+      "default": "2px ring var(--wc-accent), offset 2px var(--wc-canvas)",
+      "inputs": "border var(--wc-accent) plus 2px ring accent at 40%",
+      "sidebar": "2px ring var(--wc-sidebar-ink), offset from var(--wc-sidebar)"
+    },
+    "motion": [
+      {
+        "name": "sidebar-collapse",
+        "value": "width 200ms ease-out",
+        "purpose": "Sidebar 240px to 56px; none under reduced motion."
+      },
+      {
+        "name": "progress-fill",
+        "value": "width 300ms ease-out",
+        "purpose": "Setup checklist bar; none under reduced motion."
+      },
+      {
+        "name": "skeleton-pulse",
+        "value": "Tailwind animate-pulse",
+        "purpose": "Loading bars; off under reduced motion."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "min-window",
+        "value": "1024x640",
+        "purpose": "Tauri desktop window minimum; no mobile layout."
+      }
+    ],
+    "themes": {
+      "mechanism": "--wc-* variables on :root and .dark; .dark set on <html> before first paint by public/theme-boot.js; Tailwind reads them via @theme inline.",
+      "options": ["Light", "Dark", "System"]
+    },
+    "charts": {
+      "library": "Recharts",
+      "source": "Live --wc-* values read from document.documentElement, re-read when its class changes",
+      "mapping": {
+        "series": "chart",
+        "bars": "square ends",
+        "line": "2px, no dots",
+        "valueAxis": "starts at 0, 25% headroom",
+        "grid": "rule",
+        "axis": "rule-strong",
+        "tick": "ink-muted",
+        "tooltipBackground": "surface",
+        "tooltipBorder": "rule",
+        "tooltipText": "ink",
+        "cursor": "sunken",
+        "dotStroke": "surface"
+      },
+      "a11y": "aria-hidden; the adjacent table carries the data"
+    },
+    "enforcement": {
+      "test": "src/test/palette.test.ts",
+      "bans": "bg|text|border|ring|fill|stroke|divide|outline|ring-offset|placeholder|decoration with zinc|emerald|sky|red|amber|slate|gray|neutral|stone|green|blue shades, white, black"
+    }
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "The one main action in a view.",
+      "html": "<button class=\"ds-btn-primary\">Compute payroll</button>",
+      "css": ".ds-btn-primary{display:inline-flex;align-items:center;justify-content:center;gap:6px;border-radius:6px;padding:4px 10px;font-size:14px;line-height:20px;white-space:nowrap;cursor:pointer;font-family:'IBM Plex Sans Variable','Segoe UI',system-ui,sans-serif;transition:background-color .15s,color .15s;border:none;background:var(--wc-accent,#1f6b55);color:var(--wc-accent-ink,#fff);font-weight:500}.ds-btn-primary:hover{background:var(--wc-accent-hover,#185645)}.ds-btn-primary:focus-visible{outline:none;box-shadow:0 0 0 2px var(--wc-canvas,#f5f7f2),0 0 0 4px var(--wc-accent,#1f6b55);}.ds-btn-primary:disabled{opacity:.6;cursor:not-allowed}"
+    },
+    {
+      "name": "Secondary Button",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "A second action that still needs to stand out, such as Export CSV.",
+      "html": "<button class=\"ds-btn-secondary\">Export CSV</button>",
+      "css": ".ds-btn-secondary{display:inline-flex;align-items:center;justify-content:center;gap:6px;border-radius:6px;padding:4px 10px;font-size:14px;line-height:20px;white-space:nowrap;cursor:pointer;font-family:'IBM Plex Sans Variable','Segoe UI',system-ui,sans-serif;transition:background-color .15s,color .15s;border:1px solid var(--wc-rule-strong,#a9b8ab);background:var(--wc-surface,#fff);color:var(--wc-ink,#1b2420)}.ds-btn-secondary:hover{background:var(--wc-sunken,#eef2eb)}.ds-btn-secondary:focus-visible{outline:none;box-shadow:0 0 0 2px var(--wc-canvas,#f5f7f2),0 0 0 4px var(--wc-accent,#1f6b55);}"
+    },
+    {
+      "name": "Quiet Button",
+      "kind": "button",
+      "refersTo": "button-quiet",
+      "description": "Row and inline actions.",
+      "html": "<button class=\"ds-btn-quiet\">Edit</button>",
+      "css": ".ds-btn-quiet{display:inline-flex;align-items:center;justify-content:center;gap:6px;border-radius:6px;padding:4px 10px;font-size:14px;line-height:20px;white-space:nowrap;cursor:pointer;font-family:'IBM Plex Sans Variable','Segoe UI',system-ui,sans-serif;transition:background-color .15s,color .15s;border:none;background:transparent;color:var(--wc-ink-muted,#4f5d55)}.ds-btn-quiet:hover{background:var(--wc-sunken,#eef2eb);color:var(--wc-ink,#1b2420)}.ds-btn-quiet:focus-visible{outline:none;box-shadow:0 0 0 2px var(--wc-canvas,#f5f7f2),0 0 0 4px var(--wc-accent,#1f6b55);}"
+    },
+    {
+      "name": "Field",
+      "kind": "input",
+      "refersTo": "input",
+      "description": "A labelled input; label above, error below.",
+      "html": "<div class=\"ds-field\"><label for=\"ds-rate\">Daily rate</label><input id=\"ds-rate\" placeholder=\"0.00\"></div>",
+      "css": ".ds-field{display:flex;flex-direction:column;gap:4px;font-family:'IBM Plex Sans Variable','Segoe UI',system-ui,sans-serif;}.ds-field label{font-size:14px;font-weight:500;color:var(--wc-ink,#1b2420)}.ds-field input{border:1px solid var(--wc-field,#7d8f84);border-radius:6px;background:var(--wc-surface,#fff);padding:8px 12px;font:inherit;font-size:14px;color:var(--wc-ink,#1b2420);outline:none}.ds-field input::placeholder{color:var(--wc-ink-faint,#606d65)}.ds-field input:focus-visible{border-color:var(--wc-accent,#1f6b55);box-shadow:0 0 0 2px color-mix(in srgb,var(--wc-accent,#1f6b55) 40%,transparent)}.ds-field input[aria-invalid=true]{border-color:var(--wc-danger,#b3261e)}"
+    },
+    {
+      "name": "Status Badges",
+      "kind": "chip",
+      "refersTo": "badge-good",
+      "description": "Payroll status badges: Draft warn, Computed muted, Approved good, Posted final; bad for faults.",
+      "html": "<div class=\"ds-badges\"><span class=\"ds-badge ds-warn\">Draft</span><span class=\"ds-badge ds-muted\">Computed</span><span class=\"ds-badge ds-good\">Approved</span><span class=\"ds-badge ds-final\">Posted</span><span class=\"ds-badge ds-bad\">Locked</span></div>",
+      "css": ".ds-badges{display:flex;gap:8px;font-family:'IBM Plex Sans Variable','Segoe UI',system-ui,sans-serif;}.ds-badge{border-radius:4px;padding:2px 6px;font-size:12px;line-height:16px;font-weight:500;white-space:nowrap}.ds-good{background:var(--wc-accent-soft,#e3efe8);color:var(--wc-accent,#1f6b55)}.ds-bad{background:var(--wc-danger-soft,#fbeae8);color:var(--wc-danger,#b3261e)}.ds-warn{background:var(--wc-warn-soft,#fffbeb);color:var(--wc-warn,#92400e)}.ds-muted{background:var(--wc-sunken,#eef2eb);color:var(--wc-ink-muted,#4f5d55)}.ds-final{background:var(--wc-accent,#1f6b55);color:var(--wc-accent-ink,#fff)}"
+    },
+    {
+      "name": "Ledger Table",
+      "kind": "custom",
+      "refersTo": "table-header",
+      "description": "Sunken header, ruled rows, right-aligned tabular money with column rules, a double-ruled totals column, red-ink deductions, double rule above totals.",
+      "html": "<table class=\"ds-table\"><thead><tr><th>Employee</th><th class=\"ds-num\">Gross</th><th class=\"ds-num\">Tax</th><th class=\"ds-net\">Net pay</th></tr></thead><tbody><tr><td>Ana Reyes</td><td class=\"ds-num\">18,500.00</td><td class=\"ds-num ds-red\">1,240.00</td><td class=\"ds-net\">17,260.00</td></tr><tr><td>Ben Cruz</td><td class=\"ds-num\">15,000.00</td><td class=\"ds-num ds-red\">820.00</td><td class=\"ds-net\">14,180.00</td></tr><tr class=\"ds-total\"><td>Total</td><td class=\"ds-num\">33,500.00</td><td class=\"ds-num ds-red\">2,060.00</td><td class=\"ds-net\">31,440.00</td></tr></tbody></table>",
+      "css": ".ds-table{width:100%;border-collapse:collapse;text-align:left;font-size:14px;font-variant-numeric:tabular-nums;font-family:'IBM Plex Sans Variable','Segoe UI',system-ui,sans-serif;color:var(--wc-ink,#1b2420);background:var(--wc-surface,#fff)}.ds-table thead tr{border-bottom:1px solid var(--wc-rule-strong,#a9b8ab);background:var(--wc-sunken,#eef2eb);font-size:12px;color:var(--wc-ink-muted,#4f5d55)}.ds-table th{padding:8px 12px;font-weight:500}.ds-table td{padding:8px 12px}.ds-table tbody tr{border-bottom:1px solid var(--wc-rule,#d5dfd4)}.ds-table tbody tr:hover{background:color-mix(in srgb,var(--wc-sunken,#eef2eb) 60%,transparent)}.ds-num{text-align:right;border-left:1px solid var(--wc-rule-strong,#a9b8ab)}.ds-red{color:var(--wc-danger,#b3261e)}.ds-net{text-align:right;font-weight:600;border-left:3px double var(--wc-rule-strong,#a9b8ab)}.ds-table tr.ds-total{border-top:3px double var(--wc-rule-strong,#a9b8ab);font-weight:600}"
+    },
+    {
+      "name": "Page Header",
+      "kind": "custom",
+      "refersTo": "headline",
+      "description": "Breadcrumbs, title with status badge, description and actions, closed by a double rule.",
+      "html": "<header class=\"ds-ph\"><nav class=\"ds-crumbs\"><a href=\"#\">Payroll</a><svg viewBox=\"0 0 24 24\" width=\"14\" height=\"14\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"m9 18 6-6-6-6\"/></svg></nav><div class=\"ds-ph-row\"><div><div class=\"ds-ph-title\"><h1>Oct 1 to 15, 2026</h1><span class=\"ds-ph-badge\">Draft</span></div><p>Compute the payroll to see everyone's pay.</p></div><button class=\"ds-ph-btn\">Compute</button></div></header>",
+      "css": ".ds-ph{font-family:'IBM Plex Sans Variable','Segoe UI',system-ui,sans-serif;color:var(--wc-ink,#1b2420);border-bottom:3px double var(--wc-rule-strong,#a9b8ab);padding-bottom:16px}.ds-crumbs{display:flex;align-items:center;gap:4px;font-size:14px;color:var(--wc-ink-muted,#4f5d55);margin-bottom:6px}.ds-crumbs a{color:inherit;text-decoration:none}.ds-crumbs a:hover{color:var(--wc-accent,#1f6b55);text-decoration:underline}.ds-crumbs svg{color:var(--wc-ink-faint,#606d65)}.ds-ph-row{display:flex;justify-content:space-between;align-items:flex-start;gap:24px}.ds-ph-title{display:flex;align-items:center;gap:12px}.ds-ph h1{margin:0;font-size:24px;line-height:32px;font-weight:600;letter-spacing:-0.025em}.ds-ph p{margin:4px 0 0;font-size:14px;color:var(--wc-ink-muted,#4f5d55)}.ds-ph-badge{border-radius:4px;padding:2px 6px;font-size:12px;font-weight:500;background:var(--wc-warn-soft,#fffbeb);color:var(--wc-warn,#92400e)}.ds-ph-btn{border:none;border-radius:6px;padding:4px 10px;font:inherit;font-size:14px;font-weight:500;background:var(--wc-accent,#1f6b55);color:var(--wc-accent-ink,#fff);cursor:pointer}.ds-ph-btn:hover{background:var(--wc-accent-hover,#185645)}.ds-ph-btn:focus-visible{outline:none;box-shadow:0 0 0 2px var(--wc-canvas,#f5f7f2),0 0 0 4px var(--wc-accent,#1f6b55);}"
+    },
+    {
+      "name": "Payroll Steps",
+      "kind": "custom",
+      "refersTo": "steps-strip",
+      "description": "A ruled strip of four step cells like ledger column heads, closed by a double rule, with the next action underneath.",
+      "html": "<section class=\"ds-steps\"><ol><li class=\"ds-done\"><span class=\"ds-n\">1</span><span>Draft</span><svg viewBox=\"0 0 24 24\" width=\"16\" height=\"16\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M20 6 9 17l-5-5\"/></svg></li><li class=\"ds-cur\"><span class=\"ds-n\">2</span><span>Computed</span></li><li><span class=\"ds-n\">3</span><span>Approved</span></li><li><span class=\"ds-n\">4</span><span>Posted</span></li></ol><p>Fix attendance, leave or pay rates at the source, then recompute. Approve when the numbers are right.</p></section>",
+      "css": ".ds-steps{font-family:'IBM Plex Sans Variable','Segoe UI',system-ui,sans-serif;border:1px solid var(--wc-rule-strong,#a9b8ab);border-radius:4px;background:var(--wc-surface,#fff);color:var(--wc-ink,#1b2420)}.ds-steps ol{display:grid;grid-template-columns:repeat(4,1fr);margin:0;padding:0;list-style:none;border-bottom:3px double var(--wc-rule-strong,#a9b8ab)}.ds-steps li{display:flex;align-items:center;gap:8px;padding:10px 16px;font-size:14px;color:var(--wc-ink-faint,#606d65)}.ds-steps li+li{border-left:1px solid var(--wc-rule,#d5dfd4)}.ds-n{font-size:12px;color:var(--wc-ink-faint,#606d65);font-variant-numeric:tabular-nums}.ds-steps li.ds-done{color:var(--wc-ink,#1b2420)}.ds-steps li.ds-done svg{margin-left:auto;color:var(--wc-accent,#1f6b55)}.ds-steps li.ds-cur{color:var(--wc-ink,#1b2420);font-weight:600;background:var(--wc-accent-soft,#e3efe8);box-shadow:inset 0 3px 0 var(--wc-accent,#1f6b55)}.ds-steps p{margin:0;padding:12px 16px;font-size:14px;color:var(--wc-ink-muted,#4f5d55)}"
+    },
+    {
+      "name": "Sidebar Navigation",
+      "kind": "nav",
+      "refersTo": "nav-sidebar",
+      "description": "Spine Green column with the double-ruled wordmark and lucide items.",
+      "html": "<nav class=\"ds-side\"><span class=\"ds-mark\">Wagecraft</span><p class=\"ds-grp\">Payroll</p><a class=\"ds-item ds-active\" href=\"#\"><svg viewBox=\"0 0 24 24\" width=\"16\" height=\"16\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.75\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><rect x=\"3\" y=\"3\" width=\"18\" height=\"18\" rx=\"2\"/><path d=\"M3 9h18M9 21V9\"/></svg>Pay periods</a><a class=\"ds-item\" href=\"#\"><svg viewBox=\"0 0 24 24\" width=\"16\" height=\"16\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.75\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2\"/><circle cx=\"9\" cy=\"7\" r=\"4\"/></svg>Employees</a></nav>",
+      "css": ".ds-side{display:flex;flex-direction:column;gap:2px;width:240px;padding:16px 8px;background:var(--wc-sidebar,#173d33);color:var(--wc-sidebar-ink,#cfe0d7);font-family:'IBM Plex Sans Variable','Segoe UI',system-ui,sans-serif;}.ds-mark{align-self:flex-start;margin:0 12px 12px;padding-bottom:2px;border-bottom:3px double color-mix(in srgb,var(--wc-sidebar-ink,#cfe0d7) 50%,transparent);font-size:18px;font-weight:600;letter-spacing:-0.025em;color:var(--wc-sidebar-ink-strong,#fff)}.ds-grp{margin:0;padding:0 12px 4px;font-size:12px;font-weight:500;color:color-mix(in srgb,var(--wc-sidebar-ink,#cfe0d7) 70%,transparent)}.ds-item{display:flex;align-items:center;gap:12px;border-radius:6px;padding:4px 12px;font-size:14px;line-height:20px;color:inherit;text-decoration:none}.ds-item:hover{background:color-mix(in srgb,var(--wc-sidebar-active,#24564a) 60%,transparent);color:var(--wc-sidebar-ink-strong,#fff)}.ds-item:focus-visible{outline:none;box-shadow:0 0 0 2px var(--wc-sidebar,#173d33),0 0 0 4px var(--wc-sidebar-ink,#cfe0d7)}.ds-item.ds-active{background:var(--wc-sidebar-active,#24564a);color:var(--wc-sidebar-ink-strong,#fff);font-weight:500}"
+    },
+    {
+      "name": "Notice",
+      "kind": "card",
+      "refersTo": "notice-warn",
+      "description": "Guidance or caution inside a page, with a lucide icon.",
+      "html": "<section class=\"ds-notice\"><svg viewBox=\"0 0 24 24\" width=\"16\" height=\"16\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3\"/><path d=\"M12 9v4M12 17h.01\"/></svg><div>Two employees have no pay rate and are not in this payroll.</div></section>",
+      "css": ".ds-notice{display:flex;gap:10px;border:1px solid var(--wc-warn-rule,#fcd34d);border-radius:6px;padding:10px 12px;background:var(--wc-warn-soft,#fffbeb);color:var(--wc-warn,#92400e);font-size:14px;line-height:20px;font-family:'IBM Plex Sans Variable','Segoe UI',system-ui,sans-serif;}.ds-notice svg{flex-shrink:0;margin-top:2px}"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Ledger Pad",
+    "overview": "Wagecraft is payroll written on a green columnar accounting pad. A deep ledger-green sidebar holds the book's spine; the page is a grey-green paper canvas with white ruled surfaces on it; amounts sit in tabular figures in right-aligned columns; deductions and negatives are in red ink and parentheses; a double rule closes each page header and sits above every total. The mood is calm, exact and trustworthy, the way a well-kept book looks to an auditor.\n\nIt is a dense desktop operating tool (Tauri window, minimum 1024x640): small type, tight rows, one accent. It deliberately refuses the generic grey SaaS card kit; structure comes from rules and columns, not from floating cards and shadows. Light and dark are both designed: every colour is a semantic `--wc-*` token with its own value under `.dark`, so components never carry `dark:` classes.\n\n- Ruled, flat, near-square surfaces (4px corners): 1px rules for structure, a 3px double rule for closure (page headers, totals rows, the totals column, the figure strip, the wordmark).\n- One ledger-green accent; red ink only for deductions, negatives, lateness and errors; amber only for drafts and warnings.\n- IBM Plex Sans throughout, tabular figures in every table and number.\n- lucide outline icons at 1.75 stroke, always paired with a text label or accessible name.\n- A designed dark theme, set before first paint.",
+    "keyCharacteristics": [
+      "Ruled, flat, near-square surfaces (4px corners): 1px rules for structure, a 3px double rule for closure (page headers, totals rows, the totals column, the figure strip, the wordmark).",
+      "One ledger-green accent; red ink only for deductions, negatives, lateness and errors; amber only for drafts and warnings.",
+      "IBM Plex Sans throughout, tabular figures in every table and number.",
+      "lucide outline icons at 1.75 stroke, always paired with a text label or accessible name.",
+      "A designed dark theme, set before first paint."
+    ],
+    "rules": [
+      {
+        "name": "The Token-Only Rule",
+        "body": "Every colour in a component is a semantic token class (`bg-surface`, `text-ink`, `border-rule`, `text-danger`…). Raw Tailwind palette classes (`zinc-*`, `emerald-*`, `white`, `black`…) are banned and `src/test/palette.test.ts` fails on any of them.",
+        "section": "colors"
+      },
+      {
+        "name": "The Red Ink Rule",
+        "body": "Red means money going out or something wrong: deductions, negatives, lateness, errors. It is never decoration and never a primary action.",
+        "section": "colors"
+      },
+      {
+        "name": "The Not-Colour-Alone Rule",
+        "body": "Status always carries words: badges have labels, tiles keep their label when the number turns red, negatives keep parentheses and a screen-reader \"minus\", done steps have a check and \", done\".",
+        "section": "colors"
+      },
+      {
+        "name": "The Tabular Rule",
+        "body": "Every table and every displayed amount uses tabular figures (`table` has `font-variant-numeric: tabular-nums` globally; numeric cells and tiles add `tabular-nums`). Money columns are right-aligned.",
+        "section": "typography"
+      },
+      {
+        "name": "The Ruled-Not-Raised Rule",
+        "body": "Cards, figure strips, panels and tables sit on the page with a 1px rule border and no shadow.",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "**Do** use only the semantic token classes (`bg-canvas`, `bg-surface`, `bg-sunken`, `text-ink*`, `border-rule*`, `bg-accent`, `text-danger`, `bg-warn-soft`…); add a new `--wc-*` token with both light and dark values rather than a raw colour.",
+      "**Do** close page headers, totals rows, the totals column and the figure strip with a 3px double `rule-strong` rule.",
+      "**Do** put money in right-aligned tabular columns, deductions and negatives in red ink, negatives in parentheses.",
+      "**Do** say every status in words (badge label, tile label, \", done\"), with colour as a second cue.",
+      "**Do** use the shared `primaryButton` / `secondaryButton` / `quietButton`, `focusRing`, `Badge`, `Field`, `Notice`, `PageHeader` and table class strings rather than restyling locally.",
+      "**Do** use lucide outline icons at 1.75 stroke, `aria-hidden`, beside a label or with an accessible name.",
+      "**Do** give charts colours from the live tokens, never hard-coded hexes.",
+      "**Do** respect reduced motion on every transition and pulse."
+    ],
+    "donts": [
+      "**Don't** use raw Tailwind palette classes (`zinc`, `emerald`, `sky`, `red`, `amber`, `slate`, `gray`, `white`, `black`…); `src/test/palette.test.ts` fails the build on them.",
+      "**Don't** add `dark:` classes; dark mode lives in the `.dark` token values.",
+      "**Don't** put more than one primary button in a view.",
+      "**Don't** signal status by colour alone.",
+      "**Don't** use red for anything but money out, lateness and errors, or amber for anything but drafts and warnings.",
+      "**Don't** lift cards, tiles or tables with shadows; shadows are only for the auth sheet, popovers and the selected theme segment.",
+      "**Don't** round containers past 4px; 6px is for controls, 8px only for the floating popover.",
+      "**Don't** add a second typeface or a display face."
+    ]
+  }
+}

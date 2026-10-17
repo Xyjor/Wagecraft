@@ -10,6 +10,7 @@ import { cancelOvertime, decideOvertime, listOvertime, pendingOvertime } from ".
 import { STATUS_LABELS } from "./format";
 import { OvertimeForm } from "./OvertimeForm";
 import { OvertimeTable } from "./OvertimeTable";
+import { PageHeader } from "@/components/PageHeader";
 
 type Status = OvertimeRequest["status"];
 
@@ -18,7 +19,7 @@ export function OvertimePage() {
   const { me } = useSession();
   if (me.role === "STAFF") {
     return (
-      <p className="text-zinc-600 dark:text-zinc-400">
+      <p className="text-ink-muted">
         Only Admin and HR can decide overtime. File your own from My attendance.
       </p>
     );
@@ -74,7 +75,7 @@ function Overtime({ myEmployeeId }: { myEmployeeId: number | null }) {
 
   function decisionButtons(r: OvertimeRequest) {
     if (r.employeeId === myEmployeeId) {
-      return <span className="text-zinc-500">Your own: someone else decides</span>;
+      return <span className="text-ink-faint">Your own: someone else decides</span>;
     }
     if (rejecting === r.id) {
       return (
@@ -108,7 +109,7 @@ function Overtime({ myEmployeeId }: { myEmployeeId: number | null }) {
   }
 
   function cancelButton(r: OvertimeRequest) {
-    if (r.locked) return <span className="text-zinc-500">Payroll posted</span>;
+    if (r.locked) return <span className="text-ink-faint">Payroll posted</span>;
     if (r.status !== "PENDING" && r.status !== "APPROVED") return null;
     return (
       <div className="flex justify-end">
@@ -126,14 +127,18 @@ function Overtime({ myEmployeeId }: { myEmployeeId: number | null }) {
 
   return (
     <div className="space-y-8">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold tracking-tight">Overtime</h1>
-        {!filing && (
-          <button type="button" className={primaryButton} onClick={() => setFiling(true)}>
-            File for an employee
-          </button>
-        )}
-      </div>
+      <PageHeader
+        title="Overtime"
+        actions={
+          <>
+            {!filing && (
+              <button type="button" className={primaryButton} onClick={() => setFiling(true)}>
+                File for an employee
+              </button>
+            )}
+          </>
+        }
+      />
       <FormAlert message={alert} />
       {filing && (
         <OvertimeForm
@@ -174,7 +179,7 @@ function Overtime({ myEmployeeId }: { myEmployeeId: number | null }) {
               type="month"
               value={month}
               onChange={(e) => setMonth(e.target.value)}
-              className="w-fit rounded-md border border-zinc-300 bg-white px-3 py-1.5 text-sm dark:border-zinc-700 dark:bg-zinc-900"
+              className="w-fit rounded-md border border-field bg-surface px-3 py-1.5 text-sm text-ink"
             />
           </div>
           <div className="flex flex-col gap-1">
@@ -185,7 +190,7 @@ function Overtime({ myEmployeeId }: { myEmployeeId: number | null }) {
               id="status"
               value={status}
               onChange={(e) => setStatus(e.target.value as Status | "")}
-              className="w-fit rounded-md border border-zinc-300 bg-white px-3 py-1.5 text-sm dark:border-zinc-700 dark:bg-zinc-900"
+              className="w-fit rounded-md border border-field bg-surface px-3 py-1.5 text-sm text-ink"
             >
               <option value="">Any status</option>
               {(Object.keys(STATUS_LABELS) as Status[]).map((s) => (

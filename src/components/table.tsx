@@ -8,9 +8,11 @@ export const th = "px-3 py-2 font-medium";
 export const td = "px-3 py-2";
 export const row = "border-b border-rule hover:bg-sunken/60";
 /** A money or count column. */
-export const num = "border-l border-rule/70 text-right tabular-nums";
+export const num = "border-l border-rule-strong text-right tabular-nums";
 /** The totals row. */
 export const totalRow = "border-t-[3px] border-double border-rule-strong font-semibold";
+/** The column that totals a row, set off by a double rule as on a columnar pad. */
+export const totalCol = "border-l-[3px] border-double border-rule-strong";
 
 /** The single row a table shows when it has nothing to list. */
 export function EmptyRow({ colSpan, children }: { colSpan: number; children: string }) {

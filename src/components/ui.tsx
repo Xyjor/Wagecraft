@@ -5,7 +5,7 @@
 export const focusRing =
   "outline-none focus-visible:ring-2 focus-visible:ring-focus focus-visible:ring-offset-2 focus-visible:ring-offset-canvas";
 
-const button = `inline-flex items-center justify-center gap-1.5 rounded-md px-2.5 py-1 text-sm ${focusRing} disabled:cursor-not-allowed disabled:opacity-60`;
+const button = `inline-flex items-center justify-center gap-1.5 rounded-md px-2.5 py-1 text-sm whitespace-nowrap ${focusRing} disabled:cursor-not-allowed disabled:opacity-60`;
 
 /** The main action on a screen. Use at most one per view. */
 export const primaryButton = `${button} bg-accent font-medium text-accent-ink hover:bg-accent-hover`;

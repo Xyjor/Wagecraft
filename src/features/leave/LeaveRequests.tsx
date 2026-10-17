@@ -71,7 +71,7 @@ export function LeaveRequests({
 
   function decisionButtons(r: LeaveRequest) {
     if (r.employeeId === myEmployeeId) {
-      return <span className="text-zinc-500">Your own: someone else decides</span>;
+      return <span className="text-ink-faint">Your own: someone else decides</span>;
     }
     if (rejecting === r.id) {
       return (
@@ -105,7 +105,7 @@ export function LeaveRequests({
   }
 
   function cancelButton(r: LeaveRequest) {
-    if (r.locked) return <span className="text-zinc-500">Payroll posted</span>;
+    if (r.locked) return <span className="text-ink-faint">Payroll posted</span>;
     if (r.status !== "PENDING" && r.status !== "APPROVED") return null;
     return (
       <div className="flex justify-end">
@@ -156,7 +156,7 @@ export function LeaveRequests({
             actions={decisionButtons}
           />
         )}
-        <p className="max-w-prose text-sm text-zinc-600 dark:text-zinc-400">
+        <p className="max-w-prose text-sm text-ink-muted">
           Approving paid leave takes the days from the employee&apos;s balance. Cancelling approved
           leave gives them back.
         </p>
@@ -176,7 +176,7 @@ export function LeaveRequests({
               type="month"
               value={month}
               onChange={(e) => setMonth(e.target.value)}
-              className="w-fit rounded-md border border-zinc-300 bg-white px-3 py-1.5 text-sm dark:border-zinc-700 dark:bg-zinc-900"
+              className="w-fit rounded-md border border-field bg-surface px-3 py-1.5 text-sm text-ink"
             />
           </div>
           <div className="flex flex-col gap-1">
@@ -187,7 +187,7 @@ export function LeaveRequests({
               id="status"
               value={status}
               onChange={(e) => setStatus(e.target.value as Status | "")}
-              className="w-fit rounded-md border border-zinc-300 bg-white px-3 py-1.5 text-sm dark:border-zinc-700 dark:bg-zinc-900"
+              className="w-fit rounded-md border border-field bg-surface px-3 py-1.5 text-sm text-ink"
             >
               <option value="">Any status</option>
               {(Object.keys(STATUS_LABELS) as Status[]).map((s) => (

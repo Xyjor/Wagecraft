@@ -25,7 +25,7 @@ export function PageHeader({
   meta?: ReactNode;
 }) {
   return (
-    <header className="mb-6 border-b-[3px] border-double border-rule pb-4">
+    <header className="mb-6 border-b-[3px] border-double border-rule-strong pb-4">
       {crumbs && crumbs.length > 0 && (
         <nav aria-label="Breadcrumb" className="mb-1.5">
           <ol className="flex flex-wrap items-center gap-1 text-sm text-ink-muted">

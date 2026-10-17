@@ -134,7 +134,7 @@ export function AuthCard({
       >
         Wagecraft
       </p>
-      <div className="w-full max-w-sm rounded-lg border border-rule bg-surface p-6 shadow-[0_1px_2px_rgb(0_0_0/0.06)]">
+      <div className="w-full max-w-sm rounded-sm border border-rule bg-surface p-6 shadow-[0_1px_2px_rgb(0_0_0/0.06)]">
         <h1 className="text-xl font-semibold">{title}</h1>
         {intro && <p className="mt-1 text-sm text-ink-muted">{intro}</p>}
         <div className="mt-6">{children}</div>

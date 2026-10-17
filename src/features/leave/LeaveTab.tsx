@@ -139,7 +139,7 @@ function AdjustForm({
       onSubmit={submit}
       noValidate
       aria-label={`Adjust ${balance.leaveTypeName}`}
-      className="grid max-w-md gap-4 rounded-lg border border-rule bg-surface p-4"
+      className="grid max-w-md gap-4 rounded-sm border border-rule bg-surface p-4"
     >
       <FormAlert message={alert} />
       <Field

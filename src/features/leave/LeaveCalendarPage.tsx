@@ -6,6 +6,7 @@ import { monthRange, thisMonth, todayIso } from "@/features/attendance/format";
 import type { AppError } from "@/lib/ipc";
 import { listLeaveRequests } from "./api";
 import { monthWeeks } from "./format";
+import { PageHeader } from "@/components/PageHeader";
 
 const WEEKDAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
@@ -14,7 +15,7 @@ export function LeaveCalendarPage({ initialMonth }: { initialMonth?: string }) {
   const { me } = useSession();
   if (me.role === "STAFF") {
     return (
-      <p className="text-zinc-600 dark:text-zinc-400">
+      <p className="text-ink-muted">
         Only Admin and HR can see everyone&apos;s leave. Yours is under My leave.
       </p>
     );
@@ -47,25 +48,29 @@ function LeaveCalendar({ initialMonth }: { initialMonth: string }) {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-end justify-between gap-4">
-        <h1 className="text-2xl font-semibold tracking-tight">Leave calendar</h1>
-        <div className="flex flex-col gap-1">
-          <label htmlFor="month" className="text-sm font-medium">
-            Month
-          </label>
-          <input
-            id="month"
-            type="month"
-            value={month}
-            onChange={(e) => {
-              setRequests(null);
-              setMonth(e.target.value);
-            }}
-            className="w-fit rounded-md border border-zinc-300 bg-white px-3 py-1.5 text-sm dark:border-zinc-700 dark:bg-zinc-900"
-          />
-        </div>
-      </div>
-      <p className="max-w-prose text-sm text-zinc-600 dark:text-zinc-400">
+      <PageHeader
+        title="Leave calendar"
+        actions={
+          <>
+            <div className="flex flex-col gap-1">
+              <label htmlFor="month" className="text-sm font-medium">
+                Month
+              </label>
+              <input
+                id="month"
+                type="month"
+                value={month}
+                onChange={(e) => {
+                  setRequests(null);
+                  setMonth(e.target.value);
+                }}
+                className="w-fit rounded-md border border-field bg-surface px-3 py-1.5 text-sm text-ink"
+              />
+            </div>
+          </>
+        }
+      />
+      <p className="max-w-prose text-sm text-ink-muted">
         Approved leave, plus requests still waiting for a decision (marked &ldquo;waiting&rdquo;).
         Use it to spot days when too many people are out before approving more.
       </p>
@@ -75,7 +80,7 @@ function LeaveCalendar({ initialMonth }: { initialMonth: string }) {
           <thead>
             <tr>
               {WEEKDAYS.map((d) => (
-                <th key={d} className="py-2 text-left font-medium text-zinc-500">
+                <th key={d} className="py-2 text-left font-medium text-ink-faint">
                   {d}
                 </th>
               ))}
@@ -85,22 +90,21 @@ function LeaveCalendar({ initialMonth }: { initialMonth: string }) {
             {monthWeeks(month).map((week, i) => (
               <tr key={i}>
                 {week.map((date, j) => {
-                  if (!date)
-                    return <td key={j} className="border border-zinc-100 dark:border-zinc-900" />;
+                  if (!date) return <td key={j} className="border border-rule" />;
                   const people = away(date);
                   return (
                     <td
                       key={date}
                       aria-label={`${date}: ${people.length === 0 ? "nobody away" : `${people.length} away`}`}
-                      className={`h-24 border border-zinc-200 p-1 align-top dark:border-zinc-800 ${
-                        j >= 5 ? "bg-zinc-50 dark:bg-zinc-900/50" : ""
+                      className={`h-24 border border-rule p-1 align-top ${
+                        j >= 5 ? "bg-sunken/50" : ""
                       }`}
                     >
                       <div
                         className={`text-xs tabular-nums ${
                           date === today
-                            ? "font-semibold text-sky-700 dark:text-sky-400"
-                            : "text-zinc-500"
+                            ? "inline-grid size-5 place-items-center rounded-full bg-accent font-semibold text-accent-ink"
+                            : "text-ink-faint"
                         }`}
                       >
                         {Number(date.slice(8))}
@@ -112,8 +116,8 @@ function LeaveCalendar({ initialMonth }: { initialMonth: string }) {
                             title={`${r.employeeName}: ${r.leaveTypeName}${r.halfDay ? " (half day)" : ""}`}
                             className={`truncate rounded px-1 ${
                               r.status === "APPROVED"
-                                ? "bg-emerald-50 text-emerald-900 dark:bg-emerald-950 dark:text-emerald-200"
-                                : "text-zinc-500 italic"
+                                ? "bg-accent-soft text-accent"
+                                : "text-ink-faint italic"
                             }`}
                           >
                             {r.employeeName.split(",")[0]} · {r.leaveTypeCode}
