@@ -1,6 +1,7 @@
 import {
   Banknote,
   Building2,
+  CircleHelp,
   CalendarCheck,
   CalendarMinus,
   CalendarOff,
@@ -71,6 +72,9 @@ const NAV: NavGroup[] = [
     ],
   },
 ];
+
+/** Help sits at the foot of the menu for everyone. */
+export const HELP_ITEM: NavItem = { to: "/help", label: "Help", icon: CircleHelp };
 
 /** The menu groups this role can use. */
 export function visibleNav(role: Role): NavGroup[] {

@@ -50,6 +50,11 @@ export const router = createBrowserRouter([
       { path: "backups", element: <BackupsPage /> },
       { path: "settings", element: <SettingsPage /> },
       { path: "activity", element: <ActivityPage /> },
+      // The manual and its Markdown renderer only load when someone opens Help.
+      {
+        path: "help",
+        lazy: async () => ({ Component: (await import("@/features/help/HelpPage")).HelpPage }),
+      },
     ],
   },
 ]);

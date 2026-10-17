@@ -14,10 +14,10 @@ const me: Me = {
   theme: "SYSTEM",
 };
 
-function renderBar(signOut = vi.fn(async () => {})) {
+function renderBar(signOut = vi.fn(async () => {}), path = "/") {
   render(
     <SessionContext.Provider value={{ me, signOut }}>
-      <MemoryRouter>
+      <MemoryRouter initialEntries={[path]}>
         <TopBar />
       </MemoryRouter>
     </SessionContext.Provider>,
@@ -72,6 +72,13 @@ describe("TopBar", () => {
 
     expect(trigger.getAttribute("aria-expanded")).toBe("true");
     expect(screen.getByRole("radio", { name: "Dark" })).toBeTruthy();
+  });
+
+  it("links ? to the manual's section for this screen", () => {
+    renderBar(undefined, "/payroll/4");
+
+    const help = screen.getByRole("link", { name: "Help for this page" });
+    expect(help.getAttribute("href")).toBe("/help#48-payroll");
   });
 
   it("closes the menu on Escape and returns focus to the button", () => {

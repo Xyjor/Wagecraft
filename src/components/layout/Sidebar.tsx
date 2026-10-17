@@ -2,7 +2,7 @@ import { useState } from "react";
 import { NavLink } from "react-router";
 import { PanelLeftClose, PanelLeftOpen } from "lucide-react";
 import { useSession } from "@/features/auth/session";
-import { visibleNav } from "./nav";
+import { HELP_ITEM, visibleNav, type NavItem } from "./nav";
 
 export const SIDEBAR_KEY = "wagecraft.sidebar";
 
@@ -77,27 +77,7 @@ export function Sidebar() {
               <ul className="flex flex-col gap-0.5">
                 {group.items.map((item) => (
                   <li key={item.to}>
-                    <NavLink
-                      to={item.to}
-                      end={item.to === "/"}
-                      title={collapsed ? item.label : undefined}
-                      className={({ isActive }) =>
-                        `flex items-center gap-3 rounded-md py-1 text-sm ${focusRing} ${
-                          collapsed ? "justify-center px-0" : "px-3"
-                        } ${
-                          isActive
-                            ? "bg-sidebar-active font-medium text-sidebar-ink-strong"
-                            : "hover:bg-sidebar-active/60 hover:text-sidebar-ink-strong"
-                        }`
-                      }
-                    >
-                      <item.icon
-                        aria-hidden="true"
-                        className="size-4 shrink-0"
-                        strokeWidth={1.75}
-                      />
-                      <span className={collapsed ? "sr-only" : ""}>{item.label}</span>
-                    </NavLink>
+                    <MenuLink item={item} collapsed={collapsed} />
                   </li>
                 ))}
               </ul>
@@ -106,7 +86,8 @@ export function Sidebar() {
         })}
       </div>
 
-      <div className="border-t border-sidebar-ink/15 p-2">
+      <div className="space-y-0.5 border-t border-sidebar-ink/15 p-2">
+        <MenuLink item={HELP_ITEM} collapsed={collapsed} />
         <button
           type="button"
           onClick={toggle}
@@ -126,5 +107,27 @@ export function Sidebar() {
         </button>
       </div>
     </nav>
+  );
+}
+
+function MenuLink({ item, collapsed }: { item: NavItem; collapsed: boolean }) {
+  return (
+    <NavLink
+      to={item.to}
+      end={item.to === "/"}
+      title={collapsed ? item.label : undefined}
+      className={({ isActive }) =>
+        `flex items-center gap-3 rounded-md py-1 text-sm ${focusRing} ${
+          collapsed ? "justify-center px-0" : "px-3"
+        } ${
+          isActive
+            ? "bg-sidebar-active font-medium text-sidebar-ink-strong"
+            : "hover:bg-sidebar-active/60 hover:text-sidebar-ink-strong"
+        }`
+      }
+    >
+      <item.icon aria-hidden="true" className="size-4 shrink-0" strokeWidth={1.75} />
+      <span className={collapsed ? "sr-only" : ""}>{item.label}</span>
+    </NavLink>
   );
 }
