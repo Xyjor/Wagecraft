@@ -22,3 +22,8 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Impeccable design tooling: local caches and review captures
+.impeccable/hook.cache.json
+.impeccable/review/
+.impeccable/config.local.json

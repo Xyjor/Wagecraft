@@ -89,7 +89,7 @@ export function SetupChecklist({ year }: { year: number }) {
   return (
     <section
       aria-labelledby={headingId}
-      className="mb-6 rounded-lg border border-accent/30 bg-surface p-4"
+      className="mb-6 rounded-sm border border-accent/30 bg-surface p-4"
     >
       <div className="flex items-start justify-between gap-4">
         <div>
@@ -112,11 +112,11 @@ export function SetupChecklist({ year }: { year: number }) {
       </div>
       <div
         aria-hidden="true"
-        className="mt-3 h-1.5 overflow-hidden rounded-full bg-sunken"
+        className="mt-3 h-1.5 overflow-hidden rounded-none border-y border-rule bg-sunken"
         title={`${doneCount} of ${steps.length} done`}
       >
         <div
-          className="h-full rounded-full bg-accent transition-[width] duration-300 ease-out motion-reduce:transition-none"
+          className="h-full bg-accent transition-[width] duration-300 ease-out motion-reduce:transition-none"
           style={{ width: `${(doneCount / steps.length) * 100}%` }}
         />
       </div>
@@ -125,7 +125,7 @@ export function SetupChecklist({ year }: { year: number }) {
           <li key={s.id} className="flex items-start gap-2.5 py-1">
             <span
               aria-hidden="true"
-              className={`mt-0.5 grid size-5 shrink-0 place-items-center rounded-full border ${
+              className={`mt-0.5 grid size-5 shrink-0 place-items-center rounded-sm border ${
                 s.done ? "border-accent bg-accent text-accent-ink" : "border-field bg-surface"
               }`}
             >

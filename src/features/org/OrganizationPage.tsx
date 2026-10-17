@@ -341,7 +341,7 @@ function DepartmentForm({
       onSubmit={submit}
       noValidate
       aria-label={editing ? `Edit ${editing.name}` : "Add department"}
-      className="grid max-w-md gap-4 rounded-lg border border-rule bg-surface p-4"
+      className="grid max-w-md gap-4 rounded-sm border border-rule bg-surface p-4"
     >
       <FormAlert message={alert} />
       <Field
@@ -413,7 +413,7 @@ function PositionForm({
       onSubmit={submit}
       noValidate
       aria-label={editing ? `Edit ${editing.title}` : "Add position"}
-      className="grid max-w-md gap-4 rounded-lg border border-rule bg-surface p-4"
+      className="grid max-w-md gap-4 rounded-sm border border-rule bg-surface p-4"
     >
       <FormAlert message={alert} />
       <SelectField
@@ -521,7 +521,7 @@ function ScheduleForm({
       onSubmit={submit}
       noValidate
       aria-label={editing ? `Edit ${editing.name}` : "Add schedule"}
-      className="grid max-w-md gap-4 rounded-lg border border-rule bg-surface p-4"
+      className="grid max-w-md gap-4 rounded-sm border border-rule bg-surface p-4"
     >
       <FormAlert message={alert} />
       <Field name="name" label="Name" autoFocus defaultValue={editing?.name} error={errors.name} />

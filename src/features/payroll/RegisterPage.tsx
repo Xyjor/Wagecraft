@@ -37,12 +37,23 @@ export function RegisterPage({ today = todayIso() }: { today?: string }) {
 }
 
 // Deductions are written in red ink, as on a paper register.
-const MONEY_COLUMNS: { key: keyof RegisterRow; label: string; ink?: string }[] = [
-  { key: "grossCents", label: "Gross" },
-  { key: "statutoryEeCents", label: "Contributions", ink: "text-danger" },
-  { key: "taxCents", label: "Tax", ink: "text-danger" },
-  { key: "otherDeductionsCents", label: "Other deductions", ink: "text-danger" },
-  { key: "netCents", label: "Net pay", ink: "font-semibold" },
+// Net pay is set off by a double rule, the way a columnar pad sets off its totals column.
+const MONEY_COLUMNS: { key: keyof RegisterRow; label: string; ink?: string; rule: string }[] = [
+  { key: "grossCents", label: "Gross", rule: T.num },
+  { key: "statutoryEeCents", label: "Contributions", ink: "text-danger", rule: T.num },
+  { key: "taxCents", label: "Tax", ink: "text-danger", rule: T.num },
+  {
+    key: "otherDeductionsCents",
+    label: "Other deductions",
+    ink: "text-danger",
+    rule: T.num,
+  },
+  {
+    key: "netCents",
+    label: "Net pay",
+    ink: "font-semibold",
+    rule: `${T.totalCol} text-right tabular-nums`,
+  },
 ];
 
 /** Zeros stay faint so the red ink only marks real deductions. */
@@ -93,47 +104,51 @@ function Register({ id, today }: { id: number; today: string }) {
         title={`Payroll for ${label}`}
         crumbs={[{ label: "Payroll", to: "/payroll" }]}
         description={`Pay date ${formatDate(period.payDate)}. Rule pack ${period.rulePackCode}.`}
+        actions={
+          period.status !== "DRAFT" && rows.length > 0 ? (
+            <RegisterDownloads periodId={id} />
+          ) : undefined
+        }
       />
-      <PayrollSteps status={period.status} />
-      <FormAlert message={alert} />
-      {canCompute && (
-        <div className="flex flex-wrap items-center gap-3">
-          <button
-            type="button"
-            className={period.status === "DRAFT" ? primaryButton : secondaryButton}
-            disabled={busy}
-            onClick={() => run(() => computePayroll(id))}
-          >
-            {period.status === "DRAFT" ? "Compute payroll" : "Recompute"}
-          </button>
-          {period.status === "COMPUTED" && (
+      <PayrollSteps status={period.status}>
+        <FormAlert message={alert} />
+        {canCompute && (
+          <div className="flex flex-wrap items-center gap-3">
             <button
               type="button"
-              className={primaryButton}
-              disabled={busy || rows.length === 0}
-              onClick={() => run(() => approvePayroll(id))}
+              className={period.status === "DRAFT" ? primaryButton : secondaryButton}
+              disabled={busy}
+              onClick={() => run(() => computePayroll(id))}
             >
-              Approve
+              {period.status === "DRAFT" ? "Compute payroll" : "Recompute"}
             </button>
-          )}
-        </div>
-      )}
-      {canCompute && cutoffStillRunning(period.periodEnd, today) && (
-        <p className="text-sm text-warn">
-          The cutoff runs until {formatDate(period.periodEnd)}. A payroll computed now only has the
-          attendance recorded so far, so recompute after that day.
-        </p>
-      )}
-      {period.status === "APPROVED" && (
-        <ApprovedActions
-          label={label}
-          busy={busy}
-          onPost={() => run(() => postPayroll(id))}
-          onSendBack={(reason) => run(() => sendBackPayroll(id, reason))}
-        />
-      )}
-
-      {period.status !== "DRAFT" && rows.length > 0 && <RegisterDownloads periodId={id} />}
+            {period.status === "COMPUTED" && (
+              <button
+                type="button"
+                className={primaryButton}
+                disabled={busy || rows.length === 0}
+                onClick={() => run(() => approvePayroll(id))}
+              >
+                Approve
+              </button>
+            )}
+          </div>
+        )}
+        {canCompute && cutoffStillRunning(period.periodEnd, today) && (
+          <p className="text-sm text-warn">
+            The cutoff runs until {formatDate(period.periodEnd)}. A payroll computed now only has
+            the attendance recorded so far, so recompute after that day.
+          </p>
+        )}
+        {period.status === "APPROVED" && (
+          <ApprovedActions
+            label={label}
+            busy={busy}
+            onPost={() => run(() => postPayroll(id))}
+            onSendBack={(reason) => run(() => sendBackPayroll(id, reason))}
+          />
+        )}
+      </PayrollSteps>
 
       {period.status === "DRAFT" ? (
         <EmptyState message="Not computed yet." />
@@ -143,7 +158,7 @@ function Register({ id, today }: { id: number; today: string }) {
             <tr>
               <th className={T.th}>Employee</th>
               {MONEY_COLUMNS.map((c) => (
-                <th key={c.key} className={`${T.th} ${T.num}`}>
+                <th key={c.key} className={`${T.th} ${c.rule}`}>
                   {c.label}
                 </th>
               ))}
@@ -172,7 +187,7 @@ function Register({ id, today }: { id: number; today: string }) {
               <tr className={T.totalRow}>
                 <td className={T.td}>Total ({rows.length})</td>
                 {MONEY_COLUMNS.map((c) => (
-                  <td key={c.key} className={`${T.td} ${T.num} ${inkFor(c, total(c.key))}`}>
+                  <td key={c.key} className={`${T.td} ${c.rule} ${inkFor(c, total(c.key))}`}>
                     <Money cents={total(c.key)} />
                   </td>
                 ))}
@@ -290,7 +305,7 @@ function RegisterLine({
           ))}
         </td>
         {MONEY_COLUMNS.map((c) => (
-          <td key={c.key} className={`${T.td} ${T.num} ${inkFor(c, row[c.key] as number)}`}>
+          <td key={c.key} className={`${T.td} ${c.rule} ${inkFor(c, row[c.key] as number)}`}>
             <Money cents={row[c.key] as number} />
           </td>
         ))}
@@ -332,5 +347,5 @@ function Payslip({ id, name }: { id: number; name: string }) {
   }, [id]);
 
   if (!slip) return <FormAlert message={alert} />;
-  return <PayslipView slip={slip} label={`Payslip for ${name}`} />;
+  return <PayslipView slip={slip} label={`Payslip for ${name}`} inline />;
 }

@@ -244,7 +244,7 @@ function LogoPanel({
 
 function Group({ title, note, children }: { title: string; note?: string; children: ReactNode }) {
   return (
-    <fieldset className="space-y-3 rounded-lg border border-rule bg-surface p-4">
+    <fieldset className="space-y-3 rounded-sm border border-rule bg-surface p-4">
       <legend className="px-1 text-sm font-semibold">{title}</legend>
       {note && <p className="text-sm text-ink-muted">{note}</p>}
       {children}

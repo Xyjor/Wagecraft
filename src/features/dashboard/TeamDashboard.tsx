@@ -7,7 +7,7 @@ import type { AppError } from "@/lib/ipc";
 import { formatPesos } from "@/lib/money";
 import { getTeamDashboard } from "./api";
 import { NO_DEPARTMENT, plural } from "./labels";
-import { Panel, Tile } from "./parts";
+import { Panel, Tile, TileStrip } from "./parts";
 
 // Recharts is big, so the charts load after the numbers, like the PDF library does.
 const DepartmentChart = lazy(() =>
@@ -41,7 +41,7 @@ export function TeamDashboard() {
 
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
+      <TileStrip columns="grid-cols-5">
         <Tile label="Employees" value={data.headcount}>
           {data.newHiresThisMonth} new this month
         </Tile>
@@ -53,7 +53,7 @@ export function TeamDashboard() {
           tone={today.notIn > 0 ? "warn" : undefined}
         />
         <Tile label="On leave" value={today.onLeave} />
-      </div>
+      </TileStrip>
 
       <Panel title="Waiting for review">
         {waiting ? (

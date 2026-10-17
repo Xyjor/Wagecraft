@@ -342,7 +342,7 @@ function CorrectionForm({
       onSubmit={submit}
       noValidate
       aria-label={`Attendance for ${editing.employeeName}`}
-      className="grid max-w-md gap-4 rounded-lg border border-rule bg-surface p-4"
+      className="grid max-w-md gap-4 rounded-sm border border-rule bg-surface p-4"
     >
       <p className="font-medium">
         {editing.employeeName} · {formatDate(editing.workDate)}

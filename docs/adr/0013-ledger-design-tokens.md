@@ -22,6 +22,12 @@
   4. **Font.** One workhorse sans, IBM Plex Sans, bundled through `@fontsource-variable/ibm-plex-sans`. It has the peso sign (U+20B1) and tabular figures. Public Sans was tried first and dropped because it has no peso sign. The CSP allows fonts only from `'self'`, and the app runs offline.
   5. **Theme before first paint.** `public/theme-boot.js` sets the `dark` class before React loads. A file is needed because the CSP blocks inline scripts. `src/lib/themeBoot.test.ts` keeps it in step with `resolveTheme`.
 
+- **Form:** the columnar accounting pad.
+  - Every ruled surface follows it: square-cornered boxes, visible column rules, a double rule closing page headers, above totals and before the Net pay column, and red ink for deductions.
+  - Figures sit in one ruled strip, not separate cards.
+  - The payroll steps are ruled column heads.
+  - The direction was chosen from four colour options (Ledger, Bundy clock, Peso, Triplicate) rather than from a design-skill concept roll. The form is written down here so later screens keep to it.
+
 - **Alternatives:**
   - _Rewrite every page in one PR_: too large to review, and it blocks other work.
   - _Leave zinc alone and only add tokens_: the app would look half-new until every page was done.

@@ -81,7 +81,7 @@ export function DepartmentChart({ rows }: { rows: DepartmentCount[] }) {
           <XAxis type="number" allowDecimals={false} {...axis(c)} />
           <YAxis type="category" dataKey="name" width={110} {...axis(c)} />
           <Tooltip {...tooltip(c)} cursor={{ fill: c.sunken }} />
-          <Bar dataKey="count" name="Employees" fill={c.chart} radius={[0, 4, 4, 0]} />
+          <Bar dataKey="count" name="Employees" fill={c.chart} />
         </BarChart>
       </ResponsiveContainer>
     </div>
@@ -97,7 +97,13 @@ export function PayrollCostChart({ rows }: { rows: PeriodCost[] }) {
         <LineChart data={data} margin={{ left: 16, right: 16, top: 8 }}>
           <CartesianGrid vertical={false} stroke={c.rule} />
           <XAxis dataKey="name" {...axis(c)} />
-          <YAxis tickFormatter={compactPesos} width={60} {...axis(c)} />
+          {/* Zero stays the baseline, with headroom so the line doesn't ride the top edge. */}
+          <YAxis
+            tickFormatter={compactPesos}
+            width={60}
+            domain={[0, (max: number) => Math.ceil(max * 1.25)]}
+            {...axis(c)}
+          />
           <Tooltip
             {...tooltip(c)}
             formatter={(v) => formatPesos(Number(v))}
@@ -108,7 +114,7 @@ export function PayrollCostChart({ rows }: { rows: PeriodCost[] }) {
             name="Cost"
             stroke={c.chart}
             strokeWidth={2}
-            dot={{ r: 4, fill: c.chart, stroke: c.surface, strokeWidth: 2 }}
+            dot={false}
             activeDot={{ r: 5, fill: c.chart, stroke: c.surface, strokeWidth: 2 }}
           />
         </LineChart>

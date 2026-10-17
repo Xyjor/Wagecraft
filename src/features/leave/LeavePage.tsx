@@ -250,7 +250,7 @@ function LeaveTypeForm({
       onSubmit={submit}
       noValidate
       aria-label={editing ? `Edit ${editing.name}` : "Add leave type"}
-      className="grid max-w-md gap-4 rounded-lg border border-rule bg-surface p-4"
+      className="grid max-w-md gap-4 rounded-sm border border-rule bg-surface p-4"
     >
       <FormAlert message={alert} />
       <div className="grid grid-cols-3 gap-4">

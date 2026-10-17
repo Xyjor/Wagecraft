@@ -15,7 +15,7 @@ import type { AppError } from "@/lib/ipc";
 import { formatPesos } from "@/lib/money";
 import { getMyDashboard } from "./api";
 import { plural } from "./labels";
-import { Panel, Tile } from "./parts";
+import { Panel, Tile, TileStrip } from "./parts";
 
 interface Loaded {
   summary: Summary;
@@ -62,7 +62,7 @@ export function MyDashboard() {
       </Panel>
 
       <Panel title={`This cutoff, ${periodLabel(cutoff.periodStart, cutoff.periodEnd)}`}>
-        <div className="grid grid-cols-3 gap-3">
+        <TileStrip columns="grid-cols-3">
           <Tile label="Days present" value={cutoff.daysPresent} />
           <Tile
             label="Late"
@@ -70,7 +70,7 @@ export function MyDashboard() {
             tone={cutoff.lateMinutes > 0 ? "danger" : undefined}
           />
           <Tile label="Approved overtime" value={formatMinutes(cutoff.overtimeMinutes) || "None"} />
-        </div>
+        </TileStrip>
       </Panel>
 
       <div className="grid gap-4 lg:grid-cols-3">

@@ -46,8 +46,8 @@
   --wc-ink: #e4ece6;
   --wc-ink-muted: #a9b9af;
   --wc-ink-faint: #8d9c93;
-  --wc-rule: #27362f;
-  --wc-rule-strong: #3a4c43;
+  --wc-rule: #34473d;
+  --wc-rule-strong: #4c6357;
   --wc-field: #5f7468;
   --wc-accent: #5db592;
   --wc-accent-hover: #79c4a8;
@@ -107,7 +107,7 @@
   .manual h2 {
     margin-top: 2.75rem;
     padding-bottom: 0.375rem;
-    border-bottom: 3px double var(--wc-rule);
+    border-bottom: 3px double var(--wc-rule-strong);
     font-size: 1.375rem;
     font-weight: 600;
     letter-spacing: -0.01em;

@@ -169,7 +169,7 @@ function UserRow({ user: u, isMe, resetting, ...on }: RowProps) {
             )}
           </select>
         </td>
-        <td className="px-3 py-2 text-ink-muted">{u.employeeLabel}</td>
+        <td className="px-3 py-2 whitespace-nowrap text-ink-muted">{u.employeeLabel}</td>
         <td className="px-3 py-2">
           <div className="flex flex-wrap gap-1">
             <ActiveBadge active={u.isActive} />
@@ -177,7 +177,9 @@ function UserRow({ user: u, isMe, resetting, ...on }: RowProps) {
             {u.mustChangePassword && <Badge tone="muted">Must change password</Badge>}
           </div>
         </td>
-        <td className="px-3 py-2 text-ink-muted">{lastSeen(u.lastLoginAt)}</td>
+        <td className="px-3 py-2 whitespace-nowrap text-ink-muted tabular-nums">
+          {lastSeen(u.lastLoginAt)}
+        </td>
         <td className="px-3 py-2">
           <div className="flex justify-end gap-1">
             <button
@@ -250,7 +252,7 @@ function AddUserForm({
       onSubmit={submit}
       noValidate
       aria-label="Add user"
-      className="grid max-w-md gap-4 rounded-lg border border-rule bg-surface p-4"
+      className="grid max-w-md gap-4 rounded-sm border border-rule bg-surface p-4"
     >
       <FormAlert message={alert} />
       <Field

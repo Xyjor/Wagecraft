@@ -8,14 +8,25 @@ import { SaveButton } from "./SaveButton";
 import { quantityText } from "./periods";
 
 /** One payslip, line by line: what the employee earned and paid, then the employer's share. */
-export function PayslipView({ slip, label }: { slip: PayslipDetail; label: string }) {
+export function PayslipView({
+  slip,
+  label,
+  inline = false,
+}: {
+  slip: PayslipDetail;
+  label: string;
+  /** Inside a register row: no box of its own, just ruled lines under the row. */
+  inline?: boolean;
+}) {
   const employee = slip.lines.filter((l) => l.kind !== "EMPLOYER_SHARE");
   const employer = slip.lines.filter((l) => l.kind === "EMPLOYER_SHARE");
 
   return (
     <section
       aria-label={label}
-      className="grid gap-6 rounded-lg border border-rule bg-surface p-4 sm:grid-cols-2"
+      className={`grid gap-6 sm:grid-cols-2 ${
+        inline ? "py-2 pl-6" : "rounded-sm border border-rule bg-surface p-4"
+      }`}
     >
       <LineTable title="Earnings and deductions" lines={employee}>
         <tr className="border-t-[3px] border-double border-rule-strong font-semibold">
